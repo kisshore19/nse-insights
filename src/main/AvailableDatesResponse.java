@@ -8,7 +8,7 @@ import java.util.List;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AvailableDatesResponse {
-    private List<LocalDate> dates;          // ← changed from availableDates to dates
+    private List<LocalDate> availableDates;
     private int totalDays;
     private LocalDate latestDate;
     private LocalDate oldestDate;

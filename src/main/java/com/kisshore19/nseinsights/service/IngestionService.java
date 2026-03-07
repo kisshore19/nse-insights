@@ -17,10 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import jakarta.persistence.EntityManager;
 
 @Service
 @RequiredArgsConstructor
@@ -30,46 +29,86 @@ public class IngestionService {
     private final NseDailyPriceRepository priceRepository;
     private final DownloadLogRepository downloadLogRepository;
     private final NseBhavatopyDownloader bhavatopyDownloader;
-    private final MtoFileDownloader mtoDownloader;
     private final CsvParserService csvParser;
-    private final EntityManager entityManager;
 
-    // ── Get Available Dates ────────────────────────────────────────────────────
-    public AvailableDatesResponse getAvailableDates() {
-        List<LocalDate> dates = priceRepository.findAllDistinctTradeDates();
-        LocalDate latest = dates.isEmpty() ? null : dates.get(0);
-        LocalDate oldest = dates.isEmpty() ? null : dates.get(dates.size() - 1);
+    // ── Range Download (fromDate to toDate) ───────────────────────────────────
+    public RangeDownloadResponse downloadRange(DownloadRequest request) {
+        LocalDate fromDate  = request.getFromTradeDate();
+        LocalDate toDate    = request.getEffectiveToDate();
 
-        return AvailableDatesResponse.builder()
-                .dates(dates)
-                .totalDates(dates.size())
-                .latestDate(latest)
-                .oldestDate(oldest)
+        // Validate date range
+        if (toDate.isBefore(fromDate)) {
+            throw new InvalidDateException(
+                    "toTradeDate (" + toDate + ") cannot be before fromTradeDate (" + fromDate + ")");
+        }
+
+        long overallStart = System.currentTimeMillis();
+        List<DateDownloadResult> results = new ArrayList<>();
+
+        int successCount  = 0;
+        int failedCount   = 0;
+        int skippedCount  = 0;
+        int totalRecords  = 0;
+
+        // Loop through each date in range
+        LocalDate current = fromDate;
+        while (!current.isAfter(toDate)) {
+            DateDownloadResult result = downloadSingleDate(current, request.isOverwrite());
+            results.add(result);
+
+            switch (result.getStatus()) {
+                case "SUCCESS"        -> { successCount++; totalRecords += result.getRecordsLoaded(); }
+                case "FAILED"         -> failedCount++;
+                case "ALREADY_EXISTS" -> skippedCount++;
+            }
+
+            current = current.plusDays(1);
+        }
+
+        long totalTime = System.currentTimeMillis() - overallStart;
+
+        log.info("Range download complete: {} to {} | Success={}, Failed={}, Skipped={}, Records={}",
+                fromDate, toDate, successCount, failedCount, skippedCount, totalRecords);
+
+        return RangeDownloadResponse.builder()
+                .fromDate(fromDate)
+                .toDate(toDate)
+                .totalDatesRequested((int) fromDate.datesUntil(toDate.plusDays(1)).count())
+                .successCount(successCount)
+                .failedCount(failedCount)
+                .skippedCount(skippedCount)
+                .totalRecordsLoaded(totalRecords)
+                .totalTimeTakenMs(totalTime)
+                .results(results)
                 .build();
     }
 
-    // ── Download & Store ───────────────────────────────────────────────────────
+    // ── Download Single Date (used internally by range loop) ──────────────────
     @Transactional
-    public DownloadResponse downloadAndStore(DownloadRequest request) {
-        LocalDate tradeDate = request.getTradeDate();
-        log.info("Starting download for trade date: {}", tradeDate);
+    public DateDownloadResult downloadSingleDate(LocalDate tradeDate, boolean overwrite) {
+        long startTime = System.currentTimeMillis();
+        log.info("Processing date: {}", tradeDate);
 
-        // 1. Check if data already exists
+        // 1. Check if already exists
         boolean exists = downloadLogRepository
                 .existsByTradeDateAndStatus(tradeDate, DownloadLog.STATUS_SUCCESS);
 
-        if (exists && !request.isOverwrite()) {
-            long count = priceRepository.countByTradeDate(tradeDate);
-            throw new DataAlreadyExistsException(tradeDate, (int) count);
+        if (exists && !overwrite) {
+            log.info("Skipping {} — already downloaded. Use overwrite=true to re-download.", tradeDate);
+            return DateDownloadResult.builder()
+                    .tradeDate(tradeDate)
+                    .status("ALREADY_EXISTS")
+                    .message("Already downloaded. Pass overwrite=true to re-download.")
+                    .build();
         }
 
-        // 2. If overwrite, delete existing data first
-        if (exists && request.isOverwrite()) {
+        // 2. If overwrite, delete existing data
+        if (exists && overwrite) {
             log.info("Overwrite=true, deleting existing data for {}", tradeDate);
             priceRepository.deleteByTradeDate(tradeDate);
         }
 
-        // 3. Create initial download log entry
+        // 3. Create download log
         DownloadLog downloadLog = DownloadLog.builder()
                 .tradeDate(tradeDate)
                 .status(DownloadLog.STATUS_PARTIAL)
@@ -77,73 +116,57 @@ public class IngestionService {
                 .build();
         downloadLog = downloadLogRepository.save(downloadLog);
 
-        long startTime = System.currentTimeMillis();
-
         try {
-            // 4. Download Bhavacopy only (MTO not required - delivery data in Bhavacopy)
-            log.info("Downloading Bhavacopy for {}", tradeDate);
+            // 4. Download Bhavacopy
             NseBhavatopyDownloader.BhavatopyResult bhavResult =
                     bhavatopyDownloader.download(tradeDate);
             downloadLog.setBhavatopyUrl(bhavResult.getUrl());
             downloadLog.setFileName(bhavResult.getFileName());
 
-            // 5. Parse Bhavacopy CSV (includes delivery data - MTO not required)
-            log.info("Parsing Bhavacopy data");
-            List<NseDailyPrice> records = csvParser.parseAndMerge(
-                    bhavResult.getCsvContent(),
-                    null,  // No MTO file needed - delivery data in CSV
-                    tradeDate
-            );
-
-            // 7. Bulk save to DB
-            log.info("Saving {} records to database for {}", records.size(), tradeDate);
+            // 5. Parse CSV
+            List<NseDailyPrice> records = csvParser.parse(bhavResult.getCsvContent(), tradeDate);
 
             if (records.isEmpty()) {
-                log.warn("No records to save for {}", tradeDate);
-                throw new RuntimeException("CSV parsing returned 0 records. Please verify NSE data format.");
+                throw new RuntimeException("No EQ records found in file for " + tradeDate);
             }
 
-            try {
-                priceRepository.saveAll(records);
-                entityManager.flush();  // Ensure all records are persisted immediately
-                log.info("Successfully saved and flushed all {} records", records.size());
-            } catch (Exception ex) {
-                log.error("Failed to save records: {}", ex.getMessage(), ex);
-                throw new RuntimeException("Failed to save records to database: " + ex.getMessage(), ex);
-            }
+            // 6. Bulk save
+            priceRepository.saveAll(records);
 
-            // 8. Update download log — SUCCESS
+            // 7. Update log — SUCCESS
             long timeTaken = System.currentTimeMillis() - startTime;
             downloadLog.setStatus(DownloadLog.STATUS_SUCCESS);
             downloadLog.setRecordCount(records.size());
             downloadLog.setCompletedAt(LocalDateTime.now());
             downloadLogRepository.save(downloadLog);
 
-            log.info("Download complete for {} — {} records in {}ms",
-                    tradeDate, records.size(), timeTaken);
+            log.info("✓ {} — {} records in {}ms", tradeDate, records.size(), timeTaken);
 
-            return DownloadResponse.builder()
+            return DateDownloadResult.builder()
                     .tradeDate(tradeDate)
+                    .status("SUCCESS")
                     .recordsLoaded(records.size())
-                    .bhavatopyFile(bhavResult.getFileName())
                     .timeTakenMs(timeTaken)
-                    .downloadLogId(downloadLog.getId())
                     .build();
 
-        } catch (NseUnavailableException ex) {
-            // Update log with failure
-            downloadLog.setStatus(DownloadLog.STATUS_FAILED);
-            downloadLog.setErrorMessage(ex.getMessage());
-            downloadLog.setCompletedAt(LocalDateTime.now());
-            downloadLogRepository.save(downloadLog);
-            throw ex;
         } catch (Exception ex) {
+            // Log failure but DO NOT rethrow — let range loop continue
+            long timeTaken = System.currentTimeMillis() - startTime;
+            String errorMsg = ex.getMessage();
+
             downloadLog.setStatus(DownloadLog.STATUS_FAILED);
-            downloadLog.setErrorMessage("Unexpected error: " + ex.getMessage());
+            downloadLog.setErrorMessage(errorMsg);
             downloadLog.setCompletedAt(LocalDateTime.now());
             downloadLogRepository.save(downloadLog);
-            log.error("Download failed for {}: {}", tradeDate, ex.getMessage(), ex);
-            throw new RuntimeException("Download failed for " + tradeDate, ex);
+
+            log.warn("✗ {} — FAILED: {}", tradeDate, errorMsg);
+
+            return DateDownloadResult.builder()
+                    .tradeDate(tradeDate)
+                    .status("FAILED")
+                    .message(errorMsg)
+                    .timeTakenMs(timeTaken)
+                    .build();
         }
     }
 
@@ -152,16 +175,27 @@ public class IngestionService {
         return downloadLogRepository
                 .findTopByTradeDateAndStatusOrderByDownloadedAtDesc(
                         tradeDate, DownloadLog.STATUS_SUCCESS)
-                .map(log -> DownloadStatusResponse.builder()
+                .map(dl -> DownloadStatusResponse.builder()
                         .tradeDate(tradeDate)
                         .downloaded(true)
-                        .recordCount(log.getRecordCount())
-                        .downloadedAt(log.getDownloadedAt())
+                        .recordCount(dl.getRecordCount())
+                        .downloadedAt(dl.getDownloadedAt())
                         .build())
                 .orElse(DownloadStatusResponse.builder()
                         .tradeDate(tradeDate)
                         .downloaded(false)
                         .build());
+    }
+
+    // ── Get Available Dates ────────────────────────────────────────────────────
+    public AvailableDatesResponse getAvailableDates() {
+        List<LocalDate> dates = priceRepository.findAllDistinctTradeDates();
+        return AvailableDatesResponse.builder()
+                .dates(dates)
+                .totalDays(dates.size())
+                .latestDate(dates.isEmpty() ? null : dates.get(0))
+                .oldestDate(dates.isEmpty() ? null : dates.get(dates.size() - 1))
+                .build();
     }
 
     // ── Get Download History ───────────────────────────────────────────────────
@@ -196,7 +230,6 @@ public class IngestionService {
         int deleted = priceRepository.deleteByTradeDate(tradeDate);
         log.info("Deleted {} records for {}", deleted, tradeDate);
 
-        // Add audit log entry
         DownloadLog auditLog = DownloadLog.builder()
                 .tradeDate(tradeDate)
                 .status(DownloadLog.STATUS_DELETED)
@@ -221,20 +254,20 @@ public class IngestionService {
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────────
-    private DownloadHistoryItem toHistoryItem(DownloadLog log) {
-        Long timeTaken = (log.getCompletedAt() != null && log.getDownloadedAt() != null)
-                ? java.time.Duration.between(log.getDownloadedAt(), log.getCompletedAt()).toMillis()
+    private DownloadHistoryItem toHistoryItem(DownloadLog dl) {
+        Long timeTaken = (dl.getCompletedAt() != null && dl.getDownloadedAt() != null)
+                ? java.time.Duration.between(dl.getDownloadedAt(), dl.getCompletedAt()).toMillis()
                 : null;
 
         return DownloadHistoryItem.builder()
-                .id(log.getId())
-                .tradeDate(log.getTradeDate())
-                .status(log.getStatus())
-                .recordCount(log.getRecordCount())
-                .fileName(log.getFileName())
-                .errorMessage(log.getErrorMessage())
-                .downloadedAt(log.getDownloadedAt())
-                .completedAt(log.getCompletedAt())
+                .id(dl.getId())
+                .tradeDate(dl.getTradeDate())
+                .status(dl.getStatus())
+                .recordCount(dl.getRecordCount())
+                .fileName(dl.getFileName())
+                .errorMessage(dl.getErrorMessage())
+                .downloadedAt(dl.getDownloadedAt())
+                .completedAt(dl.getCompletedAt())
                 .timeTakenMs(timeTaken)
                 .build();
     }

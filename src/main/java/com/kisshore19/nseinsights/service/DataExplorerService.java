@@ -125,7 +125,7 @@ public class DataExplorerService {
 
         return AvailableDatesResponse.builder()
                 .dates(dates)
-                .totalDates(dates.size())
+                .totalDays(dates.size())
                 .latestDate(latestDate)
                 .oldestDate(oldestDate)
                 .build();
