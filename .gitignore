@@ -28,6 +28,8 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 
+build_output.txt
+
 ### Sensitive config — never commit passwords ###
 application-local.properties
 application-prod.properties
