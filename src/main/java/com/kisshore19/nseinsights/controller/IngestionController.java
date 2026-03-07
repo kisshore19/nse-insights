@@ -16,47 +16,53 @@ import java.time.LocalDate;
 @RequestMapping("/api/v1/ingestion")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")  // Allow React frontend on different port
+@CrossOrigin(origins = "*")
 public class IngestionController {
 
     private final IngestionService ingestionService;
 
-    // ── API 1: GET /available-dates ────────────────────────────────────────────
-    @GetMapping("/available-dates")
-    public ResponseEntity<ApiResponse<AvailableDatesResponse>> getAvailableDates() {
-        log.info("GET /available-dates called");
-        AvailableDatesResponse response = ingestionService.getAvailableDates();
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    // ── API 2: POST /download ──────────────────────────────────────────────────
+    // ── POST /download ─────────────────────────────────────────────────────────
+    // Single date:  { "fromTradeDate": "2025-03-05" }
+    // Range:        { "fromTradeDate": "2025-03-01", "toTradeDate": "2025-03-05" }
     @PostMapping("/download")
-    public ResponseEntity<ApiResponse<DownloadResponse>> download(
+    public ResponseEntity<ApiResponse<RangeDownloadResponse>> download(
             @Valid @RequestBody DownloadRequest request) {
-        log.info("POST /download called for date: {}", request.getTradeDate());
-        DownloadResponse response = ingestionService.downloadAndStore(request);
+
+        log.info("POST /download — from: {} to: {}, overwrite: {}",
+                request.getFromTradeDate(),
+                request.getEffectiveToDate(),
+                request.isOverwrite());
+
+        RangeDownloadResponse response = ingestionService.downloadRange(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // ── API 3: GET /history ────────────────────────────────────────────────────
+    // ── GET /history ───────────────────────────────────────────────────────────
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<DownloadHistoryResponse>> getHistory(
             @RequestParam(defaultValue = "0")   int page,
             @RequestParam(defaultValue = "20")  int size,
             @RequestParam(defaultValue = "ALL") String status) {
-        DownloadHistoryResponse response = ingestionService.getHistory(page, size, status);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(
+                ingestionService.getHistory(page, size, status)));
     }
 
-    // ── API 4: GET /status/{tradeDate} ─────────────────────────────────────────
+    // ── GET /status/{tradeDate} ────────────────────────────────────────────────
     @GetMapping("/status/{tradeDate}")
     public ResponseEntity<ApiResponse<DownloadStatusResponse>> getStatus(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tradeDate) {
-        DownloadStatusResponse response = ingestionService.getStatus(tradeDate);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(
+                ingestionService.getStatus(tradeDate)));
     }
 
-    // ── API 5: DELETE /{tradeDate} ─────────────────────────────────────────────
+    // ── GET /available-dates ───────────────────────────────────────────────────
+    @GetMapping("/available-dates")
+    public ResponseEntity<ApiResponse<AvailableDatesResponse>> getAvailableDates() {
+        return ResponseEntity.ok(ApiResponse.success(
+                ingestionService.getAvailableDates()));
+    }
+
+    // ── DELETE /{tradeDate} ────────────────────────────────────────────────────
     @DeleteMapping("/{tradeDate}")
     public ResponseEntity<ApiResponse<Void>> deleteByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tradeDate) {
@@ -67,10 +73,10 @@ public class IngestionController {
                 .build());
     }
 
-    // ── API 6: GET /summary ────────────────────────────────────────────────────
+    // ── GET /summary ───────────────────────────────────────────────────────────
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<IngestionSummaryResponse>> getSummary() {
-        IngestionSummaryResponse response = ingestionService.getSummary();
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(
+                ingestionService.getSummary()));
     }
 }

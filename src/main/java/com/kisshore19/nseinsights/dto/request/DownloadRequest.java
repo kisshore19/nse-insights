@@ -11,9 +11,26 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class DownloadRequest {
 
-    @NotNull(message = "tradeDate is required")
+    @NotNull(message = "fromTradeDate is required")
     @PastOrPresent(message = "Cannot download data for a future date")
-    private LocalDate tradeDate;
+    private LocalDate fromTradeDate;
+
+    @PastOrPresent(message = "Cannot download data for a future date")
+    private LocalDate toTradeDate;  // if null, downloads only fromTradeDate
 
     private boolean overwrite = false;
+
+    /**
+     * Returns true if this is a date range request (fromDate != toDate)
+     */
+    public boolean isRangeRequest() {
+        return toTradeDate != null && !toTradeDate.equals(fromTradeDate);
+    }
+
+    /**
+     * Returns toTradeDate if provided, otherwise fromTradeDate (single date)
+     */
+    public LocalDate getEffectiveToDate() {
+        return toTradeDate != null ? toTradeDate : fromTradeDate;
+    }
 }
