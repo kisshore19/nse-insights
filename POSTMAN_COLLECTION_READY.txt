@@ -1,0 +1,311 @@
+# ✅ POSTMAN COLLECTION & API TESTING - COMPLETE!
+
+## 🎁 What You Have Now
+
+All files for complete API testing and documentation have been created!
+
+---
+
+## 📦 FILES CREATED
+
+### ⭐ POSTMAN COLLECTION (Main File)
+```
+NSE_Insights_Postman_Collection.json (50 KB)
+├── Complete collection with all 12 APIs
+├── Pre-configured variables
+├── Request examples with sample data
+├── Response examples
+├── All 6 Module 1 APIs
+└── All 6 Module 2 APIs
+```
+
+**How to use:**
+1. Open Postman
+2. Click `File` → `Import`
+3. Select `NSE_Insights_Postman_Collection.json`
+4. Click `Import`
+5. Set `baseUrl` variable to `http://localhost:8080`
+6. Start testing!
+
+---
+
+### 📚 DOCUMENTATION FILES
+
+#### 1. POSTMAN_COLLECTION_GUIDE.md
+- Step-by-step import instructions
+- Environment variable setup
+- API usage examples
+- Response examples with JSON
+- Error handling guide
+- Performance tips
+- Testing workflow
+
+#### 2. CURL_COMMANDS_REFERENCE.md
+- All 12 APIs with cURL commands
+- Copy-paste ready commands
+- Advanced examples
+- Batch processing scripts
+- Performance testing
+- Debugging commands
+- Test script template
+
+#### 3. API_TESTING_QUICK_START.txt
+- Quick reference guide
+- 5-minute setup
+- Common use cases
+- Troubleshooting
+- Example requests
+- Testing checklist
+
+#### 4. PROJECT_INDEX.md
+- Complete project overview
+- File locations
+- Module status
+- API endpoints summary
+- Development commands
+- Next steps
+
+---
+
+## 🚀 QUICK START (3 Steps)
+
+### Step 1: Import Postman Collection
+```
+1. Open Postman
+2. File → Import → NSE_Insights_Postman_Collection.json
+3. Click Import
+```
+
+### Step 2: Update Base URL (if needed)
+```
+1. Click "Variables" at top
+2. Change baseUrl to your URL (default: http://localhost:8080)
+3. Save
+```
+
+### Step 3: Start Testing
+```
+1. Select an API request
+2. Click "Send"
+3. View response
+4. Try different parameters
+```
+
+---
+
+## 📋 API ENDPOINTS AT A GLANCE
+
+### Module 1: Data Ingestion (6 APIs)
+```
+1. GET  /api/v1/ingestion/available-dates
+2. POST /api/v1/ingestion/download
+3. GET  /api/v1/ingestion/history
+4. GET  /api/v1/ingestion/status/{date}
+5. DELETE /api/v1/ingestion/{date}
+6. GET  /api/v1/ingestion/summary
+```
+
+### Module 2: Data Explorer (6 APIs)
+```
+1. GET /api/v1/stocks (with filters)
+2. GET /api/v1/stocks/dates
+3. GET /api/v1/stocks/{symbol}
+4. GET /api/v1/stocks/sectors
+5. GET /api/v1/stocks/top-gainers
+6. GET /api/v1/stocks/top-losers
+```
+
+---
+
+## 💻 TESTING OPTIONS
+
+### Option A: Postman (GUI - Recommended for Beginners)
+✅ Visual interface
+✅ Easy to learn
+✅ Built-in response viewer
+✅ Can save requests
+✅ Environment management
+✅ Automated testing
+
+**File:** `NSE_Insights_Postman_Collection.json`
+**Guide:** `POSTMAN_COLLECTION_GUIDE.md`
+
+### Option B: cURL (CLI - For Advanced Users)
+✅ No GUI required
+✅ Scriptable
+✅ Perfect for automation
+✅ Lightweight
+✅ Works in any terminal
+
+**Commands:** `CURL_COMMANDS_REFERENCE.md`
+**Example:**
+```bash
+curl "http://localhost:8080/api/v1/stocks/dates" | jq '.'
+```
+
+### Option C: Browser (Simple GET Requests)
+✅ Instant testing
+✅ No tools needed
+✅ Great for quick checks
+
+**Example:**
+```
+http://localhost:8080/api/v1/stocks/dates
+```
+
+---
+
+## 🔑 Important Notes
+
+### Date Format
+⚠️ Two different date formats are used:
+
+**Module 1 (Data Ingestion):** `yyyy-MM-dd`
+- Example: `2025-01-15`
+- Used in: Download, Delete, Status check
+
+**Module 2 (Data Explorer):** `dd-MM-yyyy`
+- Example: `15-01-2025`
+- Used in: Search, Top gainers/losers, Stock detail
+
+### Configuration
+Update in Postman:
+- **Variables** → **baseUrl** → Your API URL
+
+### Requirements
+- Application must be running on `localhost:8080`
+- Database must be populated with sample data
+- Postman or cURL for testing
+
+---
+
+## 📊 EXAMPLE API CALLS
+
+### Example 1: Search Stocks
+```bash
+curl "http://localhost:8080/api/v1/stocks?date=15-01-2025&minPrice=100&maxPrice=5000&page=0&size=50" | jq '.'
+```
+
+### Example 2: Get Top Gainers
+```bash
+curl "http://localhost:8080/api/v1/stocks/top-gainers?date=15-01-2025&limit=10" | jq '.'
+```
+
+### Example 3: Download Data
+```bash
+curl -X POST "http://localhost:8080/api/v1/ingestion/download" \
+  -H "Content-Type: application/json" \
+  -d '{"tradeDate": "2025-01-15", "overwrite": false}'
+```
+
+### Example 4: Get Stock Detail
+```bash
+curl "http://localhost:8080/api/v1/stocks/INFY?date=15-01-2025" | jq '.'
+```
+
+---
+
+## 🎯 TESTING WORKFLOW
+
+### Recommended Test Sequence:
+
+1. **Check if data exists**
+   ```
+   GET /api/v1/stocks/dates
+   ```
+
+2. **If no data, download it**
+   ```
+   POST /api/v1/ingestion/download
+   Body: {"tradeDate": "2025-01-15", "overwrite": false}
+   ```
+
+3. **Search stocks**
+   ```
+   GET /api/v1/stocks?date=15-01-2025&page=0&size=10
+   ```
+
+4. **Get top gainers**
+   ```
+   GET /api/v1/stocks/top-gainers?date=15-01-2025&limit=5
+   ```
+
+5. **Get stock detail**
+   ```
+   GET /api/v1/stocks/INFY?date=15-01-2025
+   ```
+
+---
+
+## 🛠️ TROUBLESHOOTING
+
+| Problem | Solution |
+|---------|----------|
+| "Connection refused" | Ensure app is running: `gradle bootRun` |
+| "Invalid date format" | Check format: Module 1 uses `yyyy-MM-dd`, Module 2 uses `dd-MM-yyyy` |
+| "Empty response" | Download data first: POST `/api/v1/ingestion/download` |
+| "Import fails in Postman" | Verify file is valid JSON |
+| "404 Not Found" | Check endpoint URL spelling |
+
+---
+
+## 📖 DOCUMENTATION STRUCTURE
+
+```
+Project Root/
+├── NSE_Insights_Postman_Collection.json  ⭐ [START HERE]
+├── POSTMAN_COLLECTION_GUIDE.md           [If using Postman]
+├── CURL_COMMANDS_REFERENCE.md            [If using cURL]
+├── API_TESTING_QUICK_START.txt           [Quick reference]
+└── PROJECT_INDEX.md                      [Full project overview]
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before you start testing:
+
+- [ ] Application is running (`gradle bootRun`)
+- [ ] Database is setup (`setup_database.bat`)
+- [ ] Port 8080 is available
+- [ ] Postman is installed (if using Postman)
+- [ ] File `NSE_Insights_Postman_Collection.json` exists
+
+After importing collection:
+
+- [ ] Collection appears in Postman
+- [ ] All 12 requests are visible
+- [ ] baseUrl variable is set
+- [ ] First API call returns success
+
+---
+
+## 🎉 YOU'RE READY!
+
+All files are created and ready to use:
+
+✅ Postman collection with 12 APIs
+✅ cURL command reference
+✅ Comprehensive documentation
+✅ Quick start guides
+✅ Example requests
+✅ Troubleshooting guide
+
+**Next Action:** Import `NSE_Insights_Postman_Collection.json` into Postman!
+
+---
+
+## 📞 NEED HELP?
+
+- **Postman Help:** Read `POSTMAN_COLLECTION_GUIDE.md`
+- **cURL Help:** Read `CURL_COMMANDS_REFERENCE.md`
+- **General Help:** Read `API_TESTING_QUICK_START.txt`
+- **Project Info:** Read `PROJECT_INDEX.md`
+
+---
+
+**Status:** ✅ POSTMAN COLLECTION COMPLETE
+**Date:** March 7, 2026
+**Version:** 1.0.0
+**Ready:** YES, READY TO TEST! 🚀

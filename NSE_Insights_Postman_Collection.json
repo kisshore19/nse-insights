@@ -1,0 +1,468 @@
+{
+  "info": {
+    "name": "NSE Insights API Collection",
+    "description": "Complete API collection for NSE Insights - Stock Market Data Analysis Application\nModules: Data Ingestion, Data Explorer, Daily Comparison with AI Insights",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "_postman_variable_scope": "collection"
+  },
+  "item": [
+    {
+      "name": "Module 1: Data Ingestion",
+      "description": "NSE Data Download, Parse and Storage APIs",
+      "item": [
+        {
+          "name": "1. Get Available Dates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/available-dates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "available-dates"
+              ]
+            },
+            "description": "Get list of all available trading dates in the database"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Download & Parse Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tradeDate\": \"2025-01-15\",\n  \"overwrite\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/download",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "download"
+              ]
+            },
+            "description": "Download NSE Bhavacopy + MTO file, parse and store to MySQL\n\nRequest body:\n- tradeDate (required): Date in yyyy-MM-dd format (e.g., 2025-01-15)\n- overwrite (optional): true to overwrite existing data, false to skip if exists (default: false)"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Download History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/history?page=0&size=20&status=ALL",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-indexed, default: 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Page size (default: 20)"
+                },
+                {
+                  "key": "status",
+                  "value": "ALL",
+                  "description": "Filter by status: ALL, SUCCESS, FAILED, PARTIAL, DELETED (default: ALL)"
+                }
+              ]
+            },
+            "description": "Get paginated list of download history with optional status filter"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Get Download Status by Date",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/status/2025-01-15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "status",
+                "2025-01-15"
+              ]
+            },
+            "description": "Check if data exists for a specific trade date\nPath parameter: tradeDate (yyyy-MM-dd format)"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Delete Data by Date",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/2025-01-15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "2025-01-15"
+              ]
+            },
+            "description": "Delete all stock data for a specific trade date\nPath parameter: tradeDate (yyyy-MM-dd format)"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get Ingestion Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ingestion",
+                "summary"
+              ]
+            },
+            "description": "Get overall ingestion statistics (total dates, latest date, oldest date, total records, failed downloads)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Module 2: Data Explorer",
+      "description": "Stock Search, Filtering, and Analytics APIs",
+      "item": [
+        {
+          "name": "1. Search Stocks (Advanced Filters)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks?date=15-01-2025&minPrice=100&maxPrice=5000&minVolume=100000&minPctChange=-5&maxPctChange=5&minDeliveryPct=50&page=0&size=50&sortBy=pctChange&sortDir=DESC",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "15-01-2025",
+                  "description": "Trade date (dd-MM-yyyy format, optional - defaults to latest)"
+                },
+                {
+                  "key": "index",
+                  "value": null,
+                  "description": "Index filter (e.g., NIFTY50, optional)",
+                  "disabled": true
+                },
+                {
+                  "key": "sector",
+                  "value": null,
+                  "description": "Sector filter (optional)",
+                  "disabled": true
+                },
+                {
+                  "key": "minPrice",
+                  "value": "100",
+                  "description": "Minimum close price (optional)"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "5000",
+                  "description": "Maximum close price (optional)"
+                },
+                {
+                  "key": "minVolume",
+                  "value": "100000",
+                  "description": "Minimum traded quantity (optional)"
+                },
+                {
+                  "key": "minPctChange",
+                  "value": "-5",
+                  "description": "Minimum percentage change (optional)"
+                },
+                {
+                  "key": "maxPctChange",
+                  "value": "5",
+                  "description": "Maximum percentage change (optional)"
+                },
+                {
+                  "key": "minDeliveryPct",
+                  "value": "50",
+                  "description": "Minimum delivery percentage (optional)"
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Page number (0-indexed, default: 0)"
+                },
+                {
+                  "key": "size",
+                  "value": "50",
+                  "description": "Page size (default: 50)"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "pctChange",
+                  "description": "Sort by field: pctChange, closePrice, tradedQuantity (default: tradeDate)"
+                },
+                {
+                  "key": "sortDir",
+                  "value": "DESC",
+                  "description": "Sort direction: ASC or DESC (default: DESC)"
+                }
+              ]
+            },
+            "description": "Advanced stock search with multiple filters and pagination\n\nDate format: dd-MM-yyyy (e.g., 15-01-2025)\nReturns paginated list of matching stocks"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Get Available Dates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/dates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks",
+                "dates"
+              ]
+            },
+            "description": "Get list of all available trading dates in the database"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Stock Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/INFY?date=15-01-2025",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks",
+                "INFY"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "15-01-2025",
+                  "description": "Trade date (dd-MM-yyyy format, optional - defaults to latest)"
+                }
+              ]
+            },
+            "description": "Get detailed stock information for a specific symbol and date\n\nPath parameter: symbol (e.g., INFY, RELIANCE, TCS)\nDate format: dd-MM-yyyy (e.g., 15-01-2025)"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Get All Sectors",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/sectors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks",
+                "sectors"
+              ]
+            },
+            "description": "Get list of all distinct sectors from index master"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Get Top Gainers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/top-gainers?date=15-01-2025&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks",
+                "top-gainers"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "15-01-2025",
+                  "description": "Trade date (dd-MM-yyyy format, optional - defaults to latest)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of records to return (default: 10)"
+                }
+              ]
+            },
+            "description": "Get top gainers for a specific date sorted by percentage change\n\nDate format: dd-MM-yyyy (e.g., 15-01-2025)"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get Top Losers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/top-losers?date=15-01-2025&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks",
+                "top-losers"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "15-01-2025",
+                  "description": "Trade date (dd-MM-yyyy format, optional - defaults to latest)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of records to return (default: 10)"
+                }
+              ]
+            },
+            "description": "Get top losers for a specific date sorted by percentage change\n\nDate format: dd-MM-yyyy (e.g., 15-01-2025)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Base URL for the NSE Insights API\nUpdate this to your server URL if different"
+    }
+  ]
+}
