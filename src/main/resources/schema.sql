@@ -111,3 +111,102 @@ CREATE TABLE IF NOT EXISTS ai_chat_message (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_chat_msg_session ON ai_chat_message (session_id, created_at);
+
+
+-- Run this to add the stock_candle table
+CREATE TABLE IF NOT EXISTS stock_candle (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    symbol              VARCHAR(20)     NOT NULL,
+    timeframe           VARCHAR(10)     NOT NULL,
+    candle_date         DATE            NOT NULL,
+    candle_end_date     DATE            NOT NULL,
+
+    -- OHLCV
+    open_price          DECIMAL(12,2)   NOT NULL,
+    high_price          DECIMAL(12,2)   NOT NULL,
+    low_price           DECIMAL(12,2)   NOT NULL,
+    close_price         DECIMAL(12,2)   NOT NULL,
+    total_volume        BIGINT          NOT NULL,
+    avg_volume          BIGINT          NULL,
+    total_turnover      DECIMAL(18,2)   NULL,
+
+    -- vs Previous Candle
+    prev_close          DECIMAL(12,2)   NULL,
+    pct_change          DECIMAL(7,2)    NULL,
+
+    -- Delivery
+    avg_delivery_pct    DECIMAL(7,2)    NULL,
+
+    -- Candle Pattern
+    pattern             VARCHAR(10)     NULL,   -- BULLISH / BEARISH / DOJI
+
+    -- Body & Wick
+    body_size           DECIMAL(12,2)   NULL,
+    body_pct            DECIMAL(7,2)    NULL,
+    upper_wick          DECIMAL(12,2)   NULL,
+    lower_wick          DECIMAL(12,2)   NULL,
+    upper_wick_pct      DECIMAL(7,2)    NULL,
+    lower_wick_pct      DECIMAL(7,2)    NULL,
+
+    trading_days        INT             NULL,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NULL,
+
+    CONSTRAINT uq_candle_symbol_timeframe_date
+        UNIQUE (symbol, timeframe, candle_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX idx_candle_symbol_tf   ON stock_candle (symbol, timeframe);
+CREATE INDEX idx_candle_date        ON stock_candle (candle_date DESC);
+CREATE INDEX idx_candle_pattern     ON stock_candle (timeframe, pattern);
+CREATE INDEX idx_candle_pct         ON stock_candle (timeframe, pct_change DESC);
+
+-- ── candle_stats table (fresh install) ───────────────────────────────────────
+-- Stores pre-computed statistics per symbol per timeframe period.
+-- Supports YEAR / QUARTER / MONTH / WEEK timeframes.
+-- Run this once manually before starting the application.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE candle_stats (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    symbol          VARCHAR(20)     NOT NULL,
+    timeframe       VARCHAR(10)     NOT NULL,
+
+    -- Human-readable period identifier
+    -- YEAR    → "2024"
+    -- QUARTER → "2024-Q1"
+    -- MONTH   → "2024-01"
+    -- WEEK    → "2024-W03"
+    period_key      VARCHAR(10)     NOT NULL,
+
+    candle_date     DATE            NOT NULL,   -- first trading day of period
+    candle_end_date DATE            NOT NULL,   -- last  trading day of period
+
+    -- OHLC
+    open_price      DECIMAL(12,2)   NULL,
+    high_price      DECIMAL(12,2)   NULL,
+    low_price       DECIMAL(12,2)   NULL,
+    last_price      DECIMAL(12,2)   NULL,
+    trend           VARCHAR(5)      NULL,       -- UP | DOWN | SIDE
+
+    -- Volume extremes
+    high_vol_qty    BIGINT          NULL,
+    high_vol_date   DATE            NULL,
+    low_vol_qty     BIGINT          NULL,
+    low_vol_date    DATE            NULL,
+
+    -- Delivery extremes
+    high_deliv_qty  BIGINT          NULL,
+    high_deliv_date DATE            NULL,
+    low_deliv_qty   BIGINT          NULL,
+    low_deliv_date  DATE            NULL,
+
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                             ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_stats_symbol_timeframe_period (symbol, timeframe, period_key),
+    INDEX idx_stats_symbol_timeframe            (symbol, timeframe),
+    INDEX idx_stats_timeframe                   (timeframe)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

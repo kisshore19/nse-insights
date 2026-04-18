@@ -41,6 +41,9 @@ public class NseDailyPrice {
     @Column(name = "low_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal lowPrice;
 
+    @Column(name = "last_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal lastPrice;
+
     @Column(name = "close_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal closePrice;
 

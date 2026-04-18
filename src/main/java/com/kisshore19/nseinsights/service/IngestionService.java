@@ -4,12 +4,14 @@ import com.kisshore19.nseinsights.dto.request.DownloadRequest;
 import com.kisshore19.nseinsights.dto.response.*;
 import com.kisshore19.nseinsights.entity.DownloadLog;
 import com.kisshore19.nseinsights.entity.NseDailyPrice;
-import com.kisshore19.nseinsights.exception.*;
+import com.kisshore19.nseinsights.exception.DateNotFoundException;
+import com.kisshore19.nseinsights.exception.InvalidDateException;
 import com.kisshore19.nseinsights.repository.DownloadLogRepository;
 import com.kisshore19.nseinsights.repository.NseDailyPriceRepository;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -18,11 +20,15 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class IngestionService {
 
@@ -30,50 +36,99 @@ public class IngestionService {
     private final DownloadLogRepository downloadLogRepository;
     private final NseBhavatopyDownloader bhavatopyDownloader;
     private final CsvParserService csvParser;
+    private final ExecutorService downloadExecutor;
 
-    // ── Range Download (fromDate to toDate) ───────────────────────────────────
+    @Value("${nse.download.thread-pool-size:5}")
+    private int threadPoolSize;
+
+    public IngestionService(
+            NseDailyPriceRepository priceRepository,
+            DownloadLogRepository downloadLogRepository,
+            NseBhavatopyDownloader bhavatopyDownloader,
+            CsvParserService csvParser,
+            @Qualifier("nseDownloadExecutor") ExecutorService downloadExecutor) {
+        this.priceRepository = priceRepository;
+        this.downloadLogRepository = downloadLogRepository;
+        this.bhavatopyDownloader = bhavatopyDownloader;
+        this.csvParser = csvParser;
+        this.downloadExecutor = downloadExecutor;
+    }
+
+    // ── Range Download with Parallel Threads ──────────────────────────────────
     public RangeDownloadResponse downloadRange(DownloadRequest request) {
-        LocalDate fromDate  = request.getFromTradeDate();
-        LocalDate toDate    = request.getEffectiveToDate();
+        LocalDate fromDate = request.getFromTradeDate();
+        LocalDate toDate   = request.getEffectiveToDate();
 
-        // Validate date range
         if (toDate.isBefore(fromDate)) {
             throw new InvalidDateException(
                     "toTradeDate (" + toDate + ") cannot be before fromTradeDate (" + fromDate + ")");
         }
 
+        // Build list of all dates in range
+        List<LocalDate> allDates = fromDate.datesUntil(toDate.plusDays(1))
+                .collect(Collectors.toList());
+
+        log.info("Starting parallel download: {} to {} ({} dates) using {} threads",
+                fromDate, toDate, allDates.size(), threadPoolSize);
+
         long overallStart = System.currentTimeMillis();
+
+        // Submit all dates as parallel tasks
+        List<Future<DateDownloadResult>> futures = new ArrayList<>();
+        for (LocalDate date : allDates) {
+            final LocalDate taskDate = date;
+            Future<DateDownloadResult> future = downloadExecutor.submit(
+                    () -> downloadSingleDate(taskDate, request.isOverwrite())
+            );
+            futures.add(future);
+        }
+
+        // Collect results in order
         List<DateDownloadResult> results = new ArrayList<>();
+        for (int i = 0; i < futures.size(); i++) {
+            LocalDate date = allDates.get(i);
+            try {
+                DateDownloadResult result = futures.get(i).get(60, TimeUnit.SECONDS);
+                results.add(result);
+            } catch (TimeoutException ex) {
+                log.warn("✗ {} — TIMEOUT after 60 seconds", date);
+                results.add(DateDownloadResult.builder()
+                        .tradeDate(date)
+                        .status("FAILED")
+                        .message("Timeout after 60 seconds")
+                        .build());
+            } catch (Exception ex) {
+                log.warn("✗ {} — FAILED: {}", date, ex.getMessage());
+                results.add(DateDownloadResult.builder()
+                        .tradeDate(date)
+                        .status("FAILED")
+                        .message(ex.getMessage())
+                        .build());
+            }
+        }
 
-        int successCount  = 0;
-        int failedCount   = 0;
-        int skippedCount  = 0;
-        int totalRecords  = 0;
+        // Sort results by date ascending
+        results.sort(Comparator.comparing(DateDownloadResult::getTradeDate));
 
-        // Loop through each date in range
-        LocalDate current = fromDate;
-        while (!current.isAfter(toDate)) {
-            DateDownloadResult result = downloadSingleDate(current, request.isOverwrite());
-            results.add(result);
-
-            switch (result.getStatus()) {
-                case "SUCCESS"        -> { successCount++; totalRecords += result.getRecordsLoaded(); }
+        // Tally counts
+        int successCount = 0, failedCount = 0, skippedCount = 0, totalRecords = 0;
+        for (DateDownloadResult r : results) {
+            switch (r.getStatus()) {
+                case "SUCCESS"        -> { successCount++; totalRecords += r.getRecordsLoaded() != null ? r.getRecordsLoaded() : 0; }
                 case "FAILED"         -> failedCount++;
                 case "ALREADY_EXISTS" -> skippedCount++;
             }
-
-            current = current.plusDays(1);
         }
 
         long totalTime = System.currentTimeMillis() - overallStart;
 
-        log.info("Range download complete: {} to {} | Success={}, Failed={}, Skipped={}, Records={}",
-                fromDate, toDate, successCount, failedCount, skippedCount, totalRecords);
+        log.info("Parallel download complete: {} to {} | Success={}, Failed={}, Skipped={}, Records={}, Time={}ms",
+                fromDate, toDate, successCount, failedCount, skippedCount, totalRecords, totalTime);
 
         return RangeDownloadResponse.builder()
                 .fromDate(fromDate)
                 .toDate(toDate)
-                .totalDatesRequested((int) fromDate.datesUntil(toDate.plusDays(1)).count())
+                .totalDatesRequested(allDates.size())
                 .successCount(successCount)
                 .failedCount(failedCount)
                 .skippedCount(skippedCount)
@@ -83,7 +138,7 @@ public class IngestionService {
                 .build();
     }
 
-    // ── Download Single Date (used internally by range loop) ──────────────────
+    // ── Download Single Date ───────────────────────────────────────────────────
     @Transactional
     public DateDownloadResult downloadSingleDate(LocalDate tradeDate, boolean overwrite) {
         long startTime = System.currentTimeMillis();
@@ -94,7 +149,7 @@ public class IngestionService {
                 .existsByTradeDateAndStatus(tradeDate, DownloadLog.STATUS_SUCCESS);
 
         if (exists && !overwrite) {
-            log.info("Skipping {} — already downloaded. Use overwrite=true to re-download.", tradeDate);
+            log.info("Skipping {} — already downloaded.", tradeDate);
             return DateDownloadResult.builder()
                     .tradeDate(tradeDate)
                     .status("ALREADY_EXISTS")
@@ -102,7 +157,7 @@ public class IngestionService {
                     .build();
         }
 
-        // 2. If overwrite, delete existing data
+        // 2. If overwrite, delete existing
         if (exists && overwrite) {
             log.info("Overwrite=true, deleting existing data for {}", tradeDate);
             priceRepository.deleteByTradeDate(tradeDate);
@@ -127,7 +182,7 @@ public class IngestionService {
             List<NseDailyPrice> records = csvParser.parse(bhavResult.getCsvContent(), tradeDate);
 
             if (records.isEmpty()) {
-                throw new RuntimeException("No EQ records found in file for " + tradeDate);
+                throw new RuntimeException("No EQ records found for " + tradeDate);
             }
 
             // 6. Bulk save
@@ -150,21 +205,17 @@ public class IngestionService {
                     .build();
 
         } catch (Exception ex) {
-            // Log failure but DO NOT rethrow — let range loop continue
             long timeTaken = System.currentTimeMillis() - startTime;
-            String errorMsg = ex.getMessage();
-
             downloadLog.setStatus(DownloadLog.STATUS_FAILED);
-            downloadLog.setErrorMessage(errorMsg);
+            downloadLog.setErrorMessage(ex.getMessage());
             downloadLog.setCompletedAt(LocalDateTime.now());
             downloadLogRepository.save(downloadLog);
-
-            log.warn("✗ {} — FAILED: {}", tradeDate, errorMsg);
+            log.warn("✗ {} — FAILED: {}", tradeDate, ex.getMessage());
 
             return DateDownloadResult.builder()
                     .tradeDate(tradeDate)
                     .status("FAILED")
-                    .message(errorMsg)
+                    .message(ex.getMessage())
                     .timeTakenMs(timeTaken)
                     .build();
         }
@@ -191,10 +242,10 @@ public class IngestionService {
     public AvailableDatesResponse getAvailableDates() {
         List<LocalDate> dates = priceRepository.findAllDistinctTradeDates();
         return AvailableDatesResponse.builder()
-                .dates(dates)
-                .totalDays(dates.size())
                 .latestDate(dates.isEmpty() ? null : dates.get(0))
                 .oldestDate(dates.isEmpty() ? null : dates.get(dates.size() - 1))
+                .dates(dates)
+                .totalDays(dates.size())
                 .build();
     }
 

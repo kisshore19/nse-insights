@@ -55,7 +55,7 @@ public class DataExplorerService {
     /**
      * API 1: Advanced stock search with filters
      */
-    public StockSearchResponse searchStocks(
+  /*  public StockSearchResponse searchStocks(
             String dateStr,
             String symbol,
             BigDecimal minPrice,
@@ -64,7 +64,7 @@ public class DataExplorerService {
             BigDecimal minPctChange,
             BigDecimal maxPctChange,
             BigDecimal minDeliveryPct,
-            Pageable pageable) {
+            int pageable) {
 
         log.info("Searching stocks with filters - date: {}, symbol: {}, pageable: {}",
                  dateStr, symbol, pageable);
@@ -106,7 +106,7 @@ public class DataExplorerService {
                 .asOfDate(searchDate)
                 .resultCount(stockDtos.size())
                 .build();
-    }
+    }*/
 
     /**
      * API 2: Get all available trading dates
@@ -196,8 +196,7 @@ public class DataExplorerService {
             throw new DateNotFoundException("No data found for date: " + searchDate);
         }
 
-        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "pctChange"));
-        List<NseDailyPrice> gainers = priceRepository.findTopGainers(searchDate, pageable);
+        List<NseDailyPrice> gainers = priceRepository.findTopGainers(searchDate, limit);
 
         List<StockDto> stockDtos = gainers.stream()
                 .map(this::mapToStockDto)
@@ -232,8 +231,7 @@ public class DataExplorerService {
             throw new DateNotFoundException("No data found for date: " + searchDate);
         }
 
-        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.ASC, "pctChange"));
-        List<NseDailyPrice> losers = priceRepository.findTopLosers(searchDate, pageable);
+        List<NseDailyPrice> losers = priceRepository.findTopLosers(searchDate, limit);
 
         List<StockDto> stockDtos = losers.stream()
                 .map(this::mapToStockDto)

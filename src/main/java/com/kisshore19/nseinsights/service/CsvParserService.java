@@ -13,13 +13,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @Slf4j
 public class CsvParserService {
 
     private static final DateTimeFormatter NSE_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+            DateTimeFormatter.ofPattern("dd-MMM-yyyy" , Locale.ENGLISH);
 
     public List<NseDailyPrice> parse(String csvContent, LocalDate tradeDate) {
         List<NseDailyPrice> result = new ArrayList<>();
@@ -70,6 +71,7 @@ public class CsvParserService {
                     BigDecimal openPrice   = parseBD(cols[4]);
                     BigDecimal highPrice   = parseBD(cols[5]);
                     BigDecimal lowPrice    = parseBD(cols[6]);
+                    BigDecimal lastPrice  = parseBD(cols[7]);
                     BigDecimal closePrice  = parseBD(cols[8]);
                     long tradedQty         = parseLong(cols[10]);
                     BigDecimal turnover    = parseBD(cols[11]);
@@ -92,6 +94,7 @@ public class CsvParserService {
                             .openPrice(openPrice)
                             .highPrice(highPrice)
                             .lowPrice(lowPrice)
+                            .lastPrice(lastPrice)
                             .closePrice(closePrice)
                             .prevClose(prevClose)
                             .pctChange(pctChange)

@@ -69,10 +69,10 @@ public class StockExplorerController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         // Call service (service will parse date string in dd-MM-yyyy format)
-        StockSearchResponse response = dataExplorerService.searchStocks(
-                date, null, minPrice, maxPrice, minVolume, minPctChange, maxPctChange, minDeliveryPct, pageable);
+//        StockSearchResponse response = dataExplorerService.searchStocks(
+//                date, null, minPrice, maxPrice, minVolume, minPctChange, maxPctChange, minDeliveryPct, size);
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     /**

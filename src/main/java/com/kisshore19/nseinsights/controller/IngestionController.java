@@ -40,8 +40,8 @@ public class IngestionController {
     // ── GET /history ───────────────────────────────────────────────────────────
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<DownloadHistoryResponse>> getHistory(
-            @RequestParam(defaultValue = "0")   int page,
-            @RequestParam(defaultValue = "20")  int size,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "ALL") String status) {
         return ResponseEntity.ok(ApiResponse.success(
                 ingestionService.getHistory(page, size, status)));
