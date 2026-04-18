@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NSE · Stock Screener</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #080b10;
+  --surf:    #0e1318;
+  --surf2:   #111a22;
+  --border:  #1a2230;
+  --border2: #243040;
+  --text:    #c8d8e8;
+  --muted:   #4a6070;
+  --dim:     #1a2535;
+  --up:      #00d98b;
+  --down:    #ff4560;
+  --side:    #f5a623;
+  --accent:  #0ea5e9;
+  --mono:    'IBM Plex Mono', monospace;
+  --sans:    'Syne', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--sans); min-height: 100vh;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(14,165,233,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14,165,233,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* ── Layout ── */
+.wrap { position:relative; z-index:1; max-width:1280px; margin:0 auto; padding:36px 20px 80px; }
+
+/* ── Header ── */
+.eyebrow {
+  font-family:var(--mono); font-size:10px; letter-spacing:4px;
+  color:var(--muted); text-transform:uppercase; margin-bottom:10px;
+  display:flex; align-items:center; gap:10px;
+}
+.eyebrow::before { content:''; width:24px; height:1px; background:var(--accent); }
+h1 { font-size:clamp(24px,4vw,38px); font-weight:800; color:#fff; letter-spacing:-1.5px; margin-bottom:28px; }
+h1 span { color:var(--accent); }
+
+/* ── Load panel ── */
+.load-panel {
+  background:var(--surf); border:1px solid var(--border); border-radius:14px;
+  padding:22px 24px; margin-bottom:20px;
+  display:grid; grid-template-columns:1fr 160px 160px auto; gap:12px; align-items:end;
+}
+.field label {
+  display:block; font-family:var(--mono); font-size:9px; letter-spacing:2px;
+  color:var(--muted); text-transform:uppercase; margin-bottom:7px;
+}
+.field input, .field select {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); font-family:var(--mono); font-size:13px;
+  padding:10px 13px; outline:none; transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+.field input::placeholder { color:var(--muted); }
+.field input:focus, .field select:focus {
+  border-color:var(--accent); box-shadow:0 0 0 3px rgba(14,165,233,.1);
+}
+.field select option { background:#0e1318; }
+.btn {
+  padding:10px 22px; border-radius:8px; border:none; cursor:pointer;
+  font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:1px;
+  text-transform:uppercase; transition:opacity .2s, transform .1s; white-space:nowrap;
+}
+.btn:hover { opacity:.85; } .btn:active { transform:scale(.97); }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+.btn-primary { background:var(--accent); color:#000; }
+.btn-ghost   { background:transparent; color:var(--muted); border:1px solid var(--border2); }
+
+/* ── Filter bar ── */
+.filter-bar {
+  background:var(--surf); border:1px solid var(--border); border-radius:14px;
+  padding:18px 22px; margin-bottom:16px;
+}
+.filter-bar-top {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px; gap:12px; flex-wrap:wrap;
+}
+.filter-title {
+  font-family:var(--mono); font-size:9px; letter-spacing:3px;
+  color:var(--muted); text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+}
+.filter-actions { display:flex; gap:8px; }
+
+.filters-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  gap:10px;
+}
+.filter-field label {
+  display:block; font-family:var(--mono); font-size:9px; letter-spacing:1.5px;
+  color:var(--muted); text-transform:uppercase; margin-bottom:5px;
+}
+.filter-field input, .filter-field select {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px;
+  padding:8px 10px; outline:none; transition:border-color .2s; -webkit-appearance:none;
+}
+.filter-field input:focus, .filter-field select:focus { border-color:var(--accent); }
+.filter-field select option { background:#0e1318; }
+
+/* active filter badge */
+.filter-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(14,165,233,.12); border:1px solid rgba(14,165,233,.3);
+  color:var(--accent); border-radius:5px; padding:2px 8px;
+  font-family:var(--mono); font-size:10px; cursor:pointer;
+}
+.filter-badge:hover { background:rgba(14,165,233,.2); }
+.active-filters { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; min-height:22px; }
+
+/* ── Stats bar ── */
+.stats-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:10px; margin-bottom:12px;
+}
+.stats-chips { display:flex; gap:12px; flex-wrap:wrap; }
+.chip {
+  font-family:var(--mono); font-size:11px; color:var(--muted);
+  display:flex; align-items:center; gap:5px;
+}
+.chip strong { color:var(--text); }
+.chip.up   strong { color:var(--up); }
+.chip.down strong { color:var(--down); }
+.chip.side strong { color:var(--side); }
+
+.sort-controls { display:flex; gap:8px; align-items:center; }
+.sort-controls label { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; }
+.sort-controls select {
+  background:var(--bg); border:1px solid var(--border2); border-radius:6px;
+  color:var(--text); font-family:var(--mono); font-size:11px; padding:5px 10px;
+  outline:none; -webkit-appearance:none; cursor:pointer;
+}
+
+/* ── Table ── */
+/* ── Table wrapper with horizontal scroll ── */
+.table-wrap {
+  background:var(--surf); border:1px solid var(--border); border-radius:14px;
+  overflow-x: auto; margin-bottom:16px;
+  -webkit-overflow-scrolling: touch;
+}
+.tbl { width:100%; border-collapse:collapse; min-width: 1600px; }
+.tbl thead tr {
+  background:var(--surf2); border-bottom:1px solid var(--border);
+}
+.tbl thead th {
+  padding:10px 14px; font-family:var(--mono); font-size:9px; letter-spacing:1.8px;
+  color:var(--muted); text-transform:uppercase; text-align:left;
+  cursor:pointer; user-select:none; white-space:nowrap;
+  transition:color .15s;
+}
+.tbl thead th:hover { color:var(--accent); }
+.tbl thead th.sorted { color:var(--accent); }
+.tbl thead th .sort-arrow { margin-left:4px; font-size:8px; }
+
+/* Prev period columns — highlighted with purple tint */
+.tbl th.prev-col { color: var(--b) !important; background: rgba(167,139,250,.06); border-left: 1px solid rgba(167,139,250,.2); }
+.tbl td.prev-col { background: rgba(167,139,250,.03); border-left: 1px solid rgba(167,139,250,.1); }
+
+/* Signal columns */
+.tbl th.sig-col { color: var(--side) !important; background: rgba(245,166,35,.04); border-left: 1px solid rgba(245,166,35,.15); text-align:center; }
+.tbl td.sig-col { background: rgba(245,166,35,.02); border-left: 1px solid rgba(245,166,35,.08); text-align:center; }
+
+/* Signal icon badge */
+.sig {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 13px; font-weight: 700; cursor: default;
+  position: relative;
+}
+.sig.yes  { color: var(--up);   background: rgba(0,217,139,.15); }
+.sig.no   { color: var(--down); background: rgba(255,69,96,.15);  }
+.sig.neu  { color: var(--muted);background: rgba(255,255,255,.06);}
+.sig.na   { color: var(--muted);background: transparent; font-size:10px; }
+
+/* Tooltip */
+.sig::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: #1a2535; border: 1px solid var(--border2);
+  color: var(--text); font-family: var(--mono); font-size: 10px;
+  white-space: nowrap; padding: 5px 10px; border-radius: 6px;
+  pointer-events: none; opacity: 0; transition: opacity .15s;
+  z-index: 100;
+}
+.sig:hover::after { opacity: 1; }
+
+/* Structure badge */
+.struct {
+  display:inline-block; padding:2px 8px; border-radius:5px;
+  font-family:var(--mono); font-size:10px; font-weight:700;
+  letter-spacing:.5px; cursor:default; position:relative;
+  border:1px solid;
+}
+.struct::after {
+  content:attr(data-tip);
+  position:absolute; bottom:calc(100% + 6px); left:50%;
+  transform:translateX(-50%);
+  background:#1a2535; border:1px solid var(--border2);
+  color:var(--text); font-family:var(--mono); font-size:10px;
+  white-space:nowrap; padding:5px 10px; border-radius:6px;
+  pointer-events:none; opacity:0; transition:opacity .15s; z-index:100;
+  font-weight:400;
+}
+.struct:hover::after { opacity:1; }
+.struct.thh  { color:#00d98b; background:rgba(0,217,139,.15);  border-color:rgba(0,217,139,.3);  }
+.struct.hh   { color:#00d98b; background:rgba(0,217,139,.08);  border-color:rgba(0,217,139,.2);  }
+.struct.tll  { color:#ff4560; background:rgba(255,69,96,.15);  border-color:rgba(255,69,96,.3);  }
+.struct.ll   { color:#ff4560; background:rgba(255,69,96,.08);  border-color:rgba(255,69,96,.2);  }
+.struct.hv   { color:#f5a623; background:rgba(245,166,35,.12); border-color:rgba(245,166,35,.3); }
+.struct.lv   { color:#38bdf8; background:rgba(56,189,248,.1);  border-color:rgba(56,189,248,.25);}
+.struct.nc   { color:#4a6070; background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);}
+.struct.na   { color:#4a6070; background:transparent;          border-color:transparent;         }
+.tbl tbody tr { border-bottom:1px solid rgba(26,34,48,.6); transition:background .12s; }
+.tbl tbody tr:last-child { border-bottom:none; }
+.tbl tbody tr.clickable { cursor: pointer; }
+.tbl tbody tr.clickable:hover { background: rgba(14,165,233,.07) !important; }
+.cmp-row:hover { background: rgba(255,255,255,.03); }
+
+/* Context column — 3-period OHLC */
+.tbl th.ctx-col {
+  color: #8b949e !important; background: rgba(255,255,255,.02);
+  border-left: 1px solid rgba(255,255,255,.08); min-width:260px;
+}
+.tbl td.ctx-col {
+  background: rgba(255,255,255,.01); border-left: 1px solid rgba(255,255,255,.06);
+  padding: 3px 8px;
+}
+.ctx-row {
+  display: grid; grid-template-columns: 34px 1fr 1fr 1fr 1fr;
+  gap: 3px; align-items: center;
+  padding: 3px 4px; border-radius: 4px;
+  font-family: var(--mono); font-size: 10px; margin: 1px 0;
+}
+.ctx-row.ctx-curr {
+  background: rgba(14,165,233,.08); border: 1px solid rgba(14,165,233,.15);
+  font-size: 11px; font-weight: 500;
+}
+.ctx-row.ctx-prev, .ctx-row.ctx-next { opacity: .6; }
+.ctx-label { font-size: 8px; letter-spacing: .8px; color: var(--muted); text-transform: uppercase; }
+.ctx-val   { text-align: right; }
+.ctx-na    { color: var(--muted); font-size: 10px; font-family: var(--mono); padding: 4px; }
+
+.tbl tbody tr {
+  border-bottom:1px solid rgba(26,34,48,.6);
+  transition:background .12s; cursor:default;
+}
+.tbl tbody tr:last-child { border-bottom:none; }
+.tbl tbody tr:hover { background:rgba(14,165,233,.04); }
+
+.tbl td { padding:11px 14px; font-family:var(--mono); font-size:12px; white-space:nowrap; }
+
+.td-symbol { font-weight:600; color:#fff; font-size:13px; letter-spacing:.3px; }
+.td-up     { color:var(--up); }
+.td-down   { color:var(--down); }
+.td-muted  { color:var(--muted); font-size:11px; }
+.td-right  { text-align:right; }
+
+.trend-tag {
+  display:inline-block; padding:2px 8px; border-radius:4px;
+  font-size:10px; font-weight:600; letter-spacing:1px; border:1px solid;
+}
+.trend-tag.UP   { color:var(--up);   background:rgba(0,217,139,.08);  border-color:rgba(0,217,139,.2);  }
+.trend-tag.DOWN { color:var(--down); background:rgba(255,69,96,.08);   border-color:rgba(255,69,96,.2);  }
+.trend-tag.SIDE { color:var(--side); background:rgba(245,166,35,.08);  border-color:rgba(245,166,35,.2); }
+
+/* ── Pagination ── */
+.pagination {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px;
+}
+.page-info { font-family:var(--mono); font-size:11px; color:var(--muted); }
+.page-btns { display:flex; gap:4px; }
+.page-btn {
+  width:32px; height:32px; border-radius:6px; border:1px solid var(--border2);
+  background:transparent; color:var(--muted); font-family:var(--mono); font-size:12px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .15s;
+}
+.page-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+.page-btn.active { background:var(--accent); color:#000; border-color:var(--accent); }
+.page-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+/* ── State boxes ── */
+.state-box {
+  display:none; text-align:center; padding:60px 24px;
+  border:1px solid var(--border); border-radius:14px;
+}
+.state-box.visible { display:block; }
+.state-icon { font-size:30px; margin-bottom:12px; }
+.state-msg  { font-family:var(--mono); font-size:12px; color:var(--muted); }
+.state-box.error .state-msg { color:var(--down); }
+.spinner {
+  width:28px; height:28px; border:2px solid var(--border2);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin .7s linear infinite; margin:0 auto 12px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+.fade { animation:fadeUp .3s ease; }
+
+/* ── Skeleton loading ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surf2) 25%, rgba(255,255,255,.04) 50%, var(--surf2) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 40px 100px 260px 70px 60px 70px 50px 50px 60px 80px 80px 50px 80px 80px 80px 80px;
+  gap: 0;
+  padding: 0;
+  border-bottom: 1px solid rgba(26,34,48,.4);
+}
+.skeleton-cell {
+  padding: 14px 14px;
+  display: flex;
+  align-items: center;
+}
+.skeleton-bar {
+  height: 14px;
+  width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--surf2) 25%, rgba(255,255,255,.05) 50%, var(--surf2) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+.skeleton-bar.sm { width: 60%; }
+.skeleton-bar.xs { width: 40%; }
+.skeleton-bar.lg { width: 90%; }
+.skeleton-bar.circle { width: 22px; height: 22px; border-radius: 50%; }
+
+/* Stagger shimmer for visual richness */
+.skeleton-row:nth-child(odd) .skeleton-bar { animation-delay: 0.15s; }
+.skeleton-row:nth-child(3n) .skeleton-bar  { animation-delay: 0.3s; }
+
+/* ── Responsive ── */
+@media(max-width:900px) {
+  .load-panel { grid-template-columns:1fr 1fr; }
+  .btn-primary { grid-column:1/-1; }
+}
+@media(max-width:700px) {
+  .filter-row { grid-template-columns:1fr !important; }
+}
+@media(max-width:600px) {
+  .load-panel { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="eyebrow">NSE Insights · Screener</div>
+  <h1>Stock <span>Screener</span></h1>
+
+  <!-- API Config -->
+  <div style="background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px 24px;margin-bottom:12px;
+              display:flex;align-items:end;gap:12px;">
+    <div class="field" style="flex:1">
+      <label>API Base URL</label>
+      <input id="apiUrl" type="text" value="http://localhost:8080" placeholder="http://localhost:8080"
+             style="font-size:12px;" onchange="saveApiUrl()"/>
+    </div>
+    <button class="btn btn-ghost" onclick="testConnection()" style="padding:8px 16px;font-size:10px;white-space:nowrap">
+      ⚡ Test
+    </button>
+    <div id="connStatus" style="font-family:var(--mono);font-size:10px;color:var(--muted);padding-bottom:12px;white-space:nowrap"></div>
+  </div>
+
+  <!-- Load panel -->
+  <div class="load-panel">
+    <div class="field">
+      <label>Timeframe</label>
+      <select id="tf">
+        <option value="YEAR">YEAR</option>
+        <option value="QUARTER">QUARTER</option>
+        <option value="MONTH">MONTH</option>
+        <option value="WEEK">WEEK</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Period</label>
+      <select id="period">
+        <option value="">Loading...</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Max Results</label>
+      <select id="maxSize">
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+        <option value="2500" selected>All (~2400)</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btnLoad" onclick="loadData()">Load Data</button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar" id="filterBar" style="display:none">
+    <div class="filter-bar-top">
+      <div class="filter-title">⚙ Filters</div>
+      <div class="filter-actions">
+        <button class="btn btn-ghost" onclick="clearFilters()" style="padding:6px 14px;font-size:10px">Clear All</button>
+        <button class="btn btn-primary" onclick="applyFilters()" style="padding:6px 14px;font-size:10px">Apply</button>
+      </div>
+    </div>
+    <!-- All 3 filters in one row -->
+    <div style="display:grid;grid-template-columns:1fr 160px 260px;gap:12px;align-items:end;">
+      <div class="filter-field">
+        <label>Symbol Search</label>
+        <input id="f-symbol" type="text" placeholder="e.g. RELIANCE, INFY..."
+               autocomplete="off" autocapitalize="characters"
+               oninput="this.value=this.value.toUpperCase(); applyFilters()"
+               style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
+      </div>
+      <div class="filter-field">
+        <label>Trend</label>
+        <select id="f-trend" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="UP">UP</option>
+          <option value="DOWN">DOWN</option>
+          <option value="SIDE">SIDE</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Candle Structure</label>
+        <select id="f-structure" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="THH">THH — Trending Higher High</option>
+          <option value="HH">HH — Higher High</option>
+          <option value="TLL">TLL — Trending Lower Low</option>
+          <option value="LL">LL — Lower Low</option>
+          <option value="HV">HV — High Volatile</option>
+          <option value="LV">LV — Low Volatile</option>
+          <option value="NC">NC — No Change</option>
+          <option value="—">— No Prev Data</option>
+        </select>
+      </div>
+    </div>
+    <!-- Signal filters row -->
+    <div style="display:grid;grid-template-columns:160px 160px 160px;gap:12px;align-items:end;margin-top:10px;">
+      <div class="filter-field">
+        <label>Vol Breakout</label>
+        <select id="f-volbo" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="yes">✓ Yes</option>
+          <option value="no">✗ No</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Delivery Breakout</label>
+        <select id="f-delbo" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="yes">✓ Yes</option>
+          <option value="no">✗ No</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label>Close vs Prev</label>
+        <select id="f-closecp" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="up">✓ Up</option>
+          <option value="down">✗ Down</option>
+        </select>
+      </div>
+    </div>
+    <div class="active-filters" id="activeFilters" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- States -->
+  <div class="state-box visible" id="stateEmpty">
+    <div class="state-icon" style="color:var(--muted)">◎</div>
+    <div class="state-msg">Select a timeframe and period, then click Load Data.</div>
+  </div>
+  <div class="state-box" id="stateLoading">
+    <div class="spinner"></div>
+    <div class="state-msg" id="loadingMsg">Loading...</div>
+  </div>
+  <div class="state-box error" id="stateError">
+    <div class="state-icon">⚠</div>
+    <div class="state-msg" id="errorMsg">Error</div>
+  </div>
+  <div class="state-box" id="stateNoMatch">
+    <div class="state-icon" style="color:var(--muted)">⊘</div>
+    <div class="state-msg">No symbols match the current filters.</div>
+  </div>
+
+  <!-- Results area -->
+  <div id="resultsArea" style="display:none">
+
+    <!-- Stats + sort bar -->
+    <div class="stats-bar">
+      <div class="stats-chips">
+        <div class="chip">Total loaded <strong id="statTotal">0</strong></div>
+        <div class="chip">Matched <strong id="statMatched">0</strong></div>
+        <div class="chip up">UP <strong id="statUp">0</strong></div>
+        <div class="chip down">DOWN <strong id="statDown">0</strong></div>
+        <div class="chip side">SIDE <strong id="statSide">0</strong></div>
+      </div>
+      <div class="sort-controls">
+        <button class="btn btn-ghost" onclick="showTrendCloseStats()" style="padding:5px 12px;font-size:10px;margin-right:8px">📊 Stats</button>
+        <label>Sort</label>
+        <select id="sortCol" onchange="applyFilters()">
+          <option value="pctChange">% Change</option>
+          <option value="close">Close</option>
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="highVolQty">High Volume</option>
+          <option value="highDelivQty">High Delivery</option>
+          <option value="delivPct">Delivery %</option>
+          <option value="vsLastPeriod">vs Last Period</option>
+          <option value="structure">Structure</option>
+        </select>
+        <select id="sortDir" onchange="applyFilters()">
+          <option value="desc">DESC</option>
+          <option value="asc">ASC</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Trend vs Close vs Prev Statistics -->
+    <div id="trendCloseStats" style="display:none;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:8px;">
+          📊 Trend vs Close vs Prev — Statistics
+        </div>
+        <button class="btn btn-ghost" onclick="document.getElementById('trendCloseStats').style.display='none'" style="padding:4px 12px;font-size:10px">Hide</button>
+      </div>
+      <div id="trendCloseGrid"></div>
+    </div>
+
+    <!-- Table -->
+    <!-- Top scrollbar — synced with table below -->
+    <div id="topScroll" style="overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:3px;">
+      <div id="topScrollInner" style="height:1px;"></div>
+    </div>
+    <div class="table-wrap fade" id="tableWrap">
+      <table class="tbl" id="mainTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th onclick="doSort('symbol')">Symbol<span class="sort-arrow" id="arr-symbol"></span></th>
+            <th class="ctx-col" id="thContext">PREV · CURR · NEXT</th>
+            <th onclick="doSort('pctChange')" class="td-right">% Chg<span class="sort-arrow" id="arr-pctChange"></span></th>
+            <th onclick="doSort('trend')">Trend<span class="sort-arrow" id="arr-trend"></span></th>
+            <th onclick="doSort('structure')" class="sig-col" style="min-width:80px" title="Candle Structure">STRUCTURE <span class="sort-arrow" id="arr-structure"></span></th>
+            <th class="sig-col" title="Volume Breakout">VOL-BO</th>
+            <th class="sig-col" title="Delivery Breakout">DEL-BO</th>
+            <th class="sig-col" title="Close vs Prev Close">CLOSE-CP</th>
+            <th onclick="doSort('highVolQty')" class="td-right">High Vol<span class="sort-arrow" id="arr-highVolQty"></span></th>
+            <th onclick="doSort('highDelivQty')" class="td-right">High Deliv<span class="sort-arrow" id="arr-highDelivQty"></span></th>
+            <th onclick="doSort('delivPct')" class="td-right">Del%<span class="sort-arrow" id="arr-delivPct"></span></th>
+            <th>High Date</th>
+            <th>Low Date</th>
+            <th onclick="doSort('vsLastPeriod')" class="td-right prev-col" id="thPrevClose">Prev Close <span class="sort-arrow" id="arr-prevClose"></span></th>
+            <th onclick="doSort('vsLastPeriod')" class="td-right prev-col" id="thVsLastPeriod">vs Last Period <span class="sort-arrow" id="arr-vsLastPeriod"></span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="page-info" id="pageInfo">—</div>
+      <div class="page-btns" id="pageBtns"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Comparison Drawer ────────────────────────────────────────────────────── -->
+<div id="drawerOverlay" onclick="closeDrawer()" style="
+  display:none; position:fixed; inset:0; z-index:200;
+  background:rgba(0,0,0,.6); backdrop-filter:blur(3px);
+"></div>
+
+<div id="drawer" style="
+  display:none; position:fixed; top:0; right:0; bottom:0; z-index:201;
+  width:min(680px, 100vw); background:#0e1318;
+  border-left:1px solid #1a2230; overflow-y:auto;
+  transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+  font-family:'IBM Plex Mono',monospace;
+">
+  <!-- Drawer header -->
+  <div style="
+    position:sticky; top:0; z-index:10;
+    background:#0e1318; border-bottom:1px solid #1a2230;
+    padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
+  ">
+    <div>
+      <div style="font-size:9px;letter-spacing:3px;color:#4a6070;text-transform:uppercase;margin-bottom:4px;">Period Comparison</div>
+      <div id="drawerTitle" style="font-size:18px;font-weight:700;color:#fff;letter-spacing:-.5px;">—</div>
+    </div>
+    <button onclick="closeDrawer()" style="
+      background:rgba(255,255,255,.06); border:1px solid #243040; border-radius:8px;
+      color:#4a6070; font-size:18px; width:36px; height:36px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:all .15s;
+    " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#4a6070'">✕</button>
+  </div>
+
+  <!-- Drawer body -->
+  <div id="drawerBody" style="padding:24px;"></div>
+</div>
+
+<script>
+// ── Configurable API URL ──────────────────────────────────────────────────────
+function getBaseUrl() {
+  return (document.getElementById('apiUrl')?.value || localStorage.getItem('screener_api_url') || 'http://localhost:8080').replace(/\/+$/, '');
+}
+function saveApiUrl() {
+  const url = document.getElementById('apiUrl').value.replace(/\/+$/, '');
+  localStorage.setItem('screener_api_url', url);
+}
+function loadSavedApiUrl() {
+  const saved = localStorage.getItem('screener_api_url');
+  if (saved) document.getElementById('apiUrl').value = saved;
+}
+async function testConnection() {
+  const status = document.getElementById('connStatus');
+  const url = getBaseUrl();
+  status.textContent = '⏳ Testing...';
+  status.style.color = 'var(--side)';
+  try {
+    const res = await fetch(`${url}/api/v1/candles/stats/available?timeframe=YEAR`, { signal: AbortSignal.timeout(5000) });
+    if (res.ok) { status.textContent = '✓ Connected'; status.style.color = 'var(--up)'; }
+    else { status.textContent = `✗ HTTP ${res.status}`; status.style.color = 'var(--down)'; }
+  } catch(e) {
+    status.textContent = '✗ Unreachable'; status.style.color = 'var(--down)';
+  }
+}
+
+// ── Skeleton loader ───────────────────────────────────────────────────────────
+function showSkeletonTable() {
+  document.getElementById('filterBar').style.display = 'block';
+  document.getElementById('resultsArea').style.display = 'block';
+  ['stateEmpty','stateLoading','stateError','stateNoMatch'].forEach(id =>
+    document.getElementById(id).classList.remove('visible'));
+
+  const tbody = document.getElementById('tableBody');
+  let html = '';
+  for (let i = 0; i < 12; i++) {
+    html += `<tr class="skeleton-row">
+      <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell ctx-col"><div class="skeleton-bar lg"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell prev-col"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell prev-col"><div class="skeleton-bar sm"></div></td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+const PAGE_SIZE = 100;
+
+// ── Global state ──────────────────────────────────────────────────────────────
+let allData     = [];          // current period — all symbols
+let prevMap     = {};          // previous period — keyed by symbol
+let nextMap     = {};          // next period     — keyed by symbol
+let filtered    = [];          // after JS filters applied
+let currentPage = 0;
+let sortCol     = 'pctChange'; // active sort column
+let sortDir     = 'desc';      // 'asc' | 'desc'
+
+// ── Auto-populate period dropdown from /stats/available ──────────────────────
+async function updatePeriodField(tf) {
+  const sel = document.getElementById('period');
+  sel.innerHTML = '<option value="">Loading...</option>';
+  sel.disabled  = true;
+
+  try {
+    const res  = await fetch(`${getBaseUrl()}/api/v1/candles/stats/available?timeframe=${tf}`);
+    const json = await res.json();
+    const wrapper = json.data !== undefined ? json.data : json;
+    const periods = wrapper.periods || [];
+
+    if (periods.length === 0) {
+      sel.innerHTML = '<option value="">No periods built yet</option>';
+      return;
+    }
+
+    // Populate dropdown — latest period first (reverse order)
+    const reversed = [...periods].reverse();
+    sel.innerHTML = reversed.map(p =>
+      `<option value="${p.periodKey}">${p.periodKey} &nbsp;(${fmtDateShort(p.candleDate)} – ${fmtDateShort(p.candleEndDate)})</option>`
+    ).join('');
+    sel.disabled = false;
+
+  } catch(e) {
+    console.warn('[Screener] could not fetch available periods:', e.message);
+    // Fallback — show a text-style single option
+    const FALLBACK = { YEAR:'2024', QUARTER:'2024-Q1', MONTH:'2024-01', WEEK:'2024-W03' };
+    sel.innerHTML = `<option value="${FALLBACK[tf]}">${FALLBACK[tf]}</option>`;
+    sel.disabled  = false;
+  }
+}
+
+function fmtDateShort(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+document.getElementById('tf').addEventListener('change', function() {
+  updatePeriodField(this.value);
+});
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+const toNum  = x  => x != null ? parseFloat(x) : null;
+const fP     = x  => x != null ? '₹' + parseFloat(x).toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 }) : '—';
+const fV     = x  => {
+  if (x == null) return '—';
+  if (x >= 1e7)  return (x/1e7).toFixed(2) + ' Cr';
+  if (x >= 1e5)  return (x/1e5).toFixed(2) + ' L';
+  if (x >= 1e3)  return (x/1e3).toFixed(1) + ' K';
+  return x.toLocaleString('en-IN');
+};
+const fD     = d  => d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+const fPct   = x  => x != null ? (x >= 0 ? '+' : '') + parseFloat(x).toFixed(2) + '%' : '—';
+const fval   = id => { const val = document.getElementById(id).value; return val !== '' ? parseFloat(val) : null; };
+
+// ── Compute previous period key ───────────────────────────────────────────────
+function prevPeriod(tf, period) {
+  if (tf === 'YEAR') {
+    return String(parseInt(period) - 1);
+  }
+  if (tf === 'QUARTER') {
+    // "2024-Q1" → "2023-Q4", "2024-Q3" → "2024-Q2"
+    const [yr, q] = period.split('-Q').map(Number);
+    return q === 1 ? `${yr-1}-Q4` : `${yr}-Q${q-1}`;
+  }
+  if (tf === 'MONTH') {
+    // "2024-01" → "2023-12", "2024-06" → "2024-05"
+    const [yr, mo] = period.split('-').map(Number);
+    return mo === 1 ? `${yr-1}-12` : `${yr}-${String(mo-1).padStart(2,'0')}`;
+  }
+  if (tf === 'WEEK') {
+    // "2024-W03" → "2024-W02", "2024-W01" → "2023-W52" (approx)
+    const [yr, wk] = period.split('-W').map(Number);
+    return wk === 1 ? `${yr-1}-W52` : `${yr}-W${String(wk-1).padStart(2,'0')}`;
+  }
+  return null;
+}
+
+// ── Compute next period key ───────────────────────────────────────────────────
+function nextPeriod(tf, period) {
+  if (tf === 'YEAR') {
+    return String(parseInt(period) + 1);
+  }
+  if (tf === 'QUARTER') {
+    const [yr, q] = period.split('-Q').map(Number);
+    return q === 4 ? `${yr+1}-Q1` : `${yr}-Q${q+1}`;
+  }
+  if (tf === 'MONTH') {
+    const [yr, mo] = period.split('-').map(Number);
+    return mo === 12 ? `${yr+1}-01` : `${yr}-${String(mo+1).padStart(2,'0')}`;
+  }
+  if (tf === 'WEEK') {
+    const [yr, wk] = period.split('-W').map(Number);
+    return wk >= 52 ? `${yr+1}-W01` : `${yr}-W${String(wk+1).padStart(2,'0')}`;
+  }
+  return null;
+}
+function normalise(r) {
+  const open  = toNum(r.open  || r.openPrice);
+  const close = toNum(r.close || r.lastPrice || r.closePrice);
+  const hVol  = toNum(r.highVolQty  || r.highestVolume?.quantity);
+  const hDel  = toNum(r.highDelivQty|| r.highestDelivery?.quantity);
+  return {
+    symbol:        r.symbol,
+    candleDate:    r.candleDate,
+    candleEndDate: r.candleEndDate,
+    open,  close,
+    high:          toNum(r.high || r.highPrice),
+    low:           toNum(r.low  || r.lowPrice),
+    pctChange:     toNum(r.pctChange) ?? (open && close && open !== 0
+                     ? +((close - open) / Math.abs(open) * 100).toFixed(2) : null),
+    trend:         r.trend || '—',
+    highPriceDate: r.highPriceDate || r.highDate,
+    lowPriceDate:  r.lowPriceDate  || r.lowDate,
+    highVolQty:    hVol,
+    highVolDate:   r.highVolDate   || r.highestVolume?.date,
+    highDelivQty:  hDel,
+    highDelivDate: r.highDelivDate || r.highestDelivery?.date,
+    lowVolQty:     toNum(r.lowVolQty  || r.lowestVolume?.quantity),
+    lowVolDate:    r.lowVolDate    || r.lowestVolume?.date,
+    lowDelivQty:   toNum(r.lowDelivQty|| r.lowestDelivery?.quantity),
+    lowDelivDate:  r.lowDelivDate  || r.lowestDelivery?.date,
+    delivPct:      toNum(r.delivPct) ?? (hVol && hDel && hVol !== 0
+                     ? +((hDel / hVol) * 100).toFixed(2) : null),
+    _periodStart:  r.candleDate,
+    _periodEnd:    r.candleEndDate,
+  };
+}
+
+// ── Extract rows from any ApiResponse shape ───────────────────────────────────
+function unwrapRows(json) {
+  const wrapper = json.data !== undefined ? json.data : json;
+  return wrapper.results || wrapper.data || (Array.isArray(wrapper) ? wrapper : []);
+}
+
+// ── Show/hide UI states ───────────────────────────────────────────────────────
+function setState(name) {
+  ['Empty','Loading','Error','NoMatch'].forEach(s =>
+    document.getElementById('state' + s).classList.remove('visible'));
+  document.getElementById('resultsArea').style.display = 'none';
+  document.getElementById('filterBar').style.display   = 'none';
+
+  if (name === 'results' || name === 'noMatch') {
+    document.getElementById('filterBar').style.display = 'block';
+  }
+  if (name === 'results') {
+    document.getElementById('resultsArea').style.display = 'block';
+  } else if (name === 'noMatch') {
+    document.getElementById('stateNoMatch').classList.add('visible');
+  } else if (name) {
+    const id = 'state' + name.charAt(0).toUpperCase() + name.slice(1);
+    const el = document.getElementById(id);
+    if (el) el.classList.add('visible');
+  }
+}
+
+// ── Load current period data ──────────────────────────────────────────────────
+async function loadData() {
+  const tf     = document.getElementById('tf').value;
+  const period = document.getElementById('period').value;
+  const size   = parseInt(document.getElementById('maxSize').value) || 2500;
+
+  if (!period) { alert('Select a period'); return; }
+
+  showSkeletonTable();
+  document.getElementById('btnLoad').disabled = true;
+  prevMap = {};
+  nextMap = {};
+  allData = [];
+  filtered = [];
+
+  try {
+    // ── Step 1: Fetch current period ──────────────────────────────────────────
+    const url  = `${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${period}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    const wrapper = json.data !== undefined ? json.data : json;
+    const rows    = Array.isArray(wrapper) ? wrapper
+                  : Array.isArray(wrapper.results) ? wrapper.results
+                  : Array.isArray(wrapper.data)    ? wrapper.data : [];
+
+    if (rows.length === 0) {
+      document.getElementById('errorMsg').textContent =
+        `No stats found for ${tf} · ${period}. Build stats first.`;
+      setState('error');
+      return;
+    }
+
+    allData = rows.map(normalise);
+    document.getElementById('statTotal').textContent = allData.length;
+
+    // ── Step 2: Fetch prev + next in parallel ─────────────────────────────────
+    const prev = prevPeriod(tf, period);
+    const next = nextPeriod(tf, period);
+
+    document.getElementById('loadingMsg').textContent =
+      `Loading context periods ${prev || '—'} ← ${period} → ${next || '—'}...`;
+
+    const fetchPeriod = async (pk) => {
+      if (!pk) return [];
+      try {
+        const r = await fetch(`${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${pk}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`);
+        const j = await r.json();
+        const w = j.data !== undefined ? j.data : j;
+        return Array.isArray(w) ? w
+             : Array.isArray(w.results) ? w.results
+             : Array.isArray(w.data)    ? w.data : [];
+      } catch(e) {
+        console.warn(`[Screener] ${pk} fetch failed:`, e.message);
+        return [];
+      }
+    };
+
+    const [prevRows, nextRows] = await Promise.all([
+      fetchPeriod(prev),
+      fetchPeriod(next)
+    ]);
+
+    prevRows.forEach(r => { const n = normalise(r); if (n.symbol) prevMap[n.symbol] = n; });
+    nextRows.forEach(r => { const n = normalise(r); if (n.symbol) nextMap[n.symbol] = n; });
+
+    console.log('[Screener] prevMap:', Object.keys(prevMap).length,
+                'nextMap:', Object.keys(nextMap).length);
+
+    // Update column headers
+    const pcHeader  = document.getElementById('thPrevClose');
+    const vsHeader  = document.getElementById('thVsLastPeriod');
+    const ctxHeader = document.getElementById('thContext');
+    if (pcHeader  && prev) pcHeader.childNodes[0].textContent  = `Close ${prev} `;
+    if (vsHeader  && prev) vsHeader.childNodes[0].textContent  = `vs ${prev} `;
+    if (ctxHeader)         ctxHeader.textContent = `${prev||'—'} · CURR · ${next||'—'}`;
+
+    // ── Step 3: Apply filters + render ────────────────────────────────────────
+    clearFilters(false);
+    applyFilters();
+
+  } catch(err) {
+    console.error('[Screener] loadData error:', err);
+    document.getElementById('errorMsg').textContent =
+      'Could not reach API at ' + getBaseUrl() + '. (' + err.message + ')';
+    setState('error');
+  } finally {
+    document.getElementById('btnLoad').disabled = false;
+  }
+}
+
+// ── Apply all filters — pure JS, instant ─────────────────────────────────────
+function applyFilters() {
+  if (allData.length === 0) return;
+
+  const symbolFilter    = document.getElementById('f-symbol').value.trim().toUpperCase();
+  const trendFilter     = document.getElementById('f-trend').value;
+  const structureFilter = document.getElementById('f-structure').value;
+  const volBoFilter     = document.getElementById('f-volbo').value;
+  const delBoFilter     = document.getElementById('f-delbo').value;
+  const closeCpFilter   = document.getElementById('f-closecp').value;
+  const hasPrev         = Object.keys(prevMap).length > 0;
+
+  filtered = allData.filter(r => {
+    if (symbolFilter    && !r.symbol.includes(symbolFilter))    return false;
+    if (trendFilter     && r.trend !== trendFilter)             return false;
+    if (structureFilter) {
+      const cs = candleStructure(r, prevMap[r.symbol]);
+      if (cs.code !== structureFilter)                          return false;
+    }
+    if (volBoFilter && hasPrev) {
+      const prevR = prevMap[r.symbol];
+      const volBo = (prevR && r.highVolQty != null && prevR.highVolQty != null)
+        ? r.highVolQty > prevR.highVolQty : null;
+      if (volBoFilter === 'yes' && volBo !== true)  return false;
+      if (volBoFilter === 'no'  && volBo !== false) return false;
+    }
+    if (delBoFilter && hasPrev) {
+      const prevR = prevMap[r.symbol];
+      const delBo = (prevR && r.highDelivQty != null && prevR.highDelivQty != null)
+        ? r.highDelivQty > prevR.highDelivQty : null;
+      if (delBoFilter === 'yes' && delBo !== true)  return false;
+      if (delBoFilter === 'no'  && delBo !== false) return false;
+    }
+    if (closeCpFilter && hasPrev) {
+      const prevR = prevMap[r.symbol];
+      if (!prevR || r.close == null || prevR.close == null) return false;
+      if (closeCpFilter === 'up'   && !(r.close > prevR.close))  return false;
+      if (closeCpFilter === 'down' && !(r.close < prevR.close))  return false;
+    }
+    return true;
+  });
+
+
+  // ── Sort ──────────────────────────────────────────────────────────────────
+  // Sync sortCol/sortDir from dropdowns
+  sortCol = document.getElementById('sortCol').value;
+  sortDir = document.getElementById('sortDir').value;
+
+  // Pre-compute structure codes for sorting
+  filtered.forEach(r => {
+    if (r.structure == null) {
+      r.structure = candleStructure(r, prevMap[r.symbol]).code;
+    }
+  });
+
+  const dirMult = sortDir === 'asc' ? 1 : -1;
+  filtered.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    // For vsLastPeriod sort — compute on the fly
+    if (sortCol === 'vsLastPeriod') {
+      av = vsLastPeriodVal(a);
+      bv = vsLastPeriodVal(b);
+    }
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;   // nulls last
+    if (bv == null) return -1;
+    return typeof av === 'string'
+      ? dirMult * av.localeCompare(bv)
+      : dirMult * (av - bv);
+  });
+
+  // ── Stats chips ───────────────────────────────────────────────────────────
+  document.getElementById('statMatched').textContent = filtered.length;
+  document.getElementById('statUp').textContent      = filtered.filter(r => r.trend === 'UP').length;
+  document.getElementById('statDown').textContent    = filtered.filter(r => r.trend === 'DOWN').length;
+  document.getElementById('statSide').textContent    = filtered.filter(r => r.trend === 'SIDE').length;
+
+  // ── Badges ────────────────────────────────────────────────────────────────
+  renderBadges({ symbolFilter, trendFilter, structureFilter, volBoFilter, delBoFilter, closeCpFilter });
+
+  currentPage = 0;
+  if (filtered.length === 0) {
+    setState('noMatch');
+  } else {
+    setState('results');
+    renderTable();
+  }
+  // Auto-refresh stats panel if visible
+  if (document.getElementById('trendCloseStats').style.display !== 'none') {
+    showTrendCloseStats();
+  }
+}
+
+// ── Compute vs last period % change ──────────────────────────────────────────
+function vsLastPeriodVal(r) {
+  const prev = prevMap[r.symbol];
+  if (!prev || !prev.close || !r.close || prev.close === 0) return null;
+  return +((r.close - prev.close) / Math.abs(prev.close) * 100).toFixed(2);
+}
+
+// ── Compute signal icon HTML ──────────────────────────────────────────────────
+// ── Candle structure analysis vs previous period ──────────────────────────────
+// Returns { code, label, cls, tip, isBullish, isBearish }
+// ── Build 3-row context cell HTML ─────────────────────────────────────────────
+// Shows prev / current / next period OHLC in a compact stacked layout.
+// close > open → green close, close < open → red close
+function buildContextCell(r, prevR, nextR) {
+  function ohlcRow(label, d, cls) {
+    if (!d || d.open == null) {
+      return `<div class="ctx-row ${cls}">
+        <span class="ctx-label">${label}</span>
+        <span class="ctx-na" style="grid-column:2/6">No data</span>
+      </div>`;
+    }
+    const clsCl = d.close != null && d.open != null
+      ? (d.close >= d.open ? 'color:var(--up)' : 'color:var(--down)') : '';
+    const fC = v => v != null
+      ? parseFloat(v).toLocaleString('en-IN', { maximumFractionDigits:0 }) : '—';
+    return `<div class="ctx-row ${cls}">
+      <span class="ctx-label">${label}</span>
+      <span class="ctx-val" style="color:var(--muted)">O:${fC(d.open)}</span>
+      <span class="ctx-val" style="color:var(--up)">H:${fC(d.high)}</span>
+      <span class="ctx-val" style="color:var(--down)">L:${fC(d.low)}</span>
+      <span class="ctx-val" style="${clsCl}">C:${fC(d.close)}</span>
+    </div>`;
+  }
+  return `<td class="ctx-col">
+    ${ohlcRow('PREV', prevR, 'ctx-prev')}
+    ${ohlcRow('CURR', r,     'ctx-curr')}
+    ${ohlcRow('NEXT', nextR, 'ctx-next')}
+  </td>`;
+}
+
+function candleStructure(r, prevR) {
+  if (!prevR || r.high == null || r.low == null || r.close == null
+             || prevR.high == null || prevR.low == null) {
+    return { code:'—', label:'No Data', cls:'na', tip:'No previous period data',
+             isBullish:false, isBearish:false };
+  }
+
+  const ch = r.close, ph = prevR.high;
+  const cl = r.close, pl = prevR.low;
+  const rh = r.high,  rl = r.low;
+
+  // Priority order — most significant first
+  if (ch > ph) {
+    return { code:'THH', label:'Trending Higher High',
+             cls:'thh',
+             tip:`Close ${fP(ch)} > Prev High ${fP(ph)} — Closed above prev high (Strong Bullish)`,
+             isBullish:true, isBearish:false };
+  }
+  if (cl < pl) {
+    return { code:'TLL', label:'Trending Lower Low',
+             cls:'tll',
+             tip:`Close ${fP(cl)} < Prev Low ${fP(pl)} — Closed below prev low (Strong Bearish)`,
+             isBullish:false, isBearish:true };
+  }
+  if (rh > ph && rl < pl) {
+    return { code:'HV', label:'High Volatile',
+             cls:'hv',
+             tip:`High ${fP(rh)} > Prev High ${fP(ph)} AND Low ${fP(rl)} < Prev Low ${fP(pl)} — Outside Bar`,
+             isBullish:false, isBearish:false };
+  }
+  if (rh < ph && rl > pl) {
+    return { code:'LV', label:'Low Volatile',
+             cls:'lv',
+             tip:`High ${fP(rh)} < Prev High ${fP(ph)} AND Low ${fP(rl)} > Prev Low ${fP(pl)} — Inside Bar`,
+             isBullish:false, isBearish:false };
+  }
+  if (rh > ph) {
+    return { code:'HH', label:'Higher High',
+             cls:'hh',
+             tip:`High ${fP(rh)} > Prev High ${fP(ph)} — Higher High (Bullish)`,
+             isBullish:true, isBearish:false };
+  }
+  if (rl < pl) {
+    return { code:'LL', label:'Lower Low',
+             cls:'ll',
+             tip:`Low ${fP(rl)} < Prev Low ${fP(pl)} — Lower Low (Bearish)`,
+             isBullish:false, isBearish:true };
+  }
+  return { code:'NC', label:'No Change',
+           cls:'nc',
+           tip:`High ${fP(rh)} ≤ Prev High ${fP(ph)} AND Low ${fP(rl)} ≥ Prev Low ${fP(pl)}`,
+           isBullish:false, isBearish:false };
+}
+
+function sigIcon(condition, tipYes, tipNo, tipNa) {
+  if (condition === null) return `<span class="sig na" data-tip="${tipNa}">—</span>`;
+  return condition
+    ? `<span class="sig yes" data-tip="${tipYes}">✓</span>`
+    : `<span class="sig no"  data-tip="${tipNo}">✗</span>`;
+}
+
+// ── Drawer open / close ───────────────────────────────────────────────────────
+function closeDrawer() {
+  const drawer  = document.getElementById('drawer');
+  const overlay = document.getElementById('drawerOverlay');
+  drawer.style.transform  = 'translateX(100%)';
+  overlay.style.display   = 'none';
+  setTimeout(() => { drawer.style.display = 'none'; }, 300);
+}
+
+function openDrawer() {
+  const drawer  = document.getElementById('drawer');
+  const overlay = document.getElementById('drawerOverlay');
+  drawer.style.display    = 'block';
+  overlay.style.display   = 'block';
+  // Trigger transition on next frame
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { drawer.style.transform = 'translateX(0)'; });
+  });
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+// ── Open comparison drawer for a symbol ──────────────────────────────────────
+async function openComparison(symbol) {
+  const tf     = document.getElementById('tf').value;
+  const period = document.getElementById('period').value;
+  const prev   = prevPeriod(tf, period);
+
+  if (!prev) { alert('No previous period available for comparison.'); return; }
+
+  // Set title and show loading state
+  document.getElementById('drawerTitle').textContent = `${symbol} — ${prev} vs ${period}`;
+  document.getElementById('drawerBody').innerHTML = `
+    <div style="text-align:center;padding:60px 0;">
+      <div style="width:28px;height:28px;border:2px solid #243040;border-top-color:#0ea5e9;
+                  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;"></div>
+      <div style="font-size:11px;color:#4a6070;">Loading comparison data...</div>
+    </div>`;
+  openDrawer();
+
+  try {
+    // Fetch both periods — reuse prevMap data if already loaded, else fetch
+    const size = parseInt(document.getElementById('maxSize').value) || 2500;
+
+    // Current period — try prevMap + allData first (already loaded)
+    let dA = prevMap[symbol];        // prev period row
+    let dB = allData.find(r => r.symbol === symbol); // current period row
+
+    // If not in memory, fetch individually
+    if (!dA) {
+      const ra = await fetch(`${getBaseUrl()}/api/v1/candles/${symbol}/stats?timeframe=${tf}&period=${prev}`);
+      const ja = await ra.json();
+      dA = normalise(ja.data || ja);
+    }
+    if (!dB) {
+      const rb = await fetch(`${getBaseUrl()}/api/v1/candles/${symbol}/stats?timeframe=${tf}&period=${period}`);
+      const jb = await rb.json();
+      dB = normalise(jb.data || jb);
+    }
+
+    if (!dA || !dB) throw new Error('Could not load data for ' + symbol);
+
+    document.getElementById('drawerBody').innerHTML = buildCompareHTML(dA, dB, prev, period, tf);
+
+  } catch(err) {
+    console.error('[Drawer] error:', err);
+    document.getElementById('drawerBody').innerHTML = `
+      <div style="text-align:center;padding:40px;color:#ff4560;font-size:12px;">
+        ⚠ ${err.message}
+      </div>`;
+  }
+}
+
+// ── Build comparison HTML for the drawer ─────────────────────────────────────
+function buildCompareHTML(dA, dB, pA, pB, tf) {
+  const sym = dA.symbol || dB.symbol;
+
+  function row(label, vA, vB, fmt, sign, subA, subB) {
+    const fmtA = fmt ? fmt(vA) : (vA || '—');
+    const fmtB = fmt ? fmt(vB) : (vB || '—');
+    let delta = '';
+    if (fmt && vA != null && vB != null) {
+      const diff   = vB - vA;
+      const pctVal = vA !== 0 ? ((diff / Math.abs(vA)) * 100).toFixed(1) + '%' : '—';
+      const isPos  = diff * (sign||1) > 0;
+      const isNeg  = diff * (sign||1) < 0;
+      const cls    = isPos ? 'color:#00d98b' : isNeg ? 'color:#ff4560' : 'color:#4a6070';
+      const arrow  = isPos ? '▲' : isNeg ? '▼' : '—';
+      const absFmt = fmt === fP ? fP(Math.abs(diff)) : fV(Math.abs(diff));
+      delta = `<span style="${cls};font-weight:600">${arrow} ${absFmt}<br>
+               <span style="font-size:9px;opacity:.7">${pctVal}</span></span>`;
+    }
+    return `
+      <div style="display:grid;grid-template-columns:130px 1fr 90px 1fr;
+                  gap:0;padding:11px 16px;border-bottom:1px solid rgba(26,34,48,.5);
+                  align-items:center;font-size:11px;" class="cmp-row">
+        <div style="color:#4a6070;font-size:9px;letter-spacing:.5px;text-transform:uppercase">${label}</div>
+        <div style="color:#38bdf8;text-align:right">
+          ${fmtA}${subA ? `<div style="font-size:9px;color:#4a6070;margin-top:2px">${subA}</div>` : ''}
+        </div>
+        <div style="text-align:center">${delta || '<span style="color:#4a6070;font-size:10px">—</span>'}</div>
+        <div style="color:#a78bfa;text-align:right">
+          ${fmtB}${subB ? `<div style="font-size:9px;color:#4a6070;margin-top:2px">${subB}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function section(title) {
+    return `<div style="padding:12px 16px 6px;font-size:9px;letter-spacing:2.5px;
+                        color:#4a6070;text-transform:uppercase;background:#111820;
+                        border-bottom:1px solid #1a2230;">${title}</div>`;
+  }
+
+  function trendBadge(t) {
+    const c = t==='UP'?'#00d98b':t==='DOWN'?'#ff4560':'#f5a623';
+    const bg= t==='UP'?'rgba(0,217,139,.1)':t==='DOWN'?'rgba(255,69,96,.1)':'rgba(245,166,35,.1)';
+    return `<span style="color:${c};background:${bg};border:1px solid ${c}30;
+                         border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600">
+              ${t==='UP'?'▲ UP':t==='DOWN'?'▼ DN':'— SD'}</span>`;
+  }
+
+  // Signal helpers
+  function sig(condition, tipY, tipN) {
+    if (condition === null) return `<span style="color:#4a6070">—</span>`;
+    return condition
+      ? `<span style="color:#00d98b;font-size:14px" title="${tipY}">✓</span>`
+      : `<span style="color:#ff4560;font-size:14px" title="${tipN}">✗</span>`;
+  }
+
+  const volBo   = (dA.highVolQty != null && dB.highVolQty != null)
+                  ? dB.highVolQty > dA.highVolQty : null;
+  const delBo   = (dA.highDelivQty != null && dB.highDelivQty != null)
+                  ? dB.highDelivQty > dA.highDelivQty : null;
+  const closeCp = (dA.close != null && dB.close != null)
+                  ? (dB.close > dA.close ? true : dB.close < dA.close ? false : null) : null;
+
+  const cs = candleStructure(dB, dA); // dB=current, dA=prev
+
+  // Candle range visual — simple ASCII-style bar
+  function rangeBar(label, val, lo, hi, color) {
+    if (val == null || lo == null || hi == null || hi === lo) return '';
+    const pct = Math.min(100, Math.max(0, ((val - lo) / (hi - lo)) * 100));
+    return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6070;margin-bottom:3px">
+        <span>${label}</span><span style="color:${color}">${fP(val)}</span>
+      </div>
+      <div style="height:4px;background:#1a2230;border-radius:2px;position:relative">
+        <div style="position:absolute;top:0;left:${pct}%;width:8px;height:100%;
+                    background:${color};border-radius:2px;transform:translateX(-50%)"></div>
+      </div>
+    </div>`;
+  }
+
+  // All condition evaluations for detail
+  const condRows = [
+    { label:'Higher High (HH)',      met: dB.high  > dA.high,  tip:`Current High ${fP(dB.high)} > Prev High ${fP(dA.high)}` },
+    { label:'Trending HH (Close>PH)',met: dB.close > dA.high,  tip:`Current Close ${fP(dB.close)} > Prev High ${fP(dA.high)}` },
+    { label:'Lower Low (LL)',         met: dB.low   < dA.low,   tip:`Current Low ${fP(dB.low)} < Prev Low ${fP(dA.low)}` },
+    { label:'Trending LL (Close<PL)',met: dB.close < dA.low,   tip:`Current Close ${fP(dB.close)} < Prev Low ${fP(dA.low)}` },
+    { label:'High Volatile (HV)',     met: dB.high  > dA.high && dB.low < dA.low,
+      tip:`High > Prev High AND Low < Prev Low — Outside Bar` },
+    { label:'Low Volatile (LV)',      met: dB.high  < dA.high && dB.low > dA.low,
+      tip:`High < Prev High AND Low > Prev Low — Inside Bar` },
+  ];
+
+  const condHTML = condRows.map(c => {
+    const color = c.met ? '#00d98b' : '#4a6070';
+    const icon  = c.met ? '✓' : '✗';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:9px 16px;border-bottom:1px solid rgba(26,34,48,.5);font-size:11px">
+      <span style="color:#8b949e">${c.label}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:9px;color:#4a6070;font-family:var(--mono)">${c.tip}</span>
+        <span style="color:${color};font-size:14px;font-weight:700;width:16px;text-align:center">${icon}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+    <!-- Period header labels -->
+    <div style="display:grid;grid-template-columns:130px 1fr 90px 1fr;
+                gap:0;padding:10px 16px;background:#111820;border-bottom:1px solid #1a2230;">
+      <div></div>
+      <div style="text-align:right;font-size:9px;letter-spacing:2px;color:#38bdf8;text-transform:uppercase">
+        ${pA} <span style="font-size:8px;background:rgba(56,189,248,.1);padding:1px 6px;border-radius:3px">BASE</span>
+      </div>
+      <div></div>
+      <div style="text-align:right;font-size:9px;letter-spacing:2px;color:#a78bfa;text-transform:uppercase">
+        ${pB} <span style="font-size:8px;background:rgba(167,139,250,.1);padding:1px 6px;border-radius:3px">CMP</span>
+      </div>
+    </div>
+
+    <!-- Candle Structure section -->
+    <div style="padding:12px 16px 6px;font-size:9px;letter-spacing:2.5px;
+                color:#4a6070;text-transform:uppercase;background:#111820;
+                border-bottom:1px solid #1a2230;">Candle Structure</div>
+
+    <!-- Structure badge + label -->
+    <div style="padding:14px 16px;background:#0d1117;border-bottom:1px solid #1a2230;
+                display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <span class="struct ${cs.cls}" style="font-size:13px;padding:4px 14px"
+            data-tip="${cs.tip}">${cs.code}</span>
+      <span style="font-size:12px;color:#c8d8e8">${cs.label}</span>
+    </div>
+
+    <!-- Price range visual -->
+    <div style="padding:14px 16px;background:#0d1117;border-bottom:1px solid #1a2230;">
+      <div style="font-size:9px;letter-spacing:1.5px;color:#4a6070;text-transform:uppercase;margin-bottom:10px">
+        Price Range — ${pA} (base) vs ${pB} (current)
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:9px;color:#38bdf8;margin-bottom:6px;letter-spacing:1px">${pA}</div>
+          ${rangeBar('High', dA.high, dA.low, dA.high, '#00d98b')}
+          ${rangeBar('Close', dA.close, dA.low, dA.high, '#38bdf8')}
+          ${rangeBar('Open', dA.open, dA.low, dA.high, '#c8d8e8')}
+          ${rangeBar('Low', dA.low, dA.low, dA.high, '#ff4560')}
+        </div>
+        <div>
+          <div style="font-size:9px;color:#a78bfa;margin-bottom:6px;letter-spacing:1px">${pB}</div>
+          ${rangeBar('High', dB.high, dB.low, dB.high, '#00d98b')}
+          ${rangeBar('Close', dB.close, dB.low, dB.high, '#a78bfa')}
+          ${rangeBar('Open', dB.open, dB.low, dB.high, '#c8d8e8')}
+          ${rangeBar('Low', dB.low, dB.low, dB.high, '#ff4560')}
+        </div>
+      </div>
+    </div>
+
+    <!-- All 6 conditions detail -->
+    ${condHTML}
+
+    <!-- Signals row -->
+    <div style="padding:12px 16px 6px;font-size:9px;letter-spacing:2.5px;
+                color:#4a6070;text-transform:uppercase;background:#111820;
+                border-bottom:1px solid #1a2230;margin-top:4px;">Other Signals</div>
+    <div style="padding:14px 16px;background:#0d1117;border-bottom:1px solid #1a2230;
+                display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+        VOL-BO ${sig(volBo, 'Volume Breakout', 'No Volume Breakout')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+        DEL-BO ${sig(delBo, 'Delivery Breakout', 'No Delivery Breakout')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+        CLOSE-CP ${sig(closeCp, 'Close up vs prev', 'Close down vs prev')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+        ${pA} TREND ${trendBadge(dA.trend||'SIDE')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+        ${pB} TREND ${trendBadge(dB.trend||'SIDE')}
+      </div>
+    </div>
+
+    ${section('Price')}
+    ${row('Open',      dA.open,          dB.open,          fP,  1)}
+    ${row('Close',     dA.close,         dB.close,         fP,  1)}
+    ${row('High',      dA.high,          dB.high,          fP,  1)}
+    ${row('Low',       dA.low,           dB.low,           fP,  1)}
+    ${row('% Change',  dA.pctChange,     dB.pctChange,     v => (v>=0?'+':'')+v.toFixed(2)+'%', 1)}
+
+    ${section('Price Dates')}
+    ${row('High Date', dA.highPriceDate, dB.highPriceDate, null)}
+    ${row('Low Date',  dA.lowPriceDate,  dB.lowPriceDate,  null)}
+
+    ${section('Volume')}
+    ${row('High Vol',  dA.highVolQty,    dB.highVolQty,    fV,  1,
+          fD(dA.highVolDate), fD(dB.highVolDate))}
+    ${row('Low Vol',   dA.lowVolQty,     dB.lowVolQty,     fV,  1,
+          fD(dA.lowVolDate),  fD(dB.lowVolDate))}
+
+    ${section('Delivery')}
+    ${row('High Deliv',dA.highDelivQty,  dB.highDelivQty,  fV,  1,
+          fD(dA.highDelivDate), fD(dB.highDelivDate))}
+    ${row('Low Deliv', dA.lowDelivQty,   dB.lowDelivQty,   fV,  1,
+          fD(dA.lowDelivDate),  fD(dB.lowDelivDate))}
+    ${row('Deliv %',   dA.delivPct,      dB.delivPct,
+          v => v != null ? v.toFixed(1)+'%' : '—', 1)}
+
+    <div style="padding:20px 16px;font-size:10px;color:#2a3a4a;text-align:center">
+      ${sym} · ${tf} · ${pA} vs ${pB} · Delta = ${pB} − ${pA}
+    </div>`;
+}
+
+// ── Render one page of the table ─────────────────────────────────────────────
+function renderTable() {
+  const start = currentPage * PAGE_SIZE;
+  const rows  = filtered.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('tableBody');
+  const hasPrev = Object.keys(prevMap).length > 0;
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const pctCls   = r.pctChange != null ? (r.pctChange >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+
+    // vs last period
+    const vsVal    = vsLastPeriodVal(r);
+    const vsCls    = vsVal != null ? (vsVal >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    const vsTxt    = vsVal != null ? fPct(vsVal) : '—';
+    const prevR    = prevMap[r.symbol];
+    const prevClose = prevR ? fP(prevR.close) : '—';
+
+    // ── Signals ────────────────────────────────────────────────────────────
+    // VOL-BO: current highVolQty > prev highVolQty
+    const volBo = (!hasPrev || !prevR) ? null
+      : (r.highVolQty != null && prevR.highVolQty != null)
+        ? r.highVolQty > prevR.highVolQty
+        : null;
+
+    // DEL-BO: current highDelivQty > prev highDelivQty
+    const delBo = (!hasPrev || !prevR) ? null
+      : (r.highDelivQty != null && prevR.highDelivQty != null)
+        ? r.highDelivQty > prevR.highDelivQty
+        : null;
+
+    // CLOSE-CP: current close vs prev close
+    let closeCp = null;
+    let closeCpClass = 'na';
+    let closeCpTip   = 'No prev period data';
+    if (hasPrev && prevR && r.close != null && prevR.close != null) {
+      if      (r.close > prevR.close) { closeCp = true;  closeCpClass = 'yes'; closeCpTip = `Close ↑ vs prev (${fP(prevR.close)})`; }
+      else if (r.close < prevR.close) { closeCp = false; closeCpClass = 'no';  closeCpTip = `Close ↓ vs prev (${fP(prevR.close)})`; }
+      else                            { closeCp = null;  closeCpClass = 'neu'; closeCpTip = `Close = prev (${fP(prevR.close)})`; }
+    }
+
+    const volBoHtml  = sigIcon(volBo,
+      `Vol BO ✓ ${fV(r.highVolQty)} > ${fV(prevR?.highVolQty)}`,
+      `No Vol BO — ${fV(r.highVolQty)} ≤ ${fV(prevR?.highVolQty)}`,
+      'No prev period data');
+
+    const delBoHtml  = sigIcon(delBo,
+      `Del BO ✓ ${fV(r.highDelivQty)} > ${fV(prevR?.highDelivQty)}`,
+      `No Del BO — ${fV(r.highDelivQty)} ≤ ${fV(prevR?.highDelivQty)}`,
+      'No prev period data');
+
+    const closeHtml  = closeCpClass === 'na'
+      ? `<span class="sig na" data-tip="${closeCpTip}">—</span>`
+      : closeCpClass === 'neu'
+        ? `<span class="sig neu" data-tip="${closeCpTip}">~</span>`
+        : `<span class="sig ${closeCpClass}" data-tip="${closeCpTip}">${closeCpClass==='yes'?'✓':'✗'}</span>`;
+
+    // ── Candle structure ────────────────────────────────────────────────────
+    const cs = candleStructure(r, prevR);
+    r.structure = cs.code;
+    const structHtml = `<span class="struct ${cs.cls}" data-tip="${cs.tip}">${cs.code}</span>`;
+
+    // ── Context cell ────────────────────────────────────────────────────────
+    const nextR    = nextMap[r.symbol];
+    const ctxCell  = buildContextCell(r, prevR, nextR);
+
+    return `
+      <tr class="clickable" onclick="openComparison('${r.symbol}')">
+        <td class="td-muted">${start + i + 1}</td>
+        <td class="td-symbol">${r.symbol}</td>
+        ${ctxCell}
+        <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
+        <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
+        <td class="sig-col">${structHtml}</td>
+        <td class="sig-col">${volBoHtml}</td>
+        <td class="sig-col">${delBoHtml}</td>
+        <td class="sig-col">${closeHtml}</td>
+        <td class="td-right">${fV(r.highVolQty)}</td>
+        <td class="td-right">${fV(r.highDelivQty)}</td>
+        <td class="td-right">${r.delivPct != null ? r.delivPct.toFixed(1) + '%' : '—'}</td>
+        <td class="td-muted">${fD(r.highPriceDate)}</td>
+        <td class="td-muted">${fD(r.lowPriceDate)}</td>
+        <td class="td-right td-muted prev-col">${prevClose}</td>
+        <td class="td-right ${vsCls} prev-col" style="font-weight:600">${vsTxt}</td>
+      </tr>`;
+  }).join('');
+
+  renderPagination();
+  updateSortArrows();
+  setTimeout(syncTopScroll, 50);
+}
+
+// ── Sort by column header click ───────────────────────────────────────────────
+function doSort(col) {
+  const sortColEl = document.getElementById('sortCol');
+  const sortDirEl = document.getElementById('sortDir');
+
+  // Toggle direction if same column, otherwise default DESC
+  if (sortCol === col) {
+    sortDirEl.value = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortColEl.value = col;
+    sortDirEl.value = 'desc';
+  }
+  applyFilters();
+}
+
+function updateSortArrows() {
+  const cols = ['symbol','open','close','high','low','pctChange','trend',
+                'highVolQty','highDelivQty','delivPct','vsLastPeriod','prevClose','structure'];
+  cols.forEach(c => {
+    const el = document.getElementById('arr-' + c);
+    if (el) el.textContent = '';
+  });
+  const activeEl = document.getElementById('arr-' + sortCol);
+  if (activeEl) activeEl.textContent = sortDir === 'asc' ? ' ↑' : ' ↓';
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+function renderPagination() {
+  const total = filtered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = currentPage * PAGE_SIZE + 1;
+  const end   = Math.min(start + PAGE_SIZE - 1, total);
+
+  document.getElementById('pageInfo').textContent =
+    `Showing ${start}–${end} of ${total} symbols`;
+
+  const maxBtns = 7;
+  let lo = Math.max(0, currentPage - 3);
+  let hi = Math.min(pages - 1, lo + maxBtns - 1);
+  lo = Math.max(0, hi - maxBtns + 1);
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===0?'disabled':''}>‹</button>`;
+  for (let p = lo; p <= hi; p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p+1}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=pages-1?'disabled':''}>›</button>`;
+  document.getElementById('pageBtns').innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filtered.length / PAGE_SIZE);
+  if (p < 0 || p >= pages) return;
+  currentPage = p;
+  renderTable();
+  window.scrollTo({ top: document.getElementById('resultsArea').offsetTop - 20, behavior: 'smooth' });
+}
+
+// ── Active filter badges ──────────────────────────────────────────────────────
+function renderBadges(f) {
+  const badges = [];
+  if (f.symbolFilter)    badges.push(['Symbol: '+f.symbolFilter,       ()=>clearField('f-symbol')]);
+  if (f.trendFilter)     badges.push(['Trend: '+f.trendFilter,         ()=>{ document.getElementById('f-trend').value=''; applyFilters(); }]);
+  if (f.structureFilter) badges.push(['Structure: '+f.structureFilter, ()=>{ document.getElementById('f-structure').value=''; applyFilters(); }]);
+  if (f.volBoFilter)     badges.push(['Vol-BO: '+f.volBoFilter,        ()=>{ document.getElementById('f-volbo').value=''; applyFilters(); }]);
+  if (f.delBoFilter)     badges.push(['Del-BO: '+f.delBoFilter,        ()=>{ document.getElementById('f-delbo').value=''; applyFilters(); }]);
+  if (f.closeCpFilter)   badges.push(['Close-CP: '+f.closeCpFilter,    ()=>{ document.getElementById('f-closecp').value=''; applyFilters(); }]);
+
+  const container = document.getElementById('activeFilters');
+  container.innerHTML = badges.map((b, i) =>
+    `<span class="filter-badge" onclick="badgeClick(${i})" title="Click to remove">✕ ${b[0]}</span>`
+  ).join('');
+  container._cbs = badges.map(b => b[1]);
+}
+
+function badgeClick(i) {
+  const cbs = document.getElementById('activeFilters')._cbs;
+  if (cbs && cbs[i]) cbs[i]();
+}
+
+function clearField(id) {
+  document.getElementById(id).value = '';
+  applyFilters();
+}
+
+function clearFilters(andApply = true) {
+  document.getElementById('f-symbol').value    = '';
+  document.getElementById('f-trend').value     = '';
+  document.getElementById('f-structure').value = '';
+  document.getElementById('f-volbo').value     = '';
+  document.getElementById('f-delbo').value     = '';
+  document.getElementById('f-closecp').value   = '';
+  if (andApply && allData.length > 0) applyFilters();
+}
+
+function midDate(start, end) {
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  return new Date(s + (e - s) / 2);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadSavedApiUrl();
+setState('empty');
+// Auto-populate period with latest available for the default timeframe
+updatePeriodField(document.getElementById('tf').value);
+
+// ── Sync top scrollbar with table wrap ───────────────────────────────────────
+// Sets the inner div width to match actual table scroll width,
+// then mirrors scroll position both ways.
+function syncTopScroll() {
+  const wrap  = document.getElementById('tableWrap');
+  const top   = document.getElementById('topScroll');
+  const inner = document.getElementById('topScrollInner');
+  if (!wrap || !top || !inner) return;
+
+  // Match inner width to scrollable content width
+  inner.style.width = wrap.scrollWidth + 'px';
+
+  // Sync: table → top
+  wrap.addEventListener('scroll', () => {
+    top.scrollLeft = wrap.scrollLeft;
+  });
+  // Sync: top → table
+  top.addEventListener('scroll', () => {
+    wrap.scrollLeft = top.scrollLeft;
+  });
+}
+
+// Run sync after table renders (DOM is ready by then)
+// Also re-sync after each renderTable call by calling syncTopScroll
+// ── Trend vs Close vs Prev Statistics ─────────────────────────────────────────
+function showTrendCloseStats() {
+  const panel = document.getElementById('trendCloseStats');
+  const grid  = document.getElementById('trendCloseGrid');
+  if (filtered.length === 0) { alert('No data to show statistics for.'); return; }
+
+  panel.style.display = 'block';
+  const hasPrev = Object.keys(prevMap).length > 0;
+
+  // Build matrix: trend (UP/DOWN/SIDE) × closeCp (Up/Down/Flat/N/A)
+  const trends = ['UP', 'DOWN', 'SIDE'];
+  const cpLabels = hasPrev ? ['Close ↑', 'Close ↓', 'Flat', 'N/A'] : ['N/A'];
+  const matrix = {};
+  const trendTotals = {};
+  const cpTotals = {};
+  trends.forEach(t => { matrix[t] = {}; trendTotals[t] = 0; cpLabels.forEach(c => { matrix[t][c] = 0; cpTotals[c] = 0; }); });
+
+  filtered.forEach(r => {
+    const t = trends.includes(r.trend) ? r.trend : 'SIDE';
+    let cp = 'N/A';
+    if (hasPrev) {
+      const prevR = prevMap[r.symbol];
+      if (prevR && r.close != null && prevR.close != null) {
+        if (r.close > prevR.close) cp = 'Close ↑';
+        else if (r.close < prevR.close) cp = 'Close ↓';
+        else cp = 'Flat';
+      }
+    }
+    matrix[t][cp]++;
+    trendTotals[t]++;
+    cpTotals[cp]++;
+  });
+
+  const total = filtered.length;
+  const trendColors = { UP: 'var(--up)', DOWN: 'var(--down)', SIDE: 'var(--side)' };
+  const cpColors = { 'Close ↑': 'var(--up)', 'Close ↓': 'var(--down)', 'Flat': 'var(--muted)', 'N/A': 'var(--muted)' };
+
+  // Build HTML table
+  let html = `<div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border2);">
+          <th style="padding:10px 14px;text-align:left;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Trend \\ Close vs Prev</th>`;
+
+  cpLabels.forEach(cp => {
+    html += `<th style="padding:10px 14px;text-align:center;font-size:9px;letter-spacing:1.5px;color:${cpColors[cp]||'var(--muted)'};text-transform:uppercase;min-width:90px;">${cp}</th>`;
+  });
+  html += `<th style="padding:10px 14px;text-align:center;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;">Total</th></tr></thead><tbody>`;
+
+  trends.forEach(t => {
+    html += `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 14px;"><span class="trend-tag ${t}">${t}</span></td>`;
+    cpLabels.forEach(cp => {
+      const count = matrix[t][cp];
+      const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+      const intensity = total > 0 ? Math.min(1, count / (total * 0.15)) : 0;
+      const bgColor = t === 'UP' ? `rgba(0,217,139,${intensity * 0.15})` : t === 'DOWN' ? `rgba(255,69,96,${intensity * 0.15})` : `rgba(245,166,35,${intensity * 0.12})`;
+      html += `<td style="padding:10px 14px;text-align:center;background:${bgColor};border-radius:0;">
+        <div style="font-size:16px;font-weight:700;color:var(--text);">${count}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px;">${pct}%</div>
+      </td>`;
+    });
+    // Row total
+    const rowPct = total > 0 ? ((trendTotals[t] / total) * 100).toFixed(1) : '0.0';
+    html += `<td style="padding:10px 14px;text-align:center;border-left:2px solid var(--border2);">
+      <div style="font-size:16px;font-weight:700;color:${trendColors[t]};">${trendTotals[t]}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px;">${rowPct}%</div>
+    </td></tr>`;
+  });
+
+  // Footer totals row
+  html += `<tr style="border-top:2px solid var(--border2);">
+    <td style="padding:10px 14px;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:600;">Total</td>`;
+  cpLabels.forEach(cp => {
+    const colPct = total > 0 ? ((cpTotals[cp] / total) * 100).toFixed(1) : '0.0';
+    html += `<td style="padding:10px 14px;text-align:center;border-top:2px solid var(--border2);">
+      <div style="font-size:16px;font-weight:700;color:${cpColors[cp]||'var(--text)'};">${cpTotals[cp]}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px;">${colPct}%</div>
+    </td>`;
+  });
+  html += `<td style="padding:10px 14px;text-align:center;border-left:2px solid var(--border2);border-top:2px solid var(--border2);">
+    <div style="font-size:16px;font-weight:700;color:var(--accent);">${total}</div>
+    <div style="font-size:9px;color:var(--muted);margin-top:2px;">100%</div>
+  </td></tr>`;
+
+  html += `</tbody></table></div>`;
+
+  // Add insight summary
+  const upUp = matrix['UP']['Close ↑'] || 0;
+  const downDown = matrix['DOWN']['Close ↓'] || 0;
+  const bullish = upUp + (matrix['SIDE']?.['Close ↑'] || 0);
+  const bearish = downDown + (matrix['SIDE']?.['Close ↓'] || 0);
+
+  html += `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+    <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--up);display:inline-block;"></span>
+      Bullish Confirmed (UP + Close ↑): <strong style="color:var(--up);">${upUp}</strong>
+    </div>
+    <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--down);display:inline-block;"></span>
+      Bearish Confirmed (DOWN + Close ↓): <strong style="color:var(--down);">${downDown}</strong>
+    </div>
+    <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+      Net Sentiment: <strong style="color:${bullish > bearish ? 'var(--up)' : bullish < bearish ? 'var(--down)' : 'var(--side)'};">${bullish > bearish ? 'BULLISH' : bullish < bearish ? 'BEARISH' : 'NEUTRAL'} (${bullish} vs ${bearish})</strong>
+    </div>
+  </div>`;
+
+  grid.innerHTML = html;
+
+  // Scroll to it
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+window.addEventListener('load', syncTopScroll);
+</script>
+</body>
+</html>
