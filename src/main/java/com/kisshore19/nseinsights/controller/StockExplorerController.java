@@ -125,41 +125,59 @@ public class StockExplorerController {
 
     /**
      * API 5: GET /api/v1/stocks/top-gainers
-     * Get top gainers for a specific date
+     * Get top gainers for a specific date, optionally filtered by index.
      *
      * Query Parameters:
-     * - date: Trade date in dd-MM-yyyy format (e.g., 15-01-2025) - optional, defaults to latest
-     * - limit: Number of top gainers to return (default: 10)
+     * - date:  Trade date in dd-MM-yyyy format (optional, defaults to latest)
+     * - limit: Number of results (default: 10)
+     * - index: Index name e.g. NIFTY50 (optional)
      */
     @GetMapping("/top-gainers")
     public ResponseEntity<ApiResponse<TopMoversResponse>> getTopGainers(
             @RequestParam(required = false) String date,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) String index) {
 
-        log.info("GET /api/v1/stocks/top-gainers - date: {}, limit: {}", date, limit);
-
-        TopMoversResponse response = dataExplorerService.getTopGainers(date, limit);
-
-        return ResponseEntity.ok(ApiResponse.success(response));
+        log.info("GET /api/v1/stocks/top-gainers - date: {}, limit: {}, index: {}", date, limit, index);
+        return ResponseEntity.ok(ApiResponse.success(
+                dataExplorerService.getTopGainers(date, limit, index)));
     }
 
     /**
      * API 6: GET /api/v1/stocks/top-losers
-     * Get top losers for a specific date
+     * Get top losers for a specific date, optionally filtered by index.
      *
      * Query Parameters:
-     * - date: Trade date in dd-MM-yyyy format (e.g., 15-01-2025) - optional, defaults to latest
-     * - limit: Number of top losers to return (default: 10)
+     * - date:  Trade date in dd-MM-yyyy format (optional, defaults to latest)
+     * - limit: Number of results (default: 10)
+     * - index: Index name e.g. NIFTY50 (optional)
      */
     @GetMapping("/top-losers")
     public ResponseEntity<ApiResponse<TopMoversResponse>> getTopLosers(
             @RequestParam(required = false) String date,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) String index) {
 
-        log.info("GET /api/v1/stocks/top-losers - date: {}, limit: {}", date, limit);
+        log.info("GET /api/v1/stocks/top-losers - date: {}, limit: {}, index: {}", date, limit, index);
+        return ResponseEntity.ok(ApiResponse.success(
+                dataExplorerService.getTopLosers(date, limit, index)));
+    }
 
-        TopMoversResponse response = dataExplorerService.getTopLosers(date, limit);
+    /**
+     * API 7: GET /api/v1/stocks/by-index
+     * Get all stocks in an index with their daily price data.
+     *
+     * Query Parameters:
+     * - index: Index name e.g. NIFTY50 (required)
+     * - date:  Trade date in dd-MM-yyyy format (optional, defaults to latest)
+     */
+    @GetMapping("/by-index")
+    public ResponseEntity<ApiResponse<TopMoversResponse>> getStocksByIndex(
+            @RequestParam String index,
+            @RequestParam(required = false) String date) {
 
-        return ResponseEntity.ok(ApiResponse.success(response));
+        log.info("GET /api/v1/stocks/by-index - index: {}, date: {}", index, date);
+        return ResponseEntity.ok(ApiResponse.success(
+                dataExplorerService.getStocksForIndex(index, date)));
     }
 }

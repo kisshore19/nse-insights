@@ -161,10 +161,13 @@ public final class PeriodKeyUtils {
         String[] parts = key.split("-W");
         int year = Integer.parseInt(parts[0]);
         int week = Integer.parseInt(parts[1]);
-        return LocalDate.of(year, 1, 4)  // Jan 4 is always in week 1
-                .with(WeekFields.ISO.weekBasedYear(), year)
-                .with(WeekFields.ISO.weekOfWeekBasedYear(), week)
-                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
+        // Jan 4 is always in week 1 of the week-based year
+        LocalDate jan4 = LocalDate.of(year, 1, 4);
+        // Find the Monday of week 1
+        LocalDate week1Monday = jan4.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        // Add (week - 1) weeks to get the Monday of the target week
+        return week1Monday.plusWeeks(week - 1);
     }
 
     private static LocalDate weekEnd(String key) {

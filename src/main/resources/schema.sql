@@ -210,3 +210,60 @@ CREATE TABLE candle_stats (
     INDEX idx_stats_symbol_timeframe            (symbol, timeframe),
     INDEX idx_stats_timeframe                   (timeframe)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── index_daily_close ─────────────────────────────────────────
+-- Stores daily closing values for all NSE indices.
+-- Source: https://nsearchives.nseindia.com/content/indices/ind_close_all_DDMMYYYY.csv
+CREATE TABLE IF NOT EXISTS index_daily_close (
+    id               BIGINT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    index_name       VARCHAR(100)     NOT NULL,
+    trade_date       DATE             NOT NULL,
+    open_value       DECIMAL(12,2)    NULL,
+    high_value       DECIMAL(12,2)    NULL,
+    low_value        DECIMAL(12,2)    NULL,
+    close_value      DECIMAL(12,2)    NOT NULL,
+    points_change    DECIMAL(12,2)    NULL,
+    pct_change       DECIMAL(7,2)     NULL,
+    volume           BIGINT           NULL,
+    turnover         DECIMAL(18,2)    NULL,
+    pe               DECIMAL(8,2)     NULL,
+    pb               DECIMAL(8,2)     NULL,
+    div_yield        DECIMAL(7,2)     NULL,
+    created_at       DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_idx_close_name_date UNIQUE (index_name, trade_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_close_trade_date ON index_daily_close (trade_date DESC);
+CREATE INDEX idx_close_index_name ON index_daily_close (index_name);
+
+-- ── index_candle_stats ────────────────────────────────────────
+-- Pre-computed OHLC + trend + volume + fundamentals per index per timeframe period.
+-- Built from index_daily_close by POST /api/v1/index-candles/stats/build
+CREATE TABLE IF NOT EXISTS index_candle_stats (
+    id              BIGINT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    index_name      VARCHAR(100)     NOT NULL,
+    timeframe       VARCHAR(10)      NOT NULL,
+    period_key      VARCHAR(10)      NOT NULL,
+    candle_date     DATE             NOT NULL,
+    candle_end_date DATE             NOT NULL,
+    open_value      DECIMAL(12,2)    NULL,
+    high_value      DECIMAL(12,2)    NULL,
+    low_value       DECIMAL(12,2)    NULL,
+    last__value      DECIMAL(12,2)    NULL,
+    trend           VARCHAR(10) NULL,
+    high_value_date DATE             NULL,
+    low_value_date  DATE             NULL,
+    high_vol_qty    BIGINT           NULL,
+    high_vol_date   DATE             NULL,
+    low_vol_qty     BIGINT           NULL,
+    low_vol_date    DATE             NULL,
+    avg_pe          DECIMAL(8,2)     NULL,
+    avg_pb          DECIMAL(8,2)     NULL,
+    avg_div_yield   DECIMAL(7,2)     NULL,
+    created_at      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uq_idx_stats_name_tf_period UNIQUE (index_name, timeframe, period_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_idx_stats_name_tf ON index_candle_stats (index_name, timeframe);
+CREATE INDEX idx_idx_stats_tf      ON index_candle_stats (timeframe);

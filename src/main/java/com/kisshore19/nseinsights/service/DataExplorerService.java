@@ -1,6 +1,7 @@
 package com.kisshore19.nseinsights.service;
 
 import com.kisshore19.nseinsights.dto.response.*;
+import com.kisshore19.nseinsights.entity.IndexMaster;
 import com.kisshore19.nseinsights.entity.NseDailyPrice;
 import com.kisshore19.nseinsights.exception.DateNotFoundException;
 import com.kisshore19.nseinsights.exception.InvalidDateException;
@@ -176,27 +177,20 @@ public class DataExplorerService {
     }
 
     /**
-     * API 5: Get top gainers for a date
+     * API 5: Get top gainers for a date, optionally filtered by index
      */
-    public TopMoversResponse getTopGainers(String dateStr, int limit) {
-        log.info("Fetching top {} gainers for date: {}", limit, dateStr);
+    public TopMoversResponse getTopGainers(String dateStr, int limit, String indexName) {
+        log.info("Fetching top {} gainers for date: {}, index: {}", limit, dateStr, indexName);
 
-        // Parse date string in dd-MM-yyyy format
-        LocalDate tradeDate = parseUserDate(dateStr);
+        LocalDate searchDate = resolveDate(dateStr);
 
-        // If no date provided, use latest available date
-        LocalDate searchDate = tradeDate;
-        if (searchDate == null) {
-            searchDate = priceRepository.findLatestTradeDate()
-                    .orElseThrow(() -> new DateNotFoundException("No trading data available in database"));
+        List<NseDailyPrice> gainers;
+        if (indexName != null && !indexName.isBlank()) {
+            List<String> symbols = getActiveSymbolsForIndex(indexName);
+            gainers = priceRepository.findTopGainersForSymbols(searchDate, symbols, limit);
+        } else {
+            gainers = priceRepository.findTopGainers(searchDate, limit);
         }
-
-        // Validate date exists
-        if (!priceRepository.existsByTradeDate(searchDate)) {
-            throw new DateNotFoundException("No data found for date: " + searchDate);
-        }
-
-        List<NseDailyPrice> gainers = priceRepository.findTopGainers(searchDate, limit);
 
         List<StockDto> stockDtos = gainers.stream()
                 .map(this::mapToStockDto)
@@ -211,27 +205,20 @@ public class DataExplorerService {
     }
 
     /**
-     * API 6: Get top losers for a date
+     * API 6: Get top losers for a date, optionally filtered by index
      */
-    public TopMoversResponse getTopLosers(String dateStr, int limit) {
-        log.info("Fetching top {} losers for date: {}", limit, dateStr);
+    public TopMoversResponse getTopLosers(String dateStr, int limit, String indexName) {
+        log.info("Fetching top {} losers for date: {}, index: {}", limit, dateStr, indexName);
 
-        // Parse date string in dd-MM-yyyy format
-        LocalDate tradeDate = parseUserDate(dateStr);
+        LocalDate searchDate = resolveDate(dateStr);
 
-        // If no date provided, use latest available date
-        LocalDate searchDate = tradeDate;
-        if (searchDate == null) {
-            searchDate = priceRepository.findLatestTradeDate()
-                    .orElseThrow(() -> new DateNotFoundException("No trading data available in database"));
+        List<NseDailyPrice> losers;
+        if (indexName != null && !indexName.isBlank()) {
+            List<String> symbols = getActiveSymbolsForIndex(indexName);
+            losers = priceRepository.findTopLosersForSymbols(searchDate, symbols, limit);
+        } else {
+            losers = priceRepository.findTopLosers(searchDate, limit);
         }
-
-        // Validate date exists
-        if (!priceRepository.existsByTradeDate(searchDate)) {
-            throw new DateNotFoundException("No data found for date: " + searchDate);
-        }
-
-        List<NseDailyPrice> losers = priceRepository.findTopLosers(searchDate, limit);
 
         List<StockDto> stockDtos = losers.stream()
                 .map(this::mapToStockDto)
@@ -245,7 +232,56 @@ public class DataExplorerService {
                 .build();
     }
 
+    /**
+     * Get all stocks in an index for a given date with their daily price data.
+     */
+    public TopMoversResponse getStocksForIndex(String indexName, String dateStr) {
+        log.info("Fetching all stocks for index: {}, date: {}", indexName, dateStr);
+
+        LocalDate searchDate = resolveDate(dateStr);
+        List<String> symbols = getActiveSymbolsForIndex(indexName);
+
+        List<StockDto> stockDtos = priceRepository
+                .findByTradeDateAndSymbolIn(searchDate, symbols)
+                .stream()
+                .map(this::mapToStockDto)
+                .collect(Collectors.toList());
+
+        return TopMoversResponse.builder()
+                .stocks(stockDtos)
+                .tradeDate(searchDate)
+                .category(indexName.toUpperCase())
+                .count(stockDtos.size())
+                .build();
+    }
+
     // ── Helper Methods ──────────────────────────────────────────────────────
+
+    private LocalDate resolveDate(String dateStr) {
+        LocalDate tradeDate = parseUserDate(dateStr);
+        if (tradeDate == null) {
+            tradeDate = priceRepository.findLatestTradeDate()
+                    .orElseThrow(() -> new DateNotFoundException("No trading data available in database"));
+        }
+        if (!priceRepository.existsByTradeDate(tradeDate)) {
+            throw new DateNotFoundException("No data found for date: " + tradeDate);
+        }
+        return tradeDate;
+    }
+
+    private List<String> getActiveSymbolsForIndex(String indexName) {
+        List<String> symbols = indexMasterRepository
+                .findByIndexNameAndIsActiveTrue(indexName.toUpperCase())
+                .stream()
+                .map(IndexMaster::getSymbol)
+                .collect(Collectors.toList());
+        if (symbols.isEmpty()) {
+            throw new DateNotFoundException(
+                    "No constituents found for index: " + indexName
+                            + ". Run POST /api/v1/index-ingestion/sync first.");
+        }
+        return symbols;
+    }
 
     /**
      * Map NseDailyPrice entity to StockDto

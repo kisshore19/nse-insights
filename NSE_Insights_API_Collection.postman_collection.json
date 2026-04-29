@@ -1,0 +1,857 @@
+{
+  "info": {
+    "_postman_id": "nse-insights-api-v2",
+    "name": "NSE Insights API",
+    "description": "Complete API collection for NSE Insights — Bhav Data Ingestion, Index Data Ingestion, Stock Explorer, Candle Stats, and Index Candle Stats.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "latestDate",
+      "value": "2026-04-28",
+      "type": "string",
+      "description": "ISO date (yyyy-MM-dd) used as default for single-date requests"
+    },
+    {
+      "key": "fromDate",
+      "value": "2026-04-01",
+      "type": "string"
+    },
+    {
+      "key": "toDate",
+      "value": "2026-04-28",
+      "type": "string"
+    },
+    {
+      "key": "symbol",
+      "value": "RELIANCE",
+      "type": "string"
+    },
+    {
+      "key": "indexName",
+      "value": "NIFTY50",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Bhav Data Ingestion",
+      "description": "Download and manage NSE equity bhav copy data (sec_bhavdata_full_DDMMYYYY.csv)",
+      "item": [
+        {
+          "name": "Download — Single Date",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "download"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromTradeDate\": \"{{latestDate}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Download bhav data for a single trading date."
+          }
+        },
+        {
+          "name": "Download — Date Range",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "download"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromTradeDate\": \"{{fromDate}}\",\n  \"toTradeDate\": \"{{toDate}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Download bhav data for all dates in the given range (parallel)."
+          }
+        },
+        {
+          "name": "Download — Overwrite Existing",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "download"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromTradeDate\": \"{{latestDate}}\",\n  \"overwrite\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Force re-download and overwrite existing records for the date."
+          }
+        },
+        {
+          "name": "Get Status by Date",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/status/{{latestDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "status", "{{latestDate}}"]
+            },
+            "description": "Check if bhav data is downloaded for a specific date."
+          }
+        },
+        {
+          "name": "Get Available Dates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/available-dates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "available-dates"]
+            },
+            "description": "List all trading dates that have been successfully downloaded."
+          }
+        },
+        {
+          "name": "Get Download History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/history?page=0&size=20&status=ALL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "history"],
+              "query": [
+                { "key": "page",   "value": "0" },
+                { "key": "size",   "value": "20" },
+                { "key": "status", "value": "ALL", "description": "ALL | SUCCESS | FAILED | DELETED" }
+              ]
+            },
+            "description": "Paginated download audit log. Filter by status: ALL, SUCCESS, FAILED, DELETED."
+          }
+        },
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "summary"]
+            },
+            "description": "Overall ingestion stats — total dates, latest date, record count."
+          }
+        },
+        {
+          "name": "Delete Data by Date",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ingestion/{{latestDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ingestion", "{{latestDate}}"]
+            },
+            "description": "Delete all bhav records for a specific trading date."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Index Data Ingestion",
+      "description": "Download and manage NSE daily index close data (ind_close_all_DDMMYYYY.csv from nsearchives.nseindia.com)",
+      "item": [
+        {
+          "name": "Download — Single Date",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "download"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromTradeDate\": \"{{latestDate}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Download index close data (OHLC, P/E, P/B, Div Yield) for all NSE indices on a single date."
+          }
+        },
+        {
+          "name": "Download — Date Range",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "download"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromTradeDate\": \"{{fromDate}}\",\n  \"toTradeDate\": \"{{toDate}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Download index close data for all dates in range (parallel, skips weekends/holidays automatically on 404)."
+          }
+        },
+        {
+          "name": "Download — Overwrite Existing",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "download"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromTradeDate\": \"{{latestDate}}\",\n  \"overwrite\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Force re-download for a date even if already exists in DB."
+          }
+        },
+        {
+          "name": "Get Status by Date",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/status/{{latestDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "status", "{{latestDate}}"]
+            },
+            "description": "Check if index close data is downloaded for a specific date."
+          }
+        },
+        {
+          "name": "Get Available Dates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/available-dates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "available-dates"]
+            },
+            "description": "List all dates for which index close data exists in the DB."
+          }
+        },
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "summary"]
+            },
+            "description": "Total dates, latest/oldest date, total records for index close data."
+          }
+        },
+        {
+          "name": "Delete Data by Date",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-ingestion/{{latestDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-ingestion", "{{latestDate}}"]
+            },
+            "description": "Delete all index close records for a specific date."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Stock Explorer",
+      "description": "Query, filter, and explore stock price data. Supports index and sector filtering.",
+      "item": [
+        {
+          "name": "Get Top Gainers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/top-gainers?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "top-gainers"],
+              "query": [
+                { "key": "date",  "value": "",    "disabled": true, "description": "dd-MM-yyyy (default: latest)" },
+                { "key": "limit", "value": "10" },
+                { "key": "index", "value": "",    "disabled": true, "description": "e.g. NIFTY50 — filter to index constituents only" }
+              ]
+            },
+            "description": "Top gainers by % change. Optionally filter by index (requires index constituent sync)."
+          }
+        },
+        {
+          "name": "Get Top Gainers — Filtered by Index",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/top-gainers?limit=10&index=NIFTY50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "top-gainers"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "index", "value": "NIFTY50" }
+              ]
+            },
+            "description": "Top gainers within NIFTY50 constituents only."
+          }
+        },
+        {
+          "name": "Get Top Losers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/top-losers?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "top-losers"],
+              "query": [
+                { "key": "date",  "value": "",    "disabled": true, "description": "dd-MM-yyyy (default: latest)" },
+                { "key": "limit", "value": "10" },
+                { "key": "index", "value": "",    "disabled": true, "description": "e.g. NIFTY50" }
+              ]
+            },
+            "description": "Top losers by % change."
+          }
+        },
+        {
+          "name": "Get Top Losers — Filtered by Index",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/top-losers?limit=10&index=NIFTY50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "top-losers"],
+              "query": [
+                { "key": "limit", "value": "10" },
+                { "key": "index", "value": "NIFTY50" }
+              ]
+            },
+            "description": "Top losers within NIFTY50 constituents only."
+          }
+        },
+        {
+          "name": "Get Stocks by Index",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/by-index?index=NIFTY50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "by-index"],
+              "query": [
+                { "key": "index", "value": "NIFTY50", "description": "Required. Supported: NIFTY50, NIFTY100, NIFTY200, NIFTY500, NIFTYMIDCAP50, NIFTYMIDCAP100, etc." },
+                { "key": "date",  "value": "",         "disabled": true, "description": "dd-MM-yyyy (default: latest)" }
+              ]
+            },
+            "description": "All stocks belonging to a given index with their daily price data, sorted by % change desc."
+          }
+        },
+        {
+          "name": "Get Stock Detail",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/{{symbol}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "{{symbol}}"],
+              "query": [
+                { "key": "date", "value": "", "disabled": true, "description": "dd-MM-yyyy (default: latest)" }
+              ]
+            },
+            "description": "OHLC + volume + delivery data for a single symbol on a given date."
+          }
+        },
+        {
+          "name": "Get Available Dates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/dates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "dates"]
+            },
+            "description": "All trading dates that have bhav data loaded."
+          }
+        },
+        {
+          "name": "Get Sectors",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/sectors",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "sectors"]
+            },
+            "description": "Distinct sector names from the index_master table."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Candle Stats",
+      "description": "Build and query pre-computed OHLC + volume + delivery statistics per symbol per timeframe period.",
+      "item": [
+        {
+          "name": "Build Stats — All Years",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=YEAR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR" }
+              ]
+            },
+            "description": "Build yearly stats for all symbols across all available years."
+          }
+        },
+        {
+          "name": "Build Stats — Specific Year",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=YEAR&period=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR" },
+                { "key": "period",    "value": "2024" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — All Quarters",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=QUARTER",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "QUARTER" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — Specific Quarter",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=QUARTER&period=2024-Q1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "QUARTER" },
+                { "key": "period",    "value": "2024-Q1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — All Months",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=MONTH",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "MONTH" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — Month Range",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=MONTH&from=2024-01&to=2024-06",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "MONTH" },
+                { "key": "from",      "value": "2024-01" },
+                { "key": "to",        "value": "2024-06" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — All Weeks",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=WEEK",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "WEEK" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — Specific Week",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/build?timeframe=WEEK&period=2024-W03",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "WEEK" },
+                { "key": "period",    "value": "2024-W03" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Available Periods",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/available?timeframe=YEAR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "available"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR", "description": "YEAR | QUARTER | MONTH | WEEK" }
+              ]
+            },
+            "description": "Returns all period keys that have stats built, with their date ranges. Use this to find valid period values."
+          }
+        },
+        {
+          "name": "Get Stats — Symbol + Period",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/{{symbol}}/stats?timeframe=YEAR&period=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "{{symbol}}", "stats"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR",  "description": "YEAR | QUARTER | MONTH | WEEK" },
+                { "key": "period",    "value": "2024",  "description": "YEAR→2024  QUARTER→2024-Q1  MONTH→2024-01  WEEK→2024-W03" }
+              ]
+            },
+            "description": "Fetch OHLC + high/low dates + volume & delivery extremes for a symbol in a given period."
+          }
+        },
+        {
+          "name": "Screen — All Symbols (no filters)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/screen?timeframe=YEAR&period=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR" },
+                { "key": "period",    "value": "2024" }
+              ]
+            },
+            "description": "Returns all symbols for a timeframe + period. Default size=2500 so UI gets everything at once."
+          }
+        },
+        {
+          "name": "Screen — With Filters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/screen?timeframe=YEAR&period=2024&trend=UP&minPctChange=20&minClose=100&sortBy=PCT_CHANGE&sortDir=DESC&page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe",    "value": "YEAR" },
+                { "key": "period",       "value": "2024" },
+                { "key": "trend",        "value": "UP",          "description": "UP | DOWN | SIDE" },
+                { "key": "minPctChange", "value": "20" },
+                { "key": "maxPctChange", "value": "",            "disabled": true },
+                { "key": "minClose",     "value": "100" },
+                { "key": "maxClose",     "value": "",            "disabled": true },
+                { "key": "minHighVol",   "value": "",            "disabled": true },
+                { "key": "minHighDeliv", "value": "",            "disabled": true },
+                { "key": "minDelivPct",  "value": "",            "disabled": true },
+                { "key": "highDatePos",  "value": "",            "disabled": true, "description": "START | MIDDLE | END" },
+                { "key": "lowDatePos",   "value": "",            "disabled": true, "description": "START | MIDDLE | END" },
+                { "key": "sortBy",       "value": "PCT_CHANGE",  "description": "PCT_CHANGE | CLOSE | HIGH_VOL | HIGH_DELIV | DELIV_PCT" },
+                { "key": "sortDir",      "value": "DESC" },
+                { "key": "page",         "value": "0" },
+                { "key": "size",         "value": "50" }
+              ]
+            },
+            "description": "Screen with filters — uptrending stocks, min 20% annual gain, price above ₹100."
+          }
+        },
+        {
+          "name": "Screen — High Volume Stocks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/screen?timeframe=MONTH&period=2024-01&minHighVol=1000000&sortBy=HIGH_VOL&sortDir=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe",  "value": "MONTH" },
+                { "key": "period",     "value": "2024-01" },
+                { "key": "minHighVol", "value": "1000000" },
+                { "key": "sortBy",     "value": "HIGH_VOL" },
+                { "key": "sortDir",    "value": "DESC" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Screen — High Delivery %",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/candles/stats/screen?timeframe=MONTH&period=2024-01&minDelivPct=60&sortBy=DELIV_PCT&sortDir=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe",  "value": "MONTH" },
+                { "key": "period",     "value": "2024-01" },
+                { "key": "minDelivPct","value": "60" },
+                { "key": "sortBy",     "value": "DELIV_PCT" },
+                { "key": "sortDir",    "value": "DESC" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Index Candle Stats",
+      "description": "Build and query pre-computed OHLC + P/E + P/B statistics per index per timeframe period.",
+      "item": [
+        {
+          "name": "Build Stats — All Years",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=YEAR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR" }
+              ]
+            },
+            "description": "Build yearly stats for all indices across all available years."
+          }
+        },
+        {
+          "name": "Build Stats — Specific Year",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=YEAR&period=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR" },
+                { "key": "period",    "value": "2024" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — All Quarters",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=QUARTER",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "QUARTER" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — Specific Quarter",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=QUARTER&period=2024-Q1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "QUARTER" },
+                { "key": "period",    "value": "2024-Q1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — All Months",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=MONTH",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "MONTH" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — Month Range",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=MONTH&from=2024-01&to=2024-06",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "MONTH" },
+                { "key": "from",      "value": "2024-01" },
+                { "key": "to",        "value": "2024-06" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — All Weeks",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=WEEK",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "WEEK" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Build Stats — Specific Week",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/build?timeframe=WEEK&period=2024-W03",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "build"],
+              "query": [
+                { "key": "timeframe", "value": "WEEK" },
+                { "key": "period",    "value": "2024-W03" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Available Periods",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/available?timeframe=YEAR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "available"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR", "description": "YEAR | QUARTER | MONTH | WEEK" }
+              ]
+            },
+            "description": "Returns all period keys that have stats built, with their date ranges. Use this to find valid period values."
+          }
+        },
+        {
+          "name": "Get Stats — Index + Period",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/{{indexName}}/stats?timeframe=YEAR&period=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "{{indexName}}", "stats"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR",  "description": "YEAR | QUARTER | MONTH | WEEK" },
+                { "key": "period",    "value": "2024",  "description": "YEAR→2024  QUARTER→2024-Q1  MONTH→2024-01  WEEK→2024-W03" }
+              ]
+            },
+            "description": "Fetch OHLC + P/E + P/B + high/low dates + volume extremes for an index in a given period."
+          }
+        },
+        {
+          "name": "Screen — All Indices (no filters)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/screen?timeframe=YEAR&period=2024",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe", "value": "YEAR" },
+                { "key": "period",    "value": "2024" }
+              ]
+            },
+            "description": "Returns all indices for a timeframe + period. Default size=500 so UI gets everything at once."
+          }
+        },
+        {
+          "name": "Screen — With Filters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/screen?timeframe=YEAR&period=2024&trend=UP&minPctChange=10&minClose=15000&sortBy=PCT_CHANGE&sortDir=DESC&page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe",    "value": "YEAR" },
+                { "key": "period",       "value": "2024" },
+                { "key": "trend",        "value": "UP",          "description": "UP | DOWN | SIDE" },
+                { "key": "minPctChange", "value": "10" },
+                { "key": "maxPctChange", "value": "",            "disabled": true },
+                { "key": "minClose",     "value": "15000" },
+                { "key": "maxClose",     "value": "",            "disabled": true },
+                { "key": "minHighVol",   "value": "",            "disabled": true },
+                { "key": "highDatePos",  "value": "",            "disabled": true, "description": "START | MIDDLE | END" },
+                { "key": "lowDatePos",   "value": "",            "disabled": true, "description": "START | MIDDLE | END" },
+                { "key": "sortBy",       "value": "PCT_CHANGE",  "description": "PCT_CHANGE | CLOSE | HIGH_VOL | PE | PB" },
+                { "key": "sortDir",      "value": "DESC" },
+                { "key": "page",         "value": "0" },
+                { "key": "size",         "value": "50" }
+              ]
+            },
+            "description": "Screen with filters — uptrending indices, min 10% annual gain, close above 15,000."
+          }
+        },
+        {
+          "name": "Screen — High Volume Indices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-candles/stats/screen?timeframe=MONTH&period=2024-01&minHighVol=50000000&sortBy=HIGH_VOL&sortDir=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-candles", "stats", "screen"],
+              "query": [
+                { "key": "timeframe",  "value": "MONTH" },
+                { "key": "period",     "value": "2024-01" },
+                { "key": "minHighVol", "value": "50000000" },
+                { "key": "sortBy",     "value": "HIGH_VOL" },
+                { "key": "sortDir",    "value": "DESC" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

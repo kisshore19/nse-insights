@@ -58,6 +58,30 @@ public interface NseDailyPriceRepository extends JpaRepository<NseDailyPrice, Lo
     List<NseDailyPrice> findTopLosers(@Param("tradeDate") LocalDate tradeDate,
                                       @Param("limit")     int limit);
 
+    // ── Index-filtered Top Gainers / Losers ───────────────────────────────────
+    @Query(value = """
+            SELECT * FROM nse_daily_price
+            WHERE trade_date = :tradeDate AND symbol IN :symbols AND pct_change IS NOT NULL
+            ORDER BY pct_change DESC LIMIT :limit
+            """, nativeQuery = true)
+    List<NseDailyPrice> findTopGainersForSymbols(@Param("tradeDate") LocalDate tradeDate,
+                                                 @Param("symbols")   List<String> symbols,
+                                                 @Param("limit")     int limit);
+
+    @Query(value = """
+            SELECT * FROM nse_daily_price
+            WHERE trade_date = :tradeDate AND symbol IN :symbols AND pct_change IS NOT NULL
+            ORDER BY pct_change ASC LIMIT :limit
+            """, nativeQuery = true)
+    List<NseDailyPrice> findTopLosersForSymbols(@Param("tradeDate") LocalDate tradeDate,
+                                                @Param("symbols")   List<String> symbols,
+                                                @Param("limit")     int limit);
+
+    // All stocks for a date filtered by symbol list (for index-based stock view)
+    @Query("SELECT p FROM NseDailyPrice p WHERE p.tradeDate = :tradeDate AND p.symbol IN :symbols ORDER BY p.pctChange DESC")
+    List<NseDailyPrice> findByTradeDateAndSymbolIn(@Param("tradeDate") LocalDate tradeDate,
+                                                   @Param("symbols")   List<String> symbols);
+
     // =========================================================================
     // SINGLE SYMBOL — DAY
     // =========================================================================

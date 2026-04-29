@@ -354,6 +354,24 @@ h1 span { color:var(--accent); }
 .skeleton-row:nth-child(odd) .skeleton-bar { animation-delay: 0.15s; }
 .skeleton-row:nth-child(3n) .skeleton-bar  { animation-delay: 0.3s; }
 
+/* ── Tabs ── */
+.tabs {
+  display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.tab {
+  padding:12px 20px; cursor:pointer; border:none; background:transparent;
+  font-family:var(--mono); font-size:11px; letter-spacing:1.5px;
+  color:var(--muted); text-transform:uppercase; transition:all .2s;
+  border-bottom:2px solid transparent; white-space:nowrap;
+}
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ── Tab content ── */
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
 /* ── Responsive ── */
 @media(max-width:900px) {
   .load-panel { grid-template-columns:1fr 1fr; }
@@ -372,7 +390,13 @@ h1 span { color:var(--accent); }
 
   <!-- Header -->
   <div class="eyebrow">NSE Insights · Screener</div>
-  <h1>Stock <span>Screener</span></h1>
+  <h1>Stock & Index <span>Screener</span></h1>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('stocks')">📈 Stock Screener</button>
+    <button class="tab" onclick="switchTab('indices')">📊 Index Screener</button>
+  </div>
 
   <!-- API Config -->
   <div style="background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px 24px;margin-bottom:12px;
@@ -387,6 +411,9 @@ h1 span { color:var(--accent); }
     </button>
     <div id="connStatus" style="font-family:var(--mono);font-size:10px;color:var(--muted);padding-bottom:12px;white-space:nowrap"></div>
   </div>
+
+  <!-- ── STOCKS TAB ── -->
+  <div id="stocks-tab" class="tab-content active">
 
   <!-- Load panel -->
   <div class="load-panel">
@@ -584,9 +611,163 @@ h1 span { color:var(--accent); }
     <!-- Pagination -->
     <div class="pagination">
       <div class="page-info" id="pageInfo">—</div>
-      <div class="page-btns" id="pageBtns"></div>
+       <div class="page-btns" id="pageBtns"></div>
+     </div>
+   </div>
+
+  </div><!-- end stocks-tab -->
+
+  <!-- ── INDICES TAB ── -->
+  <div id="indices-tab" class="tab-content">
+
+    <!-- Load panel -->
+    <div class="load-panel">
+      <div class="field">
+        <label>Timeframe</label>
+        <select id="idx-tf">
+          <option value="YEAR">YEAR</option>
+          <option value="QUARTER">QUARTER</option>
+          <option value="MONTH">MONTH</option>
+          <option value="WEEK">WEEK</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Period</label>
+        <select id="idx-period">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max Results</label>
+        <select id="idx-maxSize">
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="500" selected>All (~500)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="idx-btnLoad" onclick="loadIndexData()">Load Data</button>
     </div>
-  </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" id="idx-filterBar" style="display:none">
+      <div class="filter-bar-top">
+        <div class="filter-title">⚙ Filters</div>
+        <div class="filter-actions">
+          <button class="btn btn-ghost" onclick="clearIndexFilters()" style="padding:6px 14px;font-size:10px">Clear All</button>
+          <button class="btn btn-primary" onclick="applyIndexFilters()" style="padding:6px 14px;font-size:10px">Apply</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 160px 260px;gap:12px;align-items:end;">
+        <div class="filter-field">
+          <label>Index Search</label>
+          <input id="idx-f-symbol" type="text" placeholder="e.g. NIFTY50, NIFTY100..."
+                 autocomplete="off" autocapitalize="characters"
+                 oninput="this.value=this.value.toUpperCase(); applyIndexFilters()"
+                 style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
+        </div>
+        <div class="filter-field">
+          <label>Trend</label>
+          <select id="idx-f-trend" onchange="applyIndexFilters()">
+            <option value="">All</option>
+            <option value="UP">UP</option>
+            <option value="DOWN">DOWN</option>
+            <option value="SIDE">SIDE</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Close Range</label>
+          <select id="idx-f-closerange" onchange="applyIndexFilters()">
+            <option value="">All</option>
+            <option value="high">High (>20000)</option>
+            <option value="mid">Medium (10000-20000)</option>
+            <option value="low">Low (<10000)</option>
+          </select>
+        </div>
+      </div>
+      <div class="active-filters" id="idx-activeFilters" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- States -->
+    <div class="state-box visible" id="idx-stateEmpty">
+      <div class="state-icon" style="color:var(--muted)">◎</div>
+      <div class="state-msg">Select a timeframe and period, then click Load Data.</div>
+    </div>
+    <div class="state-box" id="idx-stateLoading">
+      <div class="spinner"></div>
+      <div class="state-msg" id="idx-loadingMsg">Loading index data...</div>
+    </div>
+    <div class="state-box error" id="idx-stateError">
+      <div class="state-icon">⚠</div>
+      <div class="state-msg" id="idx-errorMsg">Error</div>
+    </div>
+    <div class="state-box" id="idx-stateNoMatch">
+      <div class="state-icon" style="color:var(--muted)">⊘</div>
+      <div class="state-msg">No indices match the current filters.</div>
+    </div>
+
+    <!-- Results area -->
+    <div id="idx-resultsArea" style="display:none">
+
+      <!-- Stats + sort bar -->
+      <div class="stats-bar">
+        <div class="stats-chips">
+          <div class="chip">Total loaded <strong id="idx-statTotal">0</strong></div>
+          <div class="chip">Matched <strong id="idx-statMatched">0</strong></div>
+          <div class="chip up">UP <strong id="idx-statUp">0</strong></div>
+          <div class="chip down">DOWN <strong id="idx-statDown">0</strong></div>
+          <div class="chip side">SIDE <strong id="idx-statSide">0</strong></div>
+        </div>
+        <div class="sort-controls">
+          <label>Sort</label>
+          <select id="idx-sortCol" onchange="applyIndexFilters()">
+            <option value="pctChange">% Change</option>
+            <option value="close">Close</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+            <option value="highVolQty">High Volume</option>
+            <option value="pe">P/E</option>
+            <option value="pb">P/B</option>
+          </select>
+          <select id="idx-sortDir" onchange="applyIndexFilters()">
+            <option value="desc">DESC</option>
+            <option value="asc">ASC</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div id="idx-topScroll" style="overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:3px;">
+        <div id="idx-topScrollInner" style="height:1px;"></div>
+      </div>
+      <div class="table-wrap fade" id="idx-tableWrap">
+        <table class="tbl" id="idx-mainTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th onclick="doIndexSort('symbol')">Index Name<span class="sort-arrow" id="idx-arr-symbol"></span></th>
+              <th onclick="doIndexSort('close')" class="td-right">Close<span class="sort-arrow" id="idx-arr-close"></span></th>
+              <th onclick="doIndexSort('pctChange')" class="td-right">% Chg<span class="sort-arrow" id="idx-arr-pctChange"></span></th>
+              <th onclick="doIndexSort('trend')">Trend<span class="sort-arrow" id="idx-arr-trend"></span></th>
+              <th onclick="doIndexSort('high')" class="td-right">High<span class="sort-arrow" id="idx-arr-high"></span></th>
+              <th onclick="doIndexSort('low')" class="td-right">Low<span class="sort-arrow" id="idx-arr-low"></span></th>
+              <th onclick="doIndexSort('pe')" class="td-right">P/E<span class="sort-arrow" id="idx-arr-pe"></span></th>
+              <th onclick="doIndexSort('pb')" class="td-right">P/B<span class="sort-arrow" id="idx-arr-pb"></span></th>
+              <th>High Date</th>
+              <th>Low Date</th>
+            </tr>
+          </thead>
+          <tbody id="idx-tableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="page-info" id="idx-pageInfo">—</div>
+        <div class="page-btns" id="idx-pageBtns"></div>
+      </div>
+    </div>
+
+  </div><!-- end indices-tab -->
 
 </div>
 
@@ -1757,6 +1938,285 @@ function showTrendCloseStats() {
 }
 
 window.addEventListener('load', syncTopScroll);
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tabName) {
+  // Update tab buttons
+  document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+  event.target.classList.add('active');
+
+  // Update tab content
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  document.getElementById(tabName + '-tab').classList.add('active');
+
+  // Initialize period dropdown if switching to indices
+  if (tabName === 'indices') {
+    updateIndexPeriodField('YEAR');
+  }
+}
+
+// ── Index period field update ──────────────────────────────────────────────
+async function updateIndexPeriodField(tf) {
+  const sel = document.getElementById('idx-period');
+  sel.innerHTML = '<option value="">Loading...</option>';
+  sel.disabled  = true;
+
+  try {
+    const res  = await fetch(`${getBaseUrl()}/api/v1/index-candles/stats/available?timeframe=${tf}`);
+    const json = await res.json();
+    const wrapper = json.data !== undefined ? json.data : json;
+    const periods = wrapper.periods || [];
+
+    if (periods.length === 0) {
+      sel.innerHTML = '<option value="">No periods built yet</option>';
+      return;
+    }
+
+    const reversed = [...periods].reverse();
+    sel.innerHTML = reversed.map(p =>
+      `<option value="${p.periodKey}">${p.periodKey} &nbsp;(${fmtDateShort(p.candleDate)} – ${fmtDateShort(p.candleEndDate)})</option>`
+    ).join('');
+    sel.disabled = false;
+
+  } catch(e) {
+    console.warn('[Index Screener] could not fetch available periods:', e.message);
+    const FALLBACK = { YEAR:'2024', QUARTER:'2024-Q1', MONTH:'2024-01', WEEK:'2024-W03' };
+    sel.innerHTML = `<option value="${FALLBACK[tf]}">${FALLBACK[tf]}</option>`;
+    sel.disabled  = false;
+  }
+}
+
+document.getElementById('idx-tf').addEventListener('change', function() {
+  updateIndexPeriodField(this.value);
+});
+
+// ── Global index state ─────────────────────────────────────────────────────
+let idxAllData     = [];
+let idxFiltered    = [];
+let idxCurrentPage = 0;
+let idxSortCol     = 'pctChange';
+let idxSortDir     = 'desc';
+
+function normaliseIndex(r) {
+  const open  = toNum(r.open);
+  const close = toNum(r.close || r.lastPrice || r.closePrice);
+  const hVol  = toNum(r.highVolQty  || r.highestVolume?.quantity);
+  return {
+    symbol:        r.symbol || r.indexName,
+    candleDate:    r.candleDate,
+    candleEndDate: r.candleEndDate,
+    open, close,
+    high:          toNum(r.high || r.highPrice),
+    low:           toNum(r.low  || r.lowPrice),
+    pctChange:     toNum(r.pctChange) ?? (open && close && open !== 0
+                     ? +((close - open) / Math.abs(open) * 100).toFixed(2) : null),
+    trend:         r.trend || '—',
+    highPriceDate: r.highPriceDate || r.highDate,
+    lowPriceDate:  r.lowPriceDate  || r.lowDate,
+    highVolQty:    hVol,
+    highVolDate:   r.highVolDate   || r.highestVolume?.date,
+    pe:            toNum(r.pe),
+    pb:            toNum(r.pb),
+    _periodStart:  r.candleDate,
+    _periodEnd:    r.candleEndDate,
+  };
+}
+
+async function loadIndexData() {
+  const tf     = document.getElementById('idx-tf').value;
+  const period = document.getElementById('idx-period').value;
+  const size   = parseInt(document.getElementById('idx-maxSize').value) || 500;
+
+  if (!period) { alert('Select a period'); return; }
+
+  showIndexSkeletonTable();
+  document.getElementById('idx-btnLoad').disabled = true;
+  idxAllData = [];
+  idxFiltered = [];
+
+  try {
+    const url  = `${getBaseUrl()}/api/v1/index-candles/stats/screen?timeframe=${tf}&period=${period}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    const wrapper = json.data !== undefined ? json.data : json;
+    const rows    = Array.isArray(wrapper) ? wrapper
+                  : Array.isArray(wrapper.results) ? wrapper.results
+                  : Array.isArray(wrapper.data)    ? wrapper.data : [];
+
+    if (rows.length === 0) {
+      document.getElementById('idx-errorMsg').textContent = `No stats found for ${tf} · ${period}. Build stats first.`;
+      setIndexState('error');
+      return;
+    }
+
+    idxAllData = rows.map(normaliseIndex);
+    document.getElementById('idx-statTotal').textContent = idxAllData.length;
+
+    applyIndexFilters();
+    setIndexState('results');
+    document.getElementById('idx-btnLoad').disabled = false;
+
+  } catch(e) {
+    console.error('[Index Screener] load error:', e);
+    document.getElementById('idx-errorMsg').textContent = e.message || 'Load failed';
+    setIndexState('error');
+    document.getElementById('idx-btnLoad').disabled = false;
+  }
+}
+
+function setIndexState(name) {
+  ['Empty','Loading','Error','NoMatch'].forEach(s =>
+    document.getElementById('idx-state' + s).classList.remove('visible'));
+  document.getElementById('idx-resultsArea').style.display = 'none';
+  document.getElementById('idx-filterBar').style.display   = 'none';
+
+  if (name === 'results' || name === 'noMatch') {
+    document.getElementById('idx-filterBar').style.display = 'block';
+  }
+  if (name === 'results') {
+    document.getElementById('idx-resultsArea').style.display = 'block';
+  } else if (name === 'noMatch') {
+    document.getElementById('idx-stateNoMatch').classList.add('visible');
+  } else if (name) {
+    const id = 'idx-state' + name.charAt(0).toUpperCase() + name.slice(1);
+    const el = document.getElementById(id);
+    if (el) el.classList.add('visible');
+  }
+}
+
+function showIndexSkeletonTable() {
+  document.getElementById('idx-filterBar').style.display = 'block';
+  document.getElementById('idx-resultsArea').style.display = 'block';
+  ['idx-stateEmpty','idx-stateLoading','idx-stateError','idx-stateNoMatch'].forEach(id =>
+    document.getElementById(id).classList.remove('visible'));
+
+  const tbody = document.getElementById('idx-tableBody');
+  let html = '';
+  for (let i = 0; i < 12; i++) {
+    html += `<tr class="skeleton-row">
+      <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+function clearIndexFilters() {
+  document.getElementById('idx-f-symbol').value = '';
+  document.getElementById('idx-f-trend').value = '';
+  document.getElementById('idx-f-closerange').value = '';
+  applyIndexFilters();
+}
+
+function applyIndexFilters() {
+  const symbol = document.getElementById('idx-f-symbol').value.toUpperCase();
+  const trend = document.getElementById('idx-f-trend').value;
+  const closerange = document.getElementById('idx-f-closerange').value;
+
+  idxFiltered = idxAllData.filter(r => {
+    if (symbol && !r.symbol.includes(symbol)) return false;
+    if (trend && r.trend !== trend) return false;
+    if (closerange === 'high' && r.close < 20000) return false;
+    if (closerange === 'mid' && (r.close < 10000 || r.close >= 20000)) return false;
+    if (closerange === 'low' && r.close >= 10000) return false;
+    return true;
+  });
+
+  // Update stats
+  document.getElementById('idx-statMatched').textContent = idxFiltered.length;
+  document.getElementById('idx-statUp').textContent = idxFiltered.filter(r => r.trend === 'UP').length;
+  document.getElementById('idx-statDown').textContent = idxFiltered.filter(r => r.trend === 'DOWN').length;
+  document.getElementById('idx-statSide').textContent = idxFiltered.filter(r => r.trend === 'SIDE').length;
+
+  // Reset pagination and render
+  idxCurrentPage = 0;
+  renderIndexTable();
+  renderIndexPagination();
+}
+
+function doIndexSort(col) {
+  if (idxSortCol === col) {
+    idxSortDir = idxSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    idxSortCol = col;
+    idxSortDir = 'desc';
+  }
+  renderIndexTable();
+}
+
+function renderIndexTable() {
+  const sortedData = [...idxFiltered].sort((a, b) => {
+    let aVal = a[idxSortCol];
+    let bVal = b[idxSortCol];
+    if (aVal == null) aVal = idxSortDir === 'desc' ? -Infinity : Infinity;
+    if (bVal == null) bVal = idxSortDir === 'desc' ? -Infinity : Infinity;
+    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    return idxSortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const start = idxCurrentPage * 50;
+  const end = start + 50;
+  const pageData = sortedData.slice(start, end);
+
+  let html = '';
+  pageData.forEach((r, i) => {
+    const trendColor = r.trend === 'UP' ? 'var(--up)' : r.trend === 'DOWN' ? 'var(--down)' : 'var(--side)';
+    html += `<tr class="clickable">
+      <td style="text-align:center;color:var(--muted);">${start + i + 1}</td>
+      <td class="td-symbol">${r.symbol}</td>
+      <td class="td-right">${fP(r.close)}</td>
+      <td class="td-right" style="color:${r.pctChange >= 0 ? 'var(--up)' : 'var(--down)'};">${fPct(r.pctChange)}</td>
+      <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
+      <td class="td-right">${fP(r.high)}</td>
+      <td class="td-right">${fP(r.low)}</td>
+      <td class="td-right">${r.pe != null ? r.pe.toFixed(2) : '—'}</td>
+      <td class="td-right">${r.pb != null ? r.pb.toFixed(2) : '—'}</td>
+      <td class="td-muted">${fD(r.highPriceDate)}</td>
+      <td class="td-muted">${fD(r.lowPriceDate)}</td>
+    </tr>`;
+  });
+
+  if (html === '') {
+    html = `<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted);">No indices found</td></tr>`;
+  }
+
+  document.getElementById('idx-tableBody').innerHTML = html;
+}
+
+function renderIndexPagination() {
+  const total = idxFiltered.length;
+  const pages = Math.ceil(total / 50);
+  const info = `Showing ${Math.min(idxCurrentPage * 50 + 1, total)}–${Math.min((idxCurrentPage + 1) * 50, total)} of ${total}`;
+  document.getElementById('idx-pageInfo').textContent = info;
+
+  let html = '';
+  if (idxCurrentPage > 0) html += `<button class="page-btn" onclick="idxCurrentPage=0;renderIndexTable();renderIndexPagination();">«</button>`;
+  if (idxCurrentPage > 0) html += `<button class="page-btn" onclick="idxCurrentPage--;renderIndexTable();renderIndexPagination();">‹</button>`;
+
+  for (let i = Math.max(0, idxCurrentPage - 2); i < Math.min(pages, idxCurrentPage + 3); i++) {
+    html += `<button class="page-btn ${i === idxCurrentPage ? 'active' : ''}" onclick="idxCurrentPage=${i};renderIndexTable();renderIndexPagination();">${i + 1}</button>`;
+  }
+
+  if (idxCurrentPage < pages - 1) html += `<button class="page-btn" onclick="idxCurrentPage++;renderIndexTable();renderIndexPagination();">›</button>`;
+  if (idxCurrentPage < pages - 1) html += `<button class="page-btn" onclick="idxCurrentPage=${pages - 1};renderIndexTable();renderIndexPagination();">»</button>`;
+
+  document.getElementById('idx-pageBtns').innerHTML = html;
+}
+
+window.addEventListener('load', () => {
+  syncTopScroll();
+  updatePeriodField('YEAR');
+  loadSavedApiUrl();
+});
 </script>
 </body>
 </html>
