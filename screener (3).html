@@ -4,23 +4,23 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NSE · Stock Screener</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:      #080b10;
-  --surf:    #0e1318;
-  --surf2:   #111a22;
-  --border:  #1a2230;
-  --border2: #243040;
-  --text:    #c8d8e8;
-  --muted:   #4a6070;
-  --dim:     #1a2535;
-  --up:      #00d98b;
-  --down:    #ff4560;
-  --side:    #f5a623;
-  --accent:  #0ea5e9;
-  --mono:    'IBM Plex Mono', monospace;
-  --sans:    'Syne', sans-serif;
+  --bg:      #f5f7fc;
+  --surf:    #ffffff;
+  --surf2:   #eef1f8;
+  --border:  #dde2f0;
+  --border2: #c8cfe3;
+  --text:    #111827;
+  --muted:   #6b7280;
+  --dim:     #eef1f8;
+  --up:      #059669;
+  --down:    #dc2626;
+  --side:    #d97706;
+  --accent:  #4f46e5;
+  --mono:    'JetBrains Mono', monospace;
+  --sans:    'Plus Jakarta Sans', sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -31,9 +31,9 @@ body {
 body::before {
   content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
   background-image:
-    linear-gradient(rgba(14,165,233,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(14,165,233,.025) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(rgba(79,70,229,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,70,229,.04) 1px, transparent 1px);
+  background-size: 56px 56px;
 }
 
 /* ── Layout ── */
@@ -41,13 +41,18 @@ body::before {
 
 /* ── Header ── */
 .eyebrow {
-  font-family:var(--mono); font-size:10px; letter-spacing:4px;
-  color:var(--muted); text-transform:uppercase; margin-bottom:10px;
+  font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:4px;
+  color:var(--muted); text-transform:uppercase; margin-bottom:12px;
   display:flex; align-items:center; gap:10px;
 }
-.eyebrow::before { content:''; width:24px; height:1px; background:var(--accent); }
-h1 { font-size:clamp(24px,4vw,38px); font-weight:800; color:#fff; letter-spacing:-1.5px; margin-bottom:28px; }
-h1 span { color:var(--accent); }
+.eyebrow::before { content:''; width:28px; height:2px; border-radius:2px; background:linear-gradient(90deg,var(--accent),transparent); }
+h1 {
+  font-family: var(--sans); font-size:clamp(26px,4vw,44px); font-weight:800;
+  letter-spacing:-2px; margin-bottom:28px; line-height:1.1;
+  background: linear-gradient(120deg, #111827 0%, #4338ca 55%, var(--accent) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+h1 span { /* inherits gradient naturally */ }
 
 /* ── Load panel ── */
 .load-panel {
@@ -67,9 +72,9 @@ h1 span { color:var(--accent); }
 }
 .field input::placeholder { color:var(--muted); }
 .field input:focus, .field select:focus {
-  border-color:var(--accent); box-shadow:0 0 0 3px rgba(14,165,233,.1);
+  border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,70,229,.1);
 }
-.field select option { background:#0e1318; }
+.field select option { background:#ffffff; }
 .btn {
   padding:10px 22px; border-radius:8px; border:none; cursor:pointer;
   font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:1px;
@@ -77,7 +82,7 @@ h1 span { color:var(--accent); }
 }
 .btn:hover { opacity:.85; } .btn:active { transform:scale(.97); }
 .btn:disabled { opacity:.4; cursor:not-allowed; }
-.btn-primary { background:var(--accent); color:#000; }
+.btn-primary { background:var(--accent); color:#fff; }
 .btn-ghost   { background:transparent; color:var(--muted); border:1px solid var(--border2); }
 
 /* ── Filter bar ── */
@@ -111,16 +116,16 @@ h1 span { color:var(--accent); }
   padding:8px 10px; outline:none; transition:border-color .2s; -webkit-appearance:none;
 }
 .filter-field input:focus, .filter-field select:focus { border-color:var(--accent); }
-.filter-field select option { background:#0e1318; }
+.filter-field select option { background:#ffffff; }
 
 /* active filter badge */
 .filter-badge {
   display:inline-flex; align-items:center; gap:5px;
-  background:rgba(14,165,233,.12); border:1px solid rgba(14,165,233,.3);
+  background:rgba(79,70,229,.08); border:1px solid rgba(79,70,229,.25);
   color:var(--accent); border-radius:5px; padding:2px 8px;
   font-family:var(--mono); font-size:10px; cursor:pointer;
 }
-.filter-badge:hover { background:rgba(14,165,233,.2); }
+.filter-badge:hover { background:rgba(79,70,229,.15); }
 .active-filters { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; min-height:22px; }
 
 /* ── Stats bar ── */
@@ -172,8 +177,8 @@ h1 span { color:var(--accent); }
 .tbl td.prev-col { background: rgba(167,139,250,.03); border-left: 1px solid rgba(167,139,250,.1); }
 
 /* Signal columns */
-.tbl th.sig-col { color: var(--side) !important; background: rgba(245,166,35,.04); border-left: 1px solid rgba(245,166,35,.15); text-align:center; }
-.tbl td.sig-col { background: rgba(245,166,35,.02); border-left: 1px solid rgba(245,166,35,.08); text-align:center; }
+.tbl th.sig-col { color: var(--side) !important; background: rgba(245,158,11,.04); border-left: 1px solid rgba(245,158,11,.15); text-align:center; }
+.tbl td.sig-col { background: rgba(245,158,11,.02); border-left: 1px solid rgba(245,158,11,.08); text-align:center; }
 
 /* Signal icon badge */
 .sig {
@@ -182,9 +187,9 @@ h1 span { color:var(--accent); }
   font-size: 13px; font-weight: 700; cursor: default;
   position: relative;
 }
-.sig.yes  { color: var(--up);   background: rgba(0,217,139,.15); }
-.sig.no   { color: var(--down); background: rgba(255,69,96,.15);  }
-.sig.neu  { color: var(--muted);background: rgba(255,255,255,.06);}
+.sig.yes  { color: var(--up);   background: rgba(5,150,105,.12);  }
+.sig.no   { color: var(--down); background: rgba(220,38,38,.1);   }
+.sig.neu  { color: var(--muted);background: rgba(0,0,0,.05);      }
 .sig.na   { color: var(--muted);background: transparent; font-size:10px; }
 
 /* Tooltip */
@@ -192,7 +197,7 @@ h1 span { color:var(--accent); }
   content: attr(data-tip);
   position: absolute; bottom: calc(100% + 6px); left: 50%;
   transform: translateX(-50%);
-  background: #1a2535; border: 1px solid var(--border2);
+  background: #ffffff; border: 1px solid var(--border2); box-shadow:0 4px 12px rgba(0,0,0,.1);
   color: var(--text); font-family: var(--mono); font-size: 10px;
   white-space: nowrap; padding: 5px 10px; border-radius: 6px;
   pointer-events: none; opacity: 0; transition: opacity .15s;
@@ -211,34 +216,34 @@ h1 span { color:var(--accent); }
   content:attr(data-tip);
   position:absolute; bottom:calc(100% + 6px); left:50%;
   transform:translateX(-50%);
-  background:#1a2535; border:1px solid var(--border2);
+  background:#ffffff; border:1px solid var(--border2); box-shadow:0 4px 12px rgba(0,0,0,.1);
   color:var(--text); font-family:var(--mono); font-size:10px;
   white-space:nowrap; padding:5px 10px; border-radius:6px;
   pointer-events:none; opacity:0; transition:opacity .15s; z-index:100;
   font-weight:400;
 }
 .struct:hover::after { opacity:1; }
-.struct.thh  { color:#00d98b; background:rgba(0,217,139,.15);  border-color:rgba(0,217,139,.3);  }
-.struct.hh   { color:#00d98b; background:rgba(0,217,139,.08);  border-color:rgba(0,217,139,.2);  }
-.struct.tll  { color:#ff4560; background:rgba(255,69,96,.15);  border-color:rgba(255,69,96,.3);  }
-.struct.ll   { color:#ff4560; background:rgba(255,69,96,.08);  border-color:rgba(255,69,96,.2);  }
-.struct.hv   { color:#f5a623; background:rgba(245,166,35,.12); border-color:rgba(245,166,35,.3); }
-.struct.lv   { color:#38bdf8; background:rgba(56,189,248,.1);  border-color:rgba(56,189,248,.25);}
-.struct.nc   { color:#4a6070; background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);}
-.struct.na   { color:#4a6070; background:transparent;          border-color:transparent;         }
-.tbl tbody tr { border-bottom:1px solid rgba(26,34,48,.6); transition:background .12s; }
+.struct.thh  { color:#059669; background:rgba(5,150,105,.1);   border-color:rgba(5,150,105,.3);   }
+.struct.hh   { color:#059669; background:rgba(5,150,105,.06);  border-color:rgba(5,150,105,.2);   }
+.struct.tll  { color:#dc2626; background:rgba(220,38,38,.08);  border-color:rgba(220,38,38,.28);  }
+.struct.ll   { color:#dc2626; background:rgba(220,38,38,.05);  border-color:rgba(220,38,38,.18);  }
+.struct.hv   { color:#d97706; background:rgba(217,119,6,.08);  border-color:rgba(217,119,6,.25);  }
+.struct.lv   { color:#0369a1; background:rgba(3,105,161,.07);  border-color:rgba(3,105,161,.2);   }
+.struct.nc   { color:#6b7280; background:rgba(0,0,0,.04);      border-color:rgba(0,0,0,.12);      }
+.struct.na   { color:#6b7280; background:transparent;          border-color:transparent;          }
+.tbl tbody tr { border-bottom:1px solid rgba(0,0,0,.06); transition:background .12s; }
 .tbl tbody tr:last-child { border-bottom:none; }
 .tbl tbody tr.clickable { cursor: pointer; }
-.tbl tbody tr.clickable:hover { background: rgba(14,165,233,.07) !important; }
-.cmp-row:hover { background: rgba(255,255,255,.03); }
+.tbl tbody tr.clickable:hover { background: rgba(79,70,229,.05) !important; }
+.cmp-row:hover { background: rgba(0,0,0,.03); }
 
 /* Context column — 3-period OHLC */
 .tbl th.ctx-col {
-  color: #8b949e !important; background: rgba(255,255,255,.02);
-  border-left: 1px solid rgba(255,255,255,.08); min-width:260px;
+  color: var(--muted) !important; background: rgba(79,70,229,.02);
+  border-left: 1px solid rgba(79,70,229,.1); min-width:260px;
 }
 .tbl td.ctx-col {
-  background: rgba(255,255,255,.01); border-left: 1px solid rgba(255,255,255,.06);
+  background: rgba(79,70,229,.01); border-left: 1px solid rgba(79,70,229,.06);
   padding: 3px 8px;
 }
 .ctx-row {
@@ -248,7 +253,7 @@ h1 span { color:var(--accent); }
   font-family: var(--mono); font-size: 10px; margin: 1px 0;
 }
 .ctx-row.ctx-curr {
-  background: rgba(14,165,233,.08); border: 1px solid rgba(14,165,233,.15);
+  background: rgba(79,70,229,.07); border: 1px solid rgba(79,70,229,.18);
   font-size: 11px; font-weight: 500;
 }
 .ctx-row.ctx-prev, .ctx-row.ctx-next { opacity: .6; }
@@ -257,15 +262,15 @@ h1 span { color:var(--accent); }
 .ctx-na    { color: var(--muted); font-size: 10px; font-family: var(--mono); padding: 4px; }
 
 .tbl tbody tr {
-  border-bottom:1px solid rgba(26,34,48,.6);
+  border-bottom:1px solid rgba(0,0,0,.06);
   transition:background .12s; cursor:default;
 }
 .tbl tbody tr:last-child { border-bottom:none; }
-.tbl tbody tr:hover { background:rgba(14,165,233,.04); }
+.tbl tbody tr:hover { background:rgba(79,70,229,.04); }
 
 .tbl td { padding:11px 14px; font-family:var(--mono); font-size:12px; white-space:nowrap; }
 
-.td-symbol { font-weight:600; color:#fff; font-size:13px; letter-spacing:.3px; }
+.td-symbol { font-weight:700; color:#111827; font-size:13px; letter-spacing:.3px; }
 .td-up     { color:var(--up); }
 .td-down   { color:var(--down); }
 .td-muted  { color:var(--muted); font-size:11px; }
@@ -275,9 +280,9 @@ h1 span { color:var(--accent); }
   display:inline-block; padding:2px 8px; border-radius:4px;
   font-size:10px; font-weight:600; letter-spacing:1px; border:1px solid;
 }
-.trend-tag.UP   { color:var(--up);   background:rgba(0,217,139,.08);  border-color:rgba(0,217,139,.2);  }
-.trend-tag.DOWN { color:var(--down); background:rgba(255,69,96,.08);   border-color:rgba(255,69,96,.2);  }
-.trend-tag.SIDE { color:var(--side); background:rgba(245,166,35,.08);  border-color:rgba(245,166,35,.2); }
+.trend-tag.UP   { color:var(--up);   background:rgba(5,150,105,.08);  border-color:rgba(5,150,105,.25);  }
+.trend-tag.DOWN { color:var(--down); background:rgba(220,38,38,.07);   border-color:rgba(220,38,38,.22);  }
+.trend-tag.SIDE { color:var(--side); background:rgba(217,119,6,.08);   border-color:rgba(217,119,6,.22);  }
 
 /* ── Pagination ── */
 .pagination {
@@ -293,13 +298,13 @@ h1 span { color:var(--accent); }
   transition:all .15s;
 }
 .page-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
-.page-btn.active { background:var(--accent); color:#000; border-color:var(--accent); }
+.page-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
 .page-btn:disabled { opacity:.3; cursor:not-allowed; }
 
 /* ── State boxes ── */
 .state-box {
   display:none; text-align:center; padding:60px 24px;
-  border:1px solid var(--border); border-radius:14px;
+  background:var(--surf); border:1px solid var(--border); border-radius:14px;
 }
 .state-box.visible { display:block; }
 .state-icon { font-size:30px; margin-bottom:12px; }
@@ -320,7 +325,7 @@ h1 span { color:var(--accent); }
   100% { background-position: 400px 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--surf2) 25%, rgba(255,255,255,.04) 50%, var(--surf2) 75%);
+  background: linear-gradient(90deg, var(--surf2) 25%, rgba(255,255,255,.8) 50%, var(--surf2) 75%);
   background-size: 400px 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 4px;
@@ -330,7 +335,7 @@ h1 span { color:var(--accent); }
   grid-template-columns: 40px 100px 260px 70px 60px 70px 50px 50px 60px 80px 80px 50px 80px 80px 80px 80px;
   gap: 0;
   padding: 0;
-  border-bottom: 1px solid rgba(26,34,48,.4);
+  border-bottom: 1px solid rgba(0,0,0,.06);
 }
 .skeleton-cell {
   padding: 14px 14px;
@@ -341,7 +346,7 @@ h1 span { color:var(--accent); }
   height: 14px;
   width: 100%;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--surf2) 25%, rgba(255,255,255,.05) 50%, var(--surf2) 75%);
+  background: linear-gradient(90deg, var(--surf2) 25%, rgba(255,255,255,.9) 50%, var(--surf2) 75%);
   background-size: 400px 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -360,9 +365,9 @@ h1 span { color:var(--accent); }
   overflow-x:auto; -webkit-overflow-scrolling:touch;
 }
 .tab {
-  padding:12px 20px; cursor:pointer; border:none; background:transparent;
-  font-family:var(--mono); font-size:11px; letter-spacing:1.5px;
-  color:var(--muted); text-transform:uppercase; transition:all .2s;
+  padding:13px 22px; cursor:pointer; border:none; background:transparent;
+  font-family:var(--sans); font-size:12px; font-weight:600; letter-spacing:.3px;
+  color:var(--muted); transition:all .2s;
   border-bottom:2px solid transparent; white-space:nowrap;
 }
 .tab:hover { color:var(--text); }
@@ -684,6 +689,16 @@ h1 span { color:var(--accent); }
           </select>
         </div>
       </div>
+      <div style="display:grid;grid-template-columns:160px;gap:12px;align-items:end;margin-top:10px;">
+        <div class="filter-field">
+          <label>Close vs Prev</label>
+          <select id="idx-f-closecp" onchange="applyIndexFilters()">
+            <option value="">All</option>
+            <option value="up">✓ Up</option>
+            <option value="down">✗ Down</option>
+          </select>
+        </div>
+      </div>
       <div class="active-filters" id="idx-activeFilters" style="margin-top:10px;"></div>
     </div>
 
@@ -718,6 +733,7 @@ h1 span { color:var(--accent); }
           <div class="chip side">SIDE <strong id="idx-statSide">0</strong></div>
         </div>
         <div class="sort-controls">
+          <button class="btn btn-ghost" onclick="showIndexTrendCloseStats()" style="padding:5px 12px;font-size:10px;margin-right:8px">📊 Stats</button>
           <label>Sort</label>
           <select id="idx-sortCol" onchange="applyIndexFilters()">
             <option value="pctChange">% Change</option>
@@ -727,12 +743,24 @@ h1 span { color:var(--accent); }
             <option value="highVolQty">High Volume</option>
             <option value="pe">P/E</option>
             <option value="pb">P/B</option>
+            <option value="vsLastPeriod">vs Last Period</option>
           </select>
           <select id="idx-sortDir" onchange="applyIndexFilters()">
             <option value="desc">DESC</option>
             <option value="asc">ASC</option>
           </select>
         </div>
+      </div>
+
+      <!-- Trend vs Close vs Prev Statistics -->
+      <div id="idx-trendCloseStats" style="display:none;background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:8px;">
+            📊 Trend vs Close vs Prev — Statistics
+          </div>
+          <button class="btn btn-ghost" onclick="document.getElementById('idx-trendCloseStats').style.display='none'" style="padding:4px 12px;font-size:10px">Hide</button>
+        </div>
+        <div id="idx-trendCloseGrid"></div>
       </div>
 
       <!-- Table -->
@@ -745,7 +773,7 @@ h1 span { color:var(--accent); }
             <tr>
               <th>#</th>
               <th onclick="doIndexSort('symbol')">Index Name<span class="sort-arrow" id="idx-arr-symbol"></span></th>
-              <th onclick="doIndexSort('close')" class="td-right">Close<span class="sort-arrow" id="idx-arr-close"></span></th>
+              <th class="ctx-col" id="idx-thContext">PREV · CURR · NEXT</th>
               <th onclick="doIndexSort('pctChange')" class="td-right">% Chg<span class="sort-arrow" id="idx-arr-pctChange"></span></th>
               <th onclick="doIndexSort('trend')">Trend<span class="sort-arrow" id="idx-arr-trend"></span></th>
               <th onclick="doIndexSort('high')" class="td-right">High<span class="sort-arrow" id="idx-arr-high"></span></th>
@@ -754,6 +782,8 @@ h1 span { color:var(--accent); }
               <th onclick="doIndexSort('pb')" class="td-right">P/B<span class="sort-arrow" id="idx-arr-pb"></span></th>
               <th>High Date</th>
               <th>Low Date</th>
+              <th onclick="doIndexSort('vsLastPeriod')" class="td-right prev-col" id="idx-thPrevClose">Prev Close <span class="sort-arrow" id="idx-arr-prevClose"></span></th>
+              <th onclick="doIndexSort('vsLastPeriod')" class="td-right prev-col" id="idx-thVsLastPeriod">vs Last Period <span class="sort-arrow" id="idx-arr-vsLastPeriod"></span></th>
             </tr>
           </thead>
           <tbody id="idx-tableBody"></tbody>
@@ -779,26 +809,26 @@ h1 span { color:var(--accent); }
 
 <div id="drawer" style="
   display:none; position:fixed; top:0; right:0; bottom:0; z-index:201;
-  width:min(680px, 100vw); background:#0e1318;
-  border-left:1px solid #1a2230; overflow-y:auto;
+  width:min(680px, 100vw); background:#ffffff;
+  border-left:1px solid #dde2f0; overflow-y:auto;
   transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
-  font-family:'IBM Plex Mono',monospace;
+  font-family:'JetBrains Mono',monospace;
 ">
   <!-- Drawer header -->
   <div style="
     position:sticky; top:0; z-index:10;
-    background:#0e1318; border-bottom:1px solid #1a2230;
+    background:#f5f7fc; border-bottom:1px solid #dde2f0;
     padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
   ">
     <div>
-      <div style="font-size:9px;letter-spacing:3px;color:#4a6070;text-transform:uppercase;margin-bottom:4px;">Period Comparison</div>
-      <div id="drawerTitle" style="font-size:18px;font-weight:700;color:#fff;letter-spacing:-.5px;">—</div>
+      <div style="font-size:9px;letter-spacing:3px;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Period Comparison</div>
+      <div id="drawerTitle" style="font-size:18px;font-weight:700;color:#111827;letter-spacing:-.5px;">—</div>
     </div>
     <button onclick="closeDrawer()" style="
-      background:rgba(255,255,255,.06); border:1px solid #243040; border-radius:8px;
-      color:#4a6070; font-size:18px; width:36px; height:36px; cursor:pointer;
+      background:rgba(0,0,0,.05); border:1px solid #dde2f0; border-radius:8px;
+      color:#6b7280; font-size:18px; width:36px; height:36px; cursor:pointer;
       display:flex; align-items:center; justify-content:center; transition:all .15s;
-    " onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#4a6070'">✕</button>
+    " onmouseover="this.style.color='#111827'" onmouseout="this.style.color='#6b7280'">✕</button>
   </div>
 
   <!-- Drawer body -->
@@ -1352,9 +1382,9 @@ async function openComparison(symbol) {
   document.getElementById('drawerTitle').textContent = `${symbol} — ${prev} vs ${period}`;
   document.getElementById('drawerBody').innerHTML = `
     <div style="text-align:center;padding:60px 0;">
-      <div style="width:28px;height:28px;border:2px solid #243040;border-top-color:#0ea5e9;
+      <div style="width:28px;height:28px;border:2px solid #dde2f0;border-top-color:#4f46e5;
                   border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;"></div>
-      <div style="font-size:11px;color:#4a6070;">Loading comparison data...</div>
+      <div style="font-size:11px;color:#6b7280;">Loading comparison data...</div>
     </div>`;
   openDrawer();
 
@@ -1385,7 +1415,7 @@ async function openComparison(symbol) {
   } catch(err) {
     console.error('[Drawer] error:', err);
     document.getElementById('drawerBody').innerHTML = `
-      <div style="text-align:center;padding:40px;color:#ff4560;font-size:12px;">
+      <div style="text-align:center;padding:40px;color:#dc2626;font-size:12px;">
         ⚠ ${err.message}
       </div>`;
   }
@@ -1404,7 +1434,7 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
       const pctVal = vA !== 0 ? ((diff / Math.abs(vA)) * 100).toFixed(1) + '%' : '—';
       const isPos  = diff * (sign||1) > 0;
       const isNeg  = diff * (sign||1) < 0;
-      const cls    = isPos ? 'color:#00d98b' : isNeg ? 'color:#ff4560' : 'color:#4a6070';
+      const cls    = isPos ? 'color:#059669' : isNeg ? 'color:#dc2626' : 'color:#6b7280';
       const arrow  = isPos ? '▲' : isNeg ? '▼' : '—';
       const absFmt = fmt === fP ? fP(Math.abs(diff)) : fV(Math.abs(diff));
       delta = `<span style="${cls};font-weight:600">${arrow} ${absFmt}<br>
@@ -1412,28 +1442,28 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
     }
     return `
       <div style="display:grid;grid-template-columns:130px 1fr 90px 1fr;
-                  gap:0;padding:11px 16px;border-bottom:1px solid rgba(26,34,48,.5);
+                  gap:0;padding:11px 16px;border-bottom:1px solid rgba(0,0,0,.06);
                   align-items:center;font-size:11px;" class="cmp-row">
-        <div style="color:#4a6070;font-size:9px;letter-spacing:.5px;text-transform:uppercase">${label}</div>
-        <div style="color:#38bdf8;text-align:right">
-          ${fmtA}${subA ? `<div style="font-size:9px;color:#4a6070;margin-top:2px">${subA}</div>` : ''}
+        <div style="color:#6b7280;font-size:9px;letter-spacing:.5px;text-transform:uppercase">${label}</div>
+        <div style="color:#0369a1;text-align:right">
+          ${fmtA}${subA ? `<div style="font-size:9px;color:#6b7280;margin-top:2px">${subA}</div>` : ''}
         </div>
-        <div style="text-align:center">${delta || '<span style="color:#4a6070;font-size:10px">—</span>'}</div>
-        <div style="color:#a78bfa;text-align:right">
-          ${fmtB}${subB ? `<div style="font-size:9px;color:#4a6070;margin-top:2px">${subB}</div>` : ''}
+        <div style="text-align:center">${delta || '<span style="color:#6b7280;font-size:10px">—</span>'}</div>
+        <div style="color:#4f46e5;text-align:right">
+          ${fmtB}${subB ? `<div style="font-size:9px;color:#6b7280;margin-top:2px">${subB}</div>` : ''}
         </div>
       </div>`;
   }
 
   function section(title) {
     return `<div style="padding:12px 16px 6px;font-size:9px;letter-spacing:2.5px;
-                        color:#4a6070;text-transform:uppercase;background:#111820;
-                        border-bottom:1px solid #1a2230;">${title}</div>`;
+                        color:#6b7280;text-transform:uppercase;background:#eef1f8;
+                        border-bottom:1px solid #dde2f0;">${title}</div>`;
   }
 
   function trendBadge(t) {
-    const c = t==='UP'?'#00d98b':t==='DOWN'?'#ff4560':'#f5a623';
-    const bg= t==='UP'?'rgba(0,217,139,.1)':t==='DOWN'?'rgba(255,69,96,.1)':'rgba(245,166,35,.1)';
+    const c = t==='UP'?'#059669':t==='DOWN'?'#dc2626':'#d97706';
+    const bg= t==='UP'?'rgba(5,150,105,.08)':t==='DOWN'?'rgba(220,38,38,.07)':'rgba(217,119,6,.08)';
     return `<span style="color:${c};background:${bg};border:1px solid ${c}30;
                          border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600">
               ${t==='UP'?'▲ UP':t==='DOWN'?'▼ DN':'— SD'}</span>`;
@@ -1441,10 +1471,10 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
 
   // Signal helpers
   function sig(condition, tipY, tipN) {
-    if (condition === null) return `<span style="color:#4a6070">—</span>`;
+    if (condition === null) return `<span style="color:#6b7280">—</span>`;
     return condition
-      ? `<span style="color:#00d98b;font-size:14px" title="${tipY}">✓</span>`
-      : `<span style="color:#ff4560;font-size:14px" title="${tipN}">✗</span>`;
+      ? `<span style="color:#059669;font-size:14px" title="${tipY}">✓</span>`
+      : `<span style="color:#dc2626;font-size:14px" title="${tipN}">✗</span>`;
   }
 
   const volBo   = (dA.highVolQty != null && dB.highVolQty != null)
@@ -1461,10 +1491,10 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
     if (val == null || lo == null || hi == null || hi === lo) return '';
     const pct = Math.min(100, Math.max(0, ((val - lo) / (hi - lo)) * 100));
     return `<div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a6070;margin-bottom:3px">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#6b7280;margin-bottom:3px">
         <span>${label}</span><span style="color:${color}">${fP(val)}</span>
       </div>
-      <div style="height:4px;background:#1a2230;border-radius:2px;position:relative">
+      <div style="height:4px;background:#dde2f0;border-radius:2px;position:relative">
         <div style="position:absolute;top:0;left:${pct}%;width:8px;height:100%;
                     background:${color};border-radius:2px;transform:translateX(-50%)"></div>
       </div>
@@ -1484,13 +1514,13 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
   ];
 
   const condHTML = condRows.map(c => {
-    const color = c.met ? '#00d98b' : '#4a6070';
+    const color = c.met ? '#059669' : '#6b7280';
     const icon  = c.met ? '✓' : '✗';
     return `<div style="display:flex;align-items:center;justify-content:space-between;
-                        padding:9px 16px;border-bottom:1px solid rgba(26,34,48,.5);font-size:11px">
-      <span style="color:#8b949e">${c.label}</span>
+                        padding:9px 16px;border-bottom:1px solid rgba(0,0,0,.06);font-size:11px">
+      <span style="color:#374151">${c.label}</span>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:9px;color:#4a6070;font-family:var(--mono)">${c.tip}</span>
+        <span style="font-size:9px;color:#6b7280;font-family:var(--mono)">${c.tip}</span>
         <span style="color:${color};font-size:14px;font-weight:700;width:16px;text-align:center">${icon}</span>
       </div>
     </div>`;
@@ -1499,49 +1529,49 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
   return `
     <!-- Period header labels -->
     <div style="display:grid;grid-template-columns:130px 1fr 90px 1fr;
-                gap:0;padding:10px 16px;background:#111820;border-bottom:1px solid #1a2230;">
+                gap:0;padding:10px 16px;background:#eef1f8;border-bottom:1px solid #dde2f0;">
       <div></div>
-      <div style="text-align:right;font-size:9px;letter-spacing:2px;color:#38bdf8;text-transform:uppercase">
-        ${pA} <span style="font-size:8px;background:rgba(56,189,248,.1);padding:1px 6px;border-radius:3px">BASE</span>
+      <div style="text-align:right;font-size:9px;letter-spacing:2px;color:#0369a1;text-transform:uppercase">
+        ${pA} <span style="font-size:8px;background:rgba(3,105,161,.1);padding:1px 6px;border-radius:3px">BASE</span>
       </div>
       <div></div>
-      <div style="text-align:right;font-size:9px;letter-spacing:2px;color:#a78bfa;text-transform:uppercase">
-        ${pB} <span style="font-size:8px;background:rgba(167,139,250,.1);padding:1px 6px;border-radius:3px">CMP</span>
+      <div style="text-align:right;font-size:9px;letter-spacing:2px;color:#4f46e5;text-transform:uppercase">
+        ${pB} <span style="font-size:8px;background:rgba(79,70,229,.1);padding:1px 6px;border-radius:3px">CMP</span>
       </div>
     </div>
 
     <!-- Candle Structure section -->
     <div style="padding:12px 16px 6px;font-size:9px;letter-spacing:2.5px;
-                color:#4a6070;text-transform:uppercase;background:#111820;
-                border-bottom:1px solid #1a2230;">Candle Structure</div>
+                color:#6b7280;text-transform:uppercase;background:#eef1f8;
+                border-bottom:1px solid #dde2f0;">Candle Structure</div>
 
     <!-- Structure badge + label -->
-    <div style="padding:14px 16px;background:#0d1117;border-bottom:1px solid #1a2230;
+    <div style="padding:14px 16px;background:#f8f9fc;border-bottom:1px solid #dde2f0;
                 display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
       <span class="struct ${cs.cls}" style="font-size:13px;padding:4px 14px"
             data-tip="${cs.tip}">${cs.code}</span>
-      <span style="font-size:12px;color:#c8d8e8">${cs.label}</span>
+      <span style="font-size:12px;color:#111827">${cs.label}</span>
     </div>
 
     <!-- Price range visual -->
-    <div style="padding:14px 16px;background:#0d1117;border-bottom:1px solid #1a2230;">
-      <div style="font-size:9px;letter-spacing:1.5px;color:#4a6070;text-transform:uppercase;margin-bottom:10px">
+    <div style="padding:14px 16px;background:#f8f9fc;border-bottom:1px solid #dde2f0;">
+      <div style="font-size:9px;letter-spacing:1.5px;color:#6b7280;text-transform:uppercase;margin-bottom:10px">
         Price Range — ${pA} (base) vs ${pB} (current)
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
-          <div style="font-size:9px;color:#38bdf8;margin-bottom:6px;letter-spacing:1px">${pA}</div>
-          ${rangeBar('High', dA.high, dA.low, dA.high, '#00d98b')}
-          ${rangeBar('Close', dA.close, dA.low, dA.high, '#38bdf8')}
-          ${rangeBar('Open', dA.open, dA.low, dA.high, '#c8d8e8')}
-          ${rangeBar('Low', dA.low, dA.low, dA.high, '#ff4560')}
+          <div style="font-size:9px;color:#0369a1;margin-bottom:6px;letter-spacing:1px">${pA}</div>
+          ${rangeBar('High', dA.high, dA.low, dA.high, '#059669')}
+          ${rangeBar('Close', dA.close, dA.low, dA.high, '#0369a1')}
+          ${rangeBar('Open', dA.open, dA.low, dA.high, '#374151')}
+          ${rangeBar('Low', dA.low, dA.low, dA.high, '#dc2626')}
         </div>
         <div>
-          <div style="font-size:9px;color:#a78bfa;margin-bottom:6px;letter-spacing:1px">${pB}</div>
-          ${rangeBar('High', dB.high, dB.low, dB.high, '#00d98b')}
-          ${rangeBar('Close', dB.close, dB.low, dB.high, '#a78bfa')}
-          ${rangeBar('Open', dB.open, dB.low, dB.high, '#c8d8e8')}
-          ${rangeBar('Low', dB.low, dB.low, dB.high, '#ff4560')}
+          <div style="font-size:9px;color:#4f46e5;margin-bottom:6px;letter-spacing:1px">${pB}</div>
+          ${rangeBar('High', dB.high, dB.low, dB.high, '#059669')}
+          ${rangeBar('Close', dB.close, dB.low, dB.high, '#4f46e5')}
+          ${rangeBar('Open', dB.open, dB.low, dB.high, '#374151')}
+          ${rangeBar('Low', dB.low, dB.low, dB.high, '#dc2626')}
         </div>
       </div>
     </div>
@@ -1551,23 +1581,23 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
 
     <!-- Signals row -->
     <div style="padding:12px 16px 6px;font-size:9px;letter-spacing:2.5px;
-                color:#4a6070;text-transform:uppercase;background:#111820;
-                border-bottom:1px solid #1a2230;margin-top:4px;">Other Signals</div>
-    <div style="padding:14px 16px;background:#0d1117;border-bottom:1px solid #1a2230;
+                color:#6b7280;text-transform:uppercase;background:#eef1f8;
+                border-bottom:1px solid #dde2f0;margin-top:4px;">Other Signals</div>
+    <div style="padding:14px 16px;background:#f8f9fc;border-bottom:1px solid #dde2f0;
                 display:flex;gap:24px;flex-wrap:wrap;">
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#374151">
         VOL-BO ${sig(volBo, 'Volume Breakout', 'No Volume Breakout')}
       </div>
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#374151">
         DEL-BO ${sig(delBo, 'Delivery Breakout', 'No Delivery Breakout')}
       </div>
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#374151">
         CLOSE-CP ${sig(closeCp, 'Close up vs prev', 'Close down vs prev')}
       </div>
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#374151">
         ${pA} TREND ${trendBadge(dA.trend||'SIDE')}
       </div>
-      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#4a6070">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#374151">
         ${pB} TREND ${trendBadge(dB.trend||'SIDE')}
       </div>
     </div>
@@ -1597,7 +1627,7 @@ function buildCompareHTML(dA, dB, pA, pB, tf) {
     ${row('Deliv %',   dA.delivPct,      dB.delivPct,
           v => v != null ? v.toFixed(1)+'%' : '—', 1)}
 
-    <div style="padding:20px 16px;font-size:10px;color:#2a3a4a;text-align:center">
+    <div style="padding:20px 16px;font-size:10px;color:#6b7280;text-align:center">
       ${sym} · ${tf} · ${pA} vs ${pB} · Delta = ${pB} − ${pA}
     </div>`;
 }
@@ -1879,7 +1909,7 @@ function showTrendCloseStats() {
       const count = matrix[t][cp];
       const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
       const intensity = total > 0 ? Math.min(1, count / (total * 0.15)) : 0;
-      const bgColor = t === 'UP' ? `rgba(0,217,139,${intensity * 0.15})` : t === 'DOWN' ? `rgba(255,69,96,${intensity * 0.15})` : `rgba(245,166,35,${intensity * 0.12})`;
+      const bgColor = t === 'UP' ? `rgba(5,150,105,${intensity * 0.12})` : t === 'DOWN' ? `rgba(220,38,38,${intensity * 0.1})` : `rgba(217,119,6,${intensity * 0.1})`;
       html += `<td style="padding:10px 14px;text-align:center;background:${bgColor};border-radius:0;">
         <div style="font-size:16px;font-weight:700;color:var(--text);">${count}</div>
         <div style="font-size:9px;color:var(--muted);margin-top:2px;">${pct}%</div>
@@ -1992,6 +2022,8 @@ document.getElementById('idx-tf').addEventListener('change', function() {
 
 // ── Global index state ─────────────────────────────────────────────────────
 let idxAllData     = [];
+let idxPrevMap     = {};
+let idxNextMap     = {};
 let idxFiltered    = [];
 let idxCurrentPage = 0;
 let idxSortCol     = 'pctChange';
@@ -2002,7 +2034,7 @@ function normaliseIndex(r) {
   const close = toNum(r.close || r.lastPrice || r.closePrice);
   const hVol  = toNum(r.highVolQty  || r.highestVolume?.quantity);
   return {
-    symbol:        r.symbol || r.indexName,
+    symbol:        (r.symbol || r.indexName || '').toUpperCase(),
     candleDate:    r.candleDate,
     candleEndDate: r.candleEndDate,
     open, close,
@@ -2033,6 +2065,8 @@ async function loadIndexData() {
   document.getElementById('idx-btnLoad').disabled = true;
   idxAllData = [];
   idxFiltered = [];
+  idxPrevMap = {};
+  idxNextMap = {};
 
   try {
     const url  = `${getBaseUrl()}/api/v1/index-candles/stats/screen?timeframe=${tf}&period=${period}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`;
@@ -2046,11 +2080,47 @@ async function loadIndexData() {
     if (rows.length === 0) {
       document.getElementById('idx-errorMsg').textContent = `No stats found for ${tf} · ${period}. Build stats first.`;
       setIndexState('error');
+      document.getElementById('idx-btnLoad').disabled = false;
       return;
     }
 
     idxAllData = rows.map(normaliseIndex);
     document.getElementById('idx-statTotal').textContent = idxAllData.length;
+
+    // Fetch prev + next periods in parallel
+    const prev = prevPeriod(tf, period);
+    const next = nextPeriod(tf, period);
+
+    const fetchIndexPeriod = async (pk) => {
+      if (!pk) return [];
+      try {
+        const r = await fetch(`${getBaseUrl()}/api/v1/index-candles/stats/screen?timeframe=${tf}&period=${pk}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`);
+        const j = await r.json();
+        const w = j.data !== undefined ? j.data : j;
+        return Array.isArray(w) ? w
+             : Array.isArray(w.results) ? w.results
+             : Array.isArray(w.data)    ? w.data : [];
+      } catch(e) {
+        console.warn(`[Index Screener] ${pk} fetch failed:`, e.message);
+        return [];
+      }
+    };
+
+    const [prevRows, nextRows] = await Promise.all([
+      fetchIndexPeriod(prev),
+      fetchIndexPeriod(next)
+    ]);
+
+    prevRows.forEach(r => { const n = normaliseIndex(r); if (n.symbol) idxPrevMap[n.symbol] = n; });
+    nextRows.forEach(r => { const n = normaliseIndex(r); if (n.symbol) idxNextMap[n.symbol] = n; });
+
+    // Update column headers
+    const pcHeader  = document.getElementById('idx-thPrevClose');
+    const vsHeader  = document.getElementById('idx-thVsLastPeriod');
+    const ctxHeader = document.getElementById('idx-thContext');
+    if (pcHeader  && prev) pcHeader.childNodes[0].textContent  = `Close ${prev} `;
+    if (vsHeader  && prev) vsHeader.childNodes[0].textContent  = `vs ${prev} `;
+    if (ctxHeader)         ctxHeader.textContent = `${prev||'—'} · CURR · ${next||'—'}`;
 
     applyIndexFilters();
     setIndexState('results');
@@ -2096,31 +2166,42 @@ function showIndexSkeletonTable() {
     html += `<tr class="skeleton-row">
       <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell ctx-col"><div class="skeleton-bar lg"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
+      <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
-      <td class="skeleton-cell"><div class="skeleton-bar"></div></td>
+      <td class="skeleton-cell prev-col"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell prev-col"><div class="skeleton-bar sm"></div></td>
     </tr>`;
   }
   tbody.innerHTML = html;
 }
 
+function idxVsLastPeriodVal(r) {
+  const prev = idxPrevMap[r.symbol];
+  if (!prev || !prev.close || !r.close || prev.close === 0) return null;
+  return +((r.close - prev.close) / Math.abs(prev.close) * 100).toFixed(2);
+}
+
 function clearIndexFilters() {
-  document.getElementById('idx-f-symbol').value = '';
-  document.getElementById('idx-f-trend').value = '';
+  document.getElementById('idx-f-symbol').value    = '';
+  document.getElementById('idx-f-trend').value     = '';
   document.getElementById('idx-f-closerange').value = '';
+  document.getElementById('idx-f-closecp').value   = '';
   applyIndexFilters();
 }
 
 function applyIndexFilters() {
-  const symbol = document.getElementById('idx-f-symbol').value.toUpperCase();
-  const trend = document.getElementById('idx-f-trend').value;
-  const closerange = document.getElementById('idx-f-closerange').value;
+  const symbol      = document.getElementById('idx-f-symbol').value.trim().toUpperCase();
+  const trend       = document.getElementById('idx-f-trend').value;
+  const closerange  = document.getElementById('idx-f-closerange').value;
+  const closeCpFilter = document.getElementById('idx-f-closecp').value;
+  const hasPrev     = Object.keys(idxPrevMap).length > 0;
 
   idxFiltered = idxAllData.filter(r => {
     if (symbol && !r.symbol.includes(symbol)) return false;
@@ -2128,53 +2209,84 @@ function applyIndexFilters() {
     if (closerange === 'high' && r.close < 20000) return false;
     if (closerange === 'mid' && (r.close < 10000 || r.close >= 20000)) return false;
     if (closerange === 'low' && r.close >= 10000) return false;
+    if (closeCpFilter && hasPrev) {
+      const prevR = idxPrevMap[r.symbol];
+      if (!prevR || r.close == null || prevR.close == null) return false;
+      if (closeCpFilter === 'up'   && !(r.close > prevR.close)) return false;
+      if (closeCpFilter === 'down' && !(r.close < prevR.close)) return false;
+    }
     return true;
   });
 
+  // Sync sort col/dir from dropdowns
+  idxSortCol = document.getElementById('idx-sortCol').value;
+  idxSortDir = document.getElementById('idx-sortDir').value;
+
   // Update stats
   document.getElementById('idx-statMatched').textContent = idxFiltered.length;
-  document.getElementById('idx-statUp').textContent = idxFiltered.filter(r => r.trend === 'UP').length;
-  document.getElementById('idx-statDown').textContent = idxFiltered.filter(r => r.trend === 'DOWN').length;
-  document.getElementById('idx-statSide').textContent = idxFiltered.filter(r => r.trend === 'SIDE').length;
+  document.getElementById('idx-statUp').textContent      = idxFiltered.filter(r => r.trend === 'UP').length;
+  document.getElementById('idx-statDown').textContent    = idxFiltered.filter(r => r.trend === 'DOWN').length;
+  document.getElementById('idx-statSide').textContent    = idxFiltered.filter(r => r.trend === 'SIDE').length;
+
+  // Active filter badges
+  renderIndexBadges({ symbol, trend, closerange, closeCpFilter });
 
   // Reset pagination and render
   idxCurrentPage = 0;
-  renderIndexTable();
-  renderIndexPagination();
+  if (idxFiltered.length === 0) {
+    setIndexState('noMatch');
+  } else {
+    setIndexState('results');
+    renderIndexTable();
+    renderIndexPagination();
+  }
+  // Auto-refresh stats panel if visible
+  if (document.getElementById('idx-trendCloseStats').style.display !== 'none') {
+    showIndexTrendCloseStats();
+  }
 }
 
 function doIndexSort(col) {
+  const sortColEl = document.getElementById('idx-sortCol');
+  const sortDirEl = document.getElementById('idx-sortDir');
   if (idxSortCol === col) {
-    idxSortDir = idxSortDir === 'asc' ? 'desc' : 'asc';
+    sortDirEl.value = idxSortDir === 'desc' ? 'asc' : 'desc';
   } else {
-    idxSortCol = col;
-    idxSortDir = 'desc';
+    sortColEl.value = col;
+    sortDirEl.value = 'desc';
   }
-  renderIndexTable();
+  applyIndexFilters();
 }
 
 function renderIndexTable() {
+  // Re-read sort from globals (synced from dropdowns in applyIndexFilters)
   const sortedData = [...idxFiltered].sort((a, b) => {
-    let aVal = a[idxSortCol];
-    let bVal = b[idxSortCol];
+    let aVal = idxSortCol === 'vsLastPeriod' ? idxVsLastPeriodVal(a) : a[idxSortCol];
+    let bVal = idxSortCol === 'vsLastPeriod' ? idxVsLastPeriodVal(b) : b[idxSortCol];
     if (aVal == null) aVal = idxSortDir === 'desc' ? -Infinity : Infinity;
     if (bVal == null) bVal = idxSortDir === 'desc' ? -Infinity : Infinity;
     const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
     return idxSortDir === 'asc' ? cmp : -cmp;
   });
 
-  const start = idxCurrentPage * 50;
-  const end = start + 50;
-  const pageData = sortedData.slice(start, end);
+  const start    = idxCurrentPage * 50;
+  const pageData = sortedData.slice(start, start + 50);
 
   let html = '';
   pageData.forEach((r, i) => {
-    const trendColor = r.trend === 'UP' ? 'var(--up)' : r.trend === 'DOWN' ? 'var(--down)' : 'var(--side)';
-    html += `<tr class="clickable">
-      <td style="text-align:center;color:var(--muted);">${start + i + 1}</td>
+    const vsVal    = idxVsLastPeriodVal(r);
+    const vsCls    = vsVal != null ? (vsVal >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    const vsTxt    = vsVal != null ? fPct(vsVal) : '—';
+    const prevR    = idxPrevMap[r.symbol];
+    const nextR    = idxNextMap[r.symbol];
+    const prevClose = prevR ? fP(prevR.close) : '—';
+    const ctxCell  = buildContextCell(r, prevR, nextR);
+
+    html += `<tr class="clickable" onclick="openIndexComparison('${r.symbol}')">
+      <td class="td-muted">${start + i + 1}</td>
       <td class="td-symbol">${r.symbol}</td>
-      <td class="td-right">${fP(r.close)}</td>
-      <td class="td-right" style="color:${r.pctChange >= 0 ? 'var(--up)' : 'var(--down)'};">${fPct(r.pctChange)}</td>
+      ${ctxCell}
+      <td class="td-right" style="color:${r.pctChange >= 0 ? 'var(--up)' : 'var(--down)'}; font-weight:600">${fPct(r.pctChange)}</td>
       <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
       <td class="td-right">${fP(r.high)}</td>
       <td class="td-right">${fP(r.low)}</td>
@@ -2182,38 +2294,239 @@ function renderIndexTable() {
       <td class="td-right">${r.pb != null ? r.pb.toFixed(2) : '—'}</td>
       <td class="td-muted">${fD(r.highPriceDate)}</td>
       <td class="td-muted">${fD(r.lowPriceDate)}</td>
+      <td class="td-right td-muted prev-col">${prevClose}</td>
+      <td class="td-right ${vsCls} prev-col" style="font-weight:600">${vsTxt}</td>
     </tr>`;
   });
 
   if (html === '') {
-    html = `<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted);">No indices found</td></tr>`;
+    html = `<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--muted);">No indices found</td></tr>`;
   }
 
   document.getElementById('idx-tableBody').innerHTML = html;
+  updateIndexSortArrows();
+  setTimeout(syncIdxTopScroll, 50);
 }
 
 function renderIndexPagination() {
   const total = idxFiltered.length;
   const pages = Math.ceil(total / 50);
-  const info = `Showing ${Math.min(idxCurrentPage * 50 + 1, total)}–${Math.min((idxCurrentPage + 1) * 50, total)} of ${total}`;
-  document.getElementById('idx-pageInfo').textContent = info;
+  const start = idxCurrentPage * 50 + 1;
+  const end   = Math.min(start + 50 - 1, total);
 
-  let html = '';
-  if (idxCurrentPage > 0) html += `<button class="page-btn" onclick="idxCurrentPage=0;renderIndexTable();renderIndexPagination();">«</button>`;
-  if (idxCurrentPage > 0) html += `<button class="page-btn" onclick="idxCurrentPage--;renderIndexTable();renderIndexPagination();">‹</button>`;
+  document.getElementById('idx-pageInfo').textContent = `Showing ${start}–${end} of ${total} indices`;
 
-  for (let i = Math.max(0, idxCurrentPage - 2); i < Math.min(pages, idxCurrentPage + 3); i++) {
-    html += `<button class="page-btn ${i === idxCurrentPage ? 'active' : ''}" onclick="idxCurrentPage=${i};renderIndexTable();renderIndexPagination();">${i + 1}</button>`;
+  const maxBtns = 7;
+  let lo = Math.max(0, idxCurrentPage - 3);
+  let hi = Math.min(pages - 1, lo + maxBtns - 1);
+  lo = Math.max(0, hi - maxBtns + 1);
+
+  let html = `<button class="page-btn" onclick="goIndexPage(${idxCurrentPage - 1})" ${idxCurrentPage === 0 ? 'disabled' : ''}>‹</button>`;
+  for (let p = lo; p <= hi; p++) {
+    html += `<button class="page-btn ${p === idxCurrentPage ? 'active' : ''}" onclick="goIndexPage(${p})">${p + 1}</button>`;
   }
-
-  if (idxCurrentPage < pages - 1) html += `<button class="page-btn" onclick="idxCurrentPage++;renderIndexTable();renderIndexPagination();">›</button>`;
-  if (idxCurrentPage < pages - 1) html += `<button class="page-btn" onclick="idxCurrentPage=${pages - 1};renderIndexTable();renderIndexPagination();">»</button>`;
+  html += `<button class="page-btn" onclick="goIndexPage(${idxCurrentPage + 1})" ${idxCurrentPage >= pages - 1 ? 'disabled' : ''}>›</button>`;
 
   document.getElementById('idx-pageBtns').innerHTML = html;
 }
 
+function goIndexPage(p) {
+  const pages = Math.ceil(idxFiltered.length / 50);
+  if (p < 0 || p >= pages) return;
+  idxCurrentPage = p;
+  renderIndexTable();
+  renderIndexPagination();
+  window.scrollTo({ top: document.getElementById('idx-resultsArea').offsetTop - 20, behavior: 'smooth' });
+}
+
+// ── Index sort arrows ─────────────────────────────────────────────────────────
+function updateIndexSortArrows() {
+  const cols = ['symbol','close','high','low','pctChange','trend','pe','pb','vsLastPeriod','prevClose'];
+  cols.forEach(c => {
+    const el = document.getElementById('idx-arr-' + c);
+    if (el) el.textContent = '';
+  });
+  const activeEl = document.getElementById('idx-arr-' + idxSortCol);
+  if (activeEl) activeEl.textContent = idxSortDir === 'asc' ? ' ↑' : ' ↓';
+}
+
+// ── Index active filter badges ────────────────────────────────────────────────
+function renderIndexBadges(f) {
+  const badges = [];
+  if (f.symbol)        badges.push(['Symbol: ' + f.symbol,       () => { document.getElementById('idx-f-symbol').value = ''; applyIndexFilters(); }]);
+  if (f.trend)         badges.push(['Trend: ' + f.trend,         () => { document.getElementById('idx-f-trend').value = ''; applyIndexFilters(); }]);
+  if (f.closerange)    badges.push(['Range: ' + f.closerange,    () => { document.getElementById('idx-f-closerange').value = ''; applyIndexFilters(); }]);
+  if (f.closeCpFilter) badges.push(['Close-CP: ' + f.closeCpFilter, () => { document.getElementById('idx-f-closecp').value = ''; applyIndexFilters(); }]);
+
+  const container = document.getElementById('idx-activeFilters');
+  container.innerHTML = badges.map((b, i) =>
+    `<span class="filter-badge" onclick="badgeIndexClick(${i})" title="Click to remove">✕ ${b[0]}</span>`
+  ).join('');
+  container._cbs = badges.map(b => b[1]);
+}
+
+function badgeIndexClick(i) {
+  const cbs = document.getElementById('idx-activeFilters')._cbs;
+  if (cbs && cbs[i]) cbs[i]();
+}
+
+// ── Index stats panel (Trend × Close vs Prev matrix) ─────────────────────────
+function showIndexTrendCloseStats() {
+  const panel = document.getElementById('idx-trendCloseStats');
+  const grid  = document.getElementById('idx-trendCloseGrid');
+  if (idxFiltered.length === 0) { alert('No data to show statistics for.'); return; }
+
+  panel.style.display = 'block';
+  const hasPrev = Object.keys(idxPrevMap).length > 0;
+
+  const trends   = ['UP', 'DOWN', 'SIDE'];
+  const cpLabels = hasPrev ? ['Close ↑', 'Close ↓', 'Flat', 'N/A'] : ['N/A'];
+  const matrix = {};
+  const trendTotals = {};
+  const cpTotals    = {};
+  trends.forEach(t => { matrix[t] = {}; trendTotals[t] = 0; cpLabels.forEach(c => { matrix[t][c] = 0; cpTotals[c] = 0; }); });
+
+  idxFiltered.forEach(r => {
+    const t = trends.includes(r.trend) ? r.trend : 'SIDE';
+    let cp = 'N/A';
+    if (hasPrev) {
+      const prevR = idxPrevMap[r.symbol];
+      if (prevR && r.close != null && prevR.close != null) {
+        if (r.close > prevR.close) cp = 'Close ↑';
+        else if (r.close < prevR.close) cp = 'Close ↓';
+        else cp = 'Flat';
+      }
+    }
+    matrix[t][cp]++;
+    trendTotals[t]++;
+    cpTotals[cp]++;
+  });
+
+  const total       = idxFiltered.length;
+  const trendColors = { UP: 'var(--up)', DOWN: 'var(--down)', SIDE: 'var(--side)' };
+  const cpColors    = { 'Close ↑': 'var(--up)', 'Close ↓': 'var(--down)', 'Flat': 'var(--muted)', 'N/A': 'var(--muted)' };
+
+  let html = `<div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;">
+      <thead><tr style="border-bottom:2px solid var(--border2);">
+        <th style="padding:10px 14px;text-align:left;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Trend \\ Close vs Prev</th>`;
+
+  cpLabels.forEach(cp => {
+    html += `<th style="padding:10px 14px;text-align:center;font-size:9px;letter-spacing:1.5px;color:${cpColors[cp]||'var(--muted)'};text-transform:uppercase;min-width:90px;">${cp}</th>`;
+  });
+  html += `<th style="padding:10px 14px;text-align:center;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;">Total</th></tr></thead><tbody>`;
+
+  trends.forEach(t => {
+    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:10px 14px;"><span class="trend-tag ${t}">${t}</span></td>`;
+    cpLabels.forEach(cp => {
+      const count     = matrix[t][cp];
+      const pct       = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+      const intensity = total > 0 ? Math.min(1, count / (total * 0.15)) : 0;
+      const bgColor   = t === 'UP' ? `rgba(5,150,105,${intensity * 0.12})` : t === 'DOWN' ? `rgba(220,38,38,${intensity * 0.1})` : `rgba(217,119,6,${intensity * 0.1})`;
+      html += `<td style="padding:10px 14px;text-align:center;background:${bgColor};">
+        <div style="font-size:16px;font-weight:700;color:var(--text);">${count}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px;">${pct}%</div></td>`;
+    });
+    const rowPct = total > 0 ? ((trendTotals[t] / total) * 100).toFixed(1) : '0.0';
+    html += `<td style="padding:10px 14px;text-align:center;border-left:2px solid var(--border2);">
+      <div style="font-size:16px;font-weight:700;color:${trendColors[t]};">${trendTotals[t]}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px;">${rowPct}%</div></td></tr>`;
+  });
+
+  html += `<tr style="border-top:2px solid var(--border2);">
+    <td style="padding:10px 14px;font-size:9px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:600;">Total</td>`;
+  cpLabels.forEach(cp => {
+    const colPct = total > 0 ? ((cpTotals[cp] / total) * 100).toFixed(1) : '0.0';
+    html += `<td style="padding:10px 14px;text-align:center;border-top:2px solid var(--border2);">
+      <div style="font-size:16px;font-weight:700;color:${cpColors[cp]||'var(--text)'};">${cpTotals[cp]}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px;">${colPct}%</div></td>`;
+  });
+  html += `<td style="padding:10px 14px;text-align:center;border-left:2px solid var(--border2);border-top:2px solid var(--border2);">
+    <div style="font-size:16px;font-weight:700;color:var(--accent);">${total}</div>
+    <div style="font-size:9px;color:var(--muted);margin-top:2px;">100%</div></td></tr>`;
+  html += `</tbody></table></div>`;
+
+  const upUp     = matrix['UP']['Close ↑'] || 0;
+  const downDown = matrix['DOWN']['Close ↓'] || 0;
+  const bullish  = upUp + (matrix['SIDE']?.['Close ↑'] || 0);
+  const bearish  = downDown + (matrix['SIDE']?.['Close ↓'] || 0);
+
+  html += `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+    <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--up);display:inline-block;"></span>
+      Bullish Confirmed (UP + Close ↑): <strong style="color:var(--up);">${upUp}</strong>
+    </div>
+    <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--down);display:inline-block;"></span>
+      Bearish Confirmed (DOWN + Close ↓): <strong style="color:var(--down);">${downDown}</strong>
+    </div>
+    <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+      Net Sentiment: <strong style="color:${bullish > bearish ? 'var(--up)' : bullish < bearish ? 'var(--down)' : 'var(--side)'};">${bullish > bearish ? 'BULLISH' : bullish < bearish ? 'BEARISH' : 'NEUTRAL'} (${bullish} vs ${bearish})</strong>
+    </div>
+  </div>`;
+
+  grid.innerHTML = html;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── Index comparison drawer ───────────────────────────────────────────────────
+async function openIndexComparison(symbol) {
+  const tf     = document.getElementById('idx-tf').value;
+  const period = document.getElementById('idx-period').value;
+  const prev   = prevPeriod(tf, period);
+
+  if (!prev) { alert('No previous period available for comparison.'); return; }
+
+  document.getElementById('drawerTitle').textContent = `${symbol} — ${prev} vs ${period}`;
+  document.getElementById('drawerBody').innerHTML = `
+    <div style="text-align:center;padding:60px 0;">
+      <div style="width:28px;height:28px;border:2px solid #dde2f0;border-top-color:#4f46e5;
+                  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;"></div>
+      <div style="font-size:11px;color:#6b7280;">Loading comparison data...</div>
+    </div>`;
+  openDrawer();
+
+  try {
+    const size = parseInt(document.getElementById('idx-maxSize').value) || 500;
+
+    let dA = idxPrevMap[symbol];
+    let dB = idxAllData.find(r => r.symbol === symbol);
+
+    if (!dA) {
+      const ra = await fetch(`${getBaseUrl()}/api/v1/index-candles/${encodeURIComponent(symbol)}/stats?timeframe=${tf}&period=${prev}`);
+      const ja = await ra.json();
+      dA = normaliseIndex(ja.data || ja);
+    }
+    if (!dB) {
+      const rb = await fetch(`${getBaseUrl()}/api/v1/index-candles/${encodeURIComponent(symbol)}/stats?timeframe=${tf}&period=${period}`);
+      const jb = await rb.json();
+      dB = normaliseIndex(jb.data || jb);
+    }
+
+    if (!dA || !dB) throw new Error('Could not load data for ' + symbol);
+
+    document.getElementById('drawerBody').innerHTML = buildCompareHTML(dA, dB, prev, period, tf);
+  } catch(err) {
+    console.error('[Index Drawer] error:', err);
+    document.getElementById('drawerBody').innerHTML = `
+      <div style="text-align:center;padding:40px;color:#dc2626;font-size:12px;">⚠ ${err.message}</div>`;
+  }
+}
+
+function syncIdxTopScroll() {
+  const wrap  = document.getElementById('idx-tableWrap');
+  const top   = document.getElementById('idx-topScroll');
+  const inner = document.getElementById('idx-topScrollInner');
+  if (!wrap || !top || !inner) return;
+  inner.style.width = wrap.scrollWidth + 'px';
+  wrap.addEventListener('scroll', () => { top.scrollLeft = wrap.scrollLeft; });
+  top.addEventListener('scroll',  () => { wrap.scrollLeft = top.scrollLeft; });
+}
+
 window.addEventListener('load', () => {
   syncTopScroll();
+  syncIdxTopScroll();
   updatePeriodField('YEAR');
   loadSavedApiUrl();
 });
