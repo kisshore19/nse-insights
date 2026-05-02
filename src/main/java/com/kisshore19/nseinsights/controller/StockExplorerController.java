@@ -180,4 +180,37 @@ public class StockExplorerController {
         return ResponseEntity.ok(ApiResponse.success(
                 dataExplorerService.getStocksForIndex(index, date)));
     }
+
+    /**
+     * API 8: GET /api/v1/stocks/grouped-by-index
+     * Get all indices with their constituent stocks grouped, for tree-table rendering.
+     *
+     * Query Parameters:
+     * - date: Trade date in dd-MM-yyyy format (optional, defaults to latest)
+     */
+    @GetMapping("/grouped-by-index")
+    public ResponseEntity<ApiResponse<IndexGroupResponse>> getStocksGroupedByIndex(
+            @RequestParam(required = false) String date) {
+
+        log.info("GET /api/v1/stocks/grouped-by-index - date: {}", date);
+        return ResponseEntity.ok(ApiResponse.success(
+                dataExplorerService.getStocksGroupedByIndex(date)));
+    }
+
+    /**
+     * API 9: GET /api/v1/stocks/grouped-by-sector
+     * Get all sectors with their constituent stocks and index memberships, for tree-table rendering.
+     * Each stock includes the list of indices it belongs to.
+     *
+     * Query Parameters:
+     * - date: Trade date in dd-MM-yyyy format (optional, defaults to latest)
+     */
+    @GetMapping("/grouped-by-sector")
+    public ResponseEntity<ApiResponse<SectorGroupResponse>> getStocksGroupedBySector(
+            @RequestParam(required = false) String date) {
+
+        log.info("GET /api/v1/stocks/grouped-by-sector - date: {}", date);
+        return ResponseEntity.ok(ApiResponse.success(
+                dataExplorerService.getStocksGroupedBySector(date)));
+    }
 }

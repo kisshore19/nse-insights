@@ -176,6 +176,37 @@ h1 span { /* inherits gradient naturally */ }
 .tbl th.prev-col { color: var(--b) !important; background: rgba(167,139,250,.06); border-left: 1px solid rgba(167,139,250,.2); }
 .tbl td.prev-col { background: rgba(167,139,250,.03); border-left: 1px solid rgba(167,139,250,.1); }
 
+/* ── Index drill-down ─────────────────────────────────────────────────────── */
+.drill-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; font-size: 8px;
+  color: var(--muted); cursor: pointer; border-radius: 3px;
+  margin-right: 4px; background: rgba(0,0,0,.04);
+  transition: background .15s, color .15s;
+  user-select: none; vertical-align: middle;
+  border: 1px solid var(--border);
+}
+.drill-btn:hover { color: var(--accent); background: rgba(167,139,250,.12); border-color: var(--accent); }
+.drill-btn.open  { color: var(--accent); background: rgba(167,139,250,.12); border-color: var(--accent); }
+.idx-drill-row > td { padding: 0 !important; background: rgba(167,139,250,.02); border-bottom: 2px solid var(--accent); }
+.drill-panel { padding: 14px 20px 18px; border-left: 3px solid var(--accent); }
+.drill-meta  { display:flex; align-items:center; gap:10px; margin-bottom:12px;
+               font-family:var(--mono); font-size:9px; letter-spacing:2px;
+               color:var(--accent); text-transform:uppercase; flex-wrap:wrap; }
+.drill-filter-bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; }
+.drill-filter-bar input, .drill-filter-bar select {
+  font-size:11px; padding:5px 9px; border:1px solid var(--border); border-radius:6px;
+  background:var(--surf); color:var(--text); font-family:var(--mono); height:30px;
+}
+.drill-filter-bar input { width:140px; }
+.drill-filter-bar input:focus, .drill-filter-bar select:focus { outline:none; border-color:var(--accent); }
+.drill-filter-bar select { cursor:pointer; }
+.drill-filter-bar .df-label { font-size:9px; letter-spacing:1.5px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; margin-right:-4px; }
+.drill-filter-stats { font-family:var(--mono); font-size:9px; color:var(--muted); margin-left:auto; letter-spacing:1px; white-space:nowrap; }
+.drill-tbl-wrap { overflow-x:auto; overflow-y:auto; max-height:420px; border:1px solid var(--border); border-radius:10px; background:var(--surf); }
+.drill-tbl { min-width:1100px; }
+.drill-tbl thead th { position:sticky; top:0; z-index:2; background:var(--surf2); }
+
 /* Signal columns */
 .tbl th.sig-col { color: var(--side) !important; background: rgba(245,158,11,.04); border-left: 1px solid rgba(245,158,11,.15); text-align:center; }
 .tbl td.sig-col { background: rgba(245,158,11,.02); border-left: 1px solid rgba(245,158,11,.08); text-align:center; }
@@ -388,6 +419,67 @@ h1 span { /* inherits gradient naturally */ }
 @media(max-width:600px) {
   .load-panel { grid-template-columns:1fr; }
 }
+
+/* ── Breakouts Overview ── */
+.bo-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media(max-width:960px) { .bo-layout { grid-template-columns: 1fr; } }
+.bo-idx-panel {
+  background: var(--surf); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  position: sticky; top: 20px;
+}
+.bo-idx-header {
+  padding: 12px 14px 10px; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase; background: var(--surf2);
+}
+.bo-idx-list { max-height: calc(100vh - 280px); overflow-y: auto; }
+.bo-idx-card {
+  padding: 9px 14px; border-bottom: 1px solid rgba(0,0,0,.05);
+  cursor: pointer; transition: background .12s;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.bo-idx-card:hover { background: rgba(79,70,229,.04); }
+.bo-idx-card.active {
+  background: rgba(79,70,229,.08);
+  border-left: 3px solid var(--accent); padding-left: 11px;
+}
+.bo-idx-name { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text); }
+.bo-idx-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.bo-stock-panel { min-width: 0; }
+.bo-toggle-sep {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 1.5px;
+  color: var(--muted); text-transform: uppercase; padding: 0 2px; white-space: nowrap;
+}
+.bo-toggle-label {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase; margin: 8px 0 4px;
+}
+.bo-toggle-group { display: flex; flex-wrap: wrap; gap: 4px; }
+.bo-toggle-btn {
+  padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border2);
+  background: transparent; color: var(--muted); font-family: var(--mono);
+  font-size: 9px; font-weight: 600; letter-spacing: .5px; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.bo-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.bo-toggle-btn.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.bo-toggle-btn.up.active   { background: var(--up);   border-color: var(--up);   }
+.bo-toggle-btn.down.active { background: var(--down); border-color: var(--down); }
+.bo-toggle-btn.side.active { background: var(--side); border-color: var(--side); }
+.bo-stock-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0 12px; font-family: var(--mono); font-size: 11px;
+  color: var(--muted); letter-spacing: .5px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); margin-bottom: 12px;
+}
 </style>
 </head>
 <body>
@@ -401,9 +493,11 @@ h1 span { /* inherits gradient naturally */ }
   <div class="tabs">
     <button class="tab active" onclick="switchTab('stocks')">📈 Stock Screener</button>
     <button class="tab" onclick="switchTab('indices')">📊 Index Screener</button>
+    <button class="tab" onclick="switchTab('breakouts')">🔍 Breakouts Overview</button>
   </div>
 
   <!-- API Config -->
+  <!--
   <div style="background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:14px 24px;margin-bottom:12px;
               display:flex;align-items:end;gap:12px;">
     <div class="field" style="flex:1">
@@ -416,7 +510,7 @@ h1 span { /* inherits gradient naturally */ }
     </button>
     <div id="connStatus" style="font-family:var(--mono);font-size:10px;color:var(--muted);padding-bottom:12px;white-space:nowrap"></div>
   </div>
-
+-->
   <!-- ── STOCKS TAB ── -->
   <div id="stocks-tab" class="tab-content active">
 
@@ -457,64 +551,60 @@ h1 span { /* inherits gradient naturally */ }
         <button class="btn btn-primary" onclick="applyFilters()" style="padding:6px 14px;font-size:10px">Apply</button>
       </div>
     </div>
-    <!-- All 3 filters in one row -->
-    <div style="display:grid;grid-template-columns:1fr 160px 260px;gap:12px;align-items:end;">
-      <div class="filter-field">
-        <label>Symbol Search</label>
-        <input id="f-symbol" type="text" placeholder="e.g. RELIANCE, INFY..."
-               autocomplete="off" autocapitalize="characters"
-               oninput="this.value=this.value.toUpperCase(); applyFilters()"
-               style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
-      </div>
-      <div class="filter-field">
-        <label>Trend</label>
-        <select id="f-trend" onchange="applyFilters()">
-          <option value="">All</option>
-          <option value="UP">UP</option>
-          <option value="DOWN">DOWN</option>
-          <option value="SIDE">SIDE</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label>Candle Structure</label>
-        <select id="f-structure" onchange="applyFilters()">
-          <option value="">All</option>
-          <option value="THH">THH — Trending Higher High</option>
-          <option value="HH">HH — Higher High</option>
-          <option value="TLL">TLL — Trending Lower Low</option>
-          <option value="LL">LL — Lower Low</option>
-          <option value="HV">HV — High Volatile</option>
-          <option value="LV">LV — Low Volatile</option>
-          <option value="NC">NC — No Change</option>
-          <option value="—">— No Prev Data</option>
-        </select>
-      </div>
+    <!-- Hidden selects — read by applyFilters() -->
+    <select id="f-trend" style="display:none"><option value="">All</option><option value="UP">UP</option><option value="DOWN">DOWN</option><option value="SIDE">SIDE</option></select>
+    <select id="f-structure" style="display:none"><option value="">All</option><option value="THH">THH</option><option value="HH">HH</option><option value="TLL">TLL</option><option value="LL">LL</option><option value="HV">HV</option><option value="LV">LV</option><option value="NC">NC</option><option value="—">—</option></select>
+    <select id="f-volbo" style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+    <select id="f-delbo" style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+    <select id="f-closecp" style="display:none"><option value="">All</option><option value="up">up</option><option value="down">down</option></select>
+    <!-- Symbol search -->
+    <div class="filter-field" style="margin-bottom:12px">
+      <label>Symbol Search</label>
+      <input id="f-symbol" type="text" placeholder="e.g. RELIANCE, INFY..."
+             autocomplete="off" autocapitalize="characters"
+             oninput="this.value=this.value.toUpperCase(); applyFilters()"
+             style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
     </div>
-    <!-- Signal filters row -->
-    <div style="display:grid;grid-template-columns:160px 160px 160px;gap:12px;align-items:end;margin-top:10px;">
-      <div class="filter-field">
-        <label>Vol Breakout</label>
-        <select id="f-volbo" onchange="applyFilters()">
-          <option value="">All</option>
-          <option value="yes">✓ Yes</option>
-          <option value="no">✗ No</option>
-        </select>
+    <!-- Trend -->
+    <div class="bo-toggle-label">Trend</div>
+    <div class="bo-toggle-group" id="tg-f-trend">
+      <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-f-trend','f-trend','',applyFilters)">All</button>
+      <button class="bo-toggle-btn up"   data-val="UP"   onclick="togglePill('tg-f-trend','f-trend','UP',applyFilters)">UP</button>
+      <button class="bo-toggle-btn down" data-val="DOWN" onclick="togglePill('tg-f-trend','f-trend','DOWN',applyFilters)">DOWN</button>
+      <button class="bo-toggle-btn side" data-val="SIDE" onclick="togglePill('tg-f-trend','f-trend','SIDE',applyFilters)">SIDE</button>
+    </div>
+    <!-- Structure -->
+    <div class="bo-toggle-label" style="margin-top:8px">Candle Structure</div>
+    <div class="bo-toggle-group" id="tg-f-structure">
+      <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-f-structure','f-structure','',applyFilters)">All</button>
+      <button class="bo-toggle-btn" data-val="THH" onclick="togglePill('tg-f-structure','f-structure','THH',applyFilters)" title="Trending Higher High">THH</button>
+      <button class="bo-toggle-btn" data-val="HH"  onclick="togglePill('tg-f-structure','f-structure','HH',applyFilters)"  title="Higher High">HH</button>
+      <button class="bo-toggle-btn" data-val="TLL" onclick="togglePill('tg-f-structure','f-structure','TLL',applyFilters)" title="Trending Lower Low">TLL</button>
+      <button class="bo-toggle-btn" data-val="LL"  onclick="togglePill('tg-f-structure','f-structure','LL',applyFilters)"  title="Lower Low">LL</button>
+      <button class="bo-toggle-btn" data-val="HV"  onclick="togglePill('tg-f-structure','f-structure','HV',applyFilters)"  title="High Volatile">HV</button>
+      <button class="bo-toggle-btn" data-val="LV"  onclick="togglePill('tg-f-structure','f-structure','LV',applyFilters)"  title="Low Volatile">LV</button>
+      <button class="bo-toggle-btn" data-val="NC"  onclick="togglePill('tg-f-structure','f-structure','NC',applyFilters)"  title="No Change">NC</button>
+    </div>
+    <!-- Signal toggles -->
+    <div class="bo-toggle-label" style="margin-top:8px">Signals</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <div class="bo-toggle-group" id="tg-f-volbo">
+        <span class="bo-toggle-sep">VOL-BO</span>
+        <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-f-volbo','f-volbo','',applyFilters)">All</button>
+        <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('tg-f-volbo','f-volbo','yes',applyFilters)">✓ Yes</button>
+        <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('tg-f-volbo','f-volbo','no',applyFilters)">✗ No</button>
       </div>
-      <div class="filter-field">
-        <label>Delivery Breakout</label>
-        <select id="f-delbo" onchange="applyFilters()">
-          <option value="">All</option>
-          <option value="yes">✓ Yes</option>
-          <option value="no">✗ No</option>
-        </select>
+      <div class="bo-toggle-group" id="tg-f-delbo">
+        <span class="bo-toggle-sep">DEL-BO</span>
+        <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-f-delbo','f-delbo','',applyFilters)">All</button>
+        <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('tg-f-delbo','f-delbo','yes',applyFilters)">✓ Yes</button>
+        <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('tg-f-delbo','f-delbo','no',applyFilters)">✗ No</button>
       </div>
-      <div class="filter-field">
-        <label>Close vs Prev</label>
-        <select id="f-closecp" onchange="applyFilters()">
-          <option value="">All</option>
-          <option value="up">✓ Up</option>
-          <option value="down">✗ Down</option>
-        </select>
+      <div class="bo-toggle-group" id="tg-f-closecp">
+        <span class="bo-toggle-sep">CLOSE-CP</span>
+        <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-f-closecp','f-closecp','',applyFilters)">All</button>
+        <button class="bo-toggle-btn" data-val="up"   onclick="togglePill('tg-f-closecp','f-closecp','up',applyFilters)">↑ Up</button>
+        <button class="bo-toggle-btn" data-val="down" onclick="togglePill('tg-f-closecp','f-closecp','down',applyFilters)">↓ Down</button>
       </div>
     </div>
     <div class="active-filters" id="activeFilters" style="margin-top:10px;"></div>
@@ -662,41 +752,49 @@ h1 span { /* inherits gradient naturally */ }
           <button class="btn btn-primary" onclick="applyIndexFilters()" style="padding:6px 14px;font-size:10px">Apply</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 160px 260px;gap:12px;align-items:end;">
-        <div class="filter-field">
-          <label>Index Search</label>
-          <input id="idx-f-symbol" type="text" placeholder="e.g. NIFTY50, NIFTY100..."
-                 autocomplete="off" autocapitalize="characters"
-                 oninput="this.value=this.value.toUpperCase(); applyIndexFilters()"
-                 style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
-        </div>
-        <div class="filter-field">
-          <label>Trend</label>
-          <select id="idx-f-trend" onchange="applyIndexFilters()">
-            <option value="">All</option>
-            <option value="UP">UP</option>
-            <option value="DOWN">DOWN</option>
-            <option value="SIDE">SIDE</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label>Close Range</label>
-          <select id="idx-f-closerange" onchange="applyIndexFilters()">
-            <option value="">All</option>
-            <option value="high">High (>20000)</option>
-            <option value="mid">Medium (10000-20000)</option>
-            <option value="low">Low (<10000)</option>
-          </select>
-        </div>
+      <!-- Hidden selects -->
+      <select id="idx-f-trend" style="display:none"><option value="">All</option><option value="UP">UP</option><option value="DOWN">DOWN</option><option value="SIDE">SIDE</option></select>
+      <select id="idx-f-closerange" style="display:none"><option value="">All</option><option value="high">high</option><option value="mid">mid</option><option value="low">low</option></select>
+      <select id="idx-f-volbo" style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+      <select id="idx-f-closecp" style="display:none"><option value="">All</option><option value="up">up</option><option value="down">down</option></select>
+      <!-- Index Search -->
+      <div class="filter-field" style="margin-bottom:12px">
+        <label>Index Search</label>
+        <input id="idx-f-symbol" type="text" placeholder="e.g. NIFTY50, NIFTY100..."
+               autocomplete="off" autocapitalize="characters"
+               oninput="this.value=this.value.toUpperCase(); applyIndexFilters()"
+               style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
       </div>
-      <div style="display:grid;grid-template-columns:160px;gap:12px;align-items:end;margin-top:10px;">
-        <div class="filter-field">
-          <label>Close vs Prev</label>
-          <select id="idx-f-closecp" onchange="applyIndexFilters()">
-            <option value="">All</option>
-            <option value="up">✓ Up</option>
-            <option value="down">✗ Down</option>
-          </select>
+      <!-- Trend -->
+      <div class="bo-toggle-label">Trend</div>
+      <div class="bo-toggle-group" id="tg-idx-trend">
+        <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-idx-trend','idx-f-trend','',applyIndexFilters)">All</button>
+        <button class="bo-toggle-btn up"   data-val="UP"   onclick="togglePill('tg-idx-trend','idx-f-trend','UP',applyIndexFilters)">UP</button>
+        <button class="bo-toggle-btn down" data-val="DOWN" onclick="togglePill('tg-idx-trend','idx-f-trend','DOWN',applyIndexFilters)">DOWN</button>
+        <button class="bo-toggle-btn side" data-val="SIDE" onclick="togglePill('tg-idx-trend','idx-f-trend','SIDE',applyIndexFilters)">SIDE</button>
+      </div>
+      <!-- Close Range -->
+      <div class="bo-toggle-label" style="margin-top:8px">Close Range</div>
+      <div class="bo-toggle-group" id="tg-idx-closerange">
+        <button class="bo-toggle-btn active" data-val=""     onclick="togglePill('tg-idx-closerange','idx-f-closerange','',applyIndexFilters)">All</button>
+        <button class="bo-toggle-btn"        data-val="high" onclick="togglePill('tg-idx-closerange','idx-f-closerange','high',applyIndexFilters)">&gt;20k</button>
+        <button class="bo-toggle-btn"        data-val="mid"  onclick="togglePill('tg-idx-closerange','idx-f-closerange','mid',applyIndexFilters)">10k–20k</button>
+        <button class="bo-toggle-btn"        data-val="low"  onclick="togglePill('tg-idx-closerange','idx-f-closerange','low',applyIndexFilters)">&lt;10k</button>
+      </div>
+      <!-- Signals -->
+      <div class="bo-toggle-label" style="margin-top:8px">Signals</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <div class="bo-toggle-group" id="tg-idx-volbo">
+          <span class="bo-toggle-sep">VOL-BO</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-idx-volbo','idx-f-volbo','',applyIndexFilters)">All</button>
+          <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('tg-idx-volbo','idx-f-volbo','yes',applyIndexFilters)">✓ Yes</button>
+          <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('tg-idx-volbo','idx-f-volbo','no',applyIndexFilters)">✗ No</button>
+        </div>
+        <div class="bo-toggle-group" id="tg-idx-closecp">
+          <span class="bo-toggle-sep">CLOSE-CP</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-idx-closecp','idx-f-closecp','',applyIndexFilters)">All</button>
+          <button class="bo-toggle-btn" data-val="up"   onclick="togglePill('tg-idx-closecp','idx-f-closecp','up',applyIndexFilters)">↑ Up</button>
+          <button class="bo-toggle-btn" data-val="down" onclick="togglePill('tg-idx-closecp','idx-f-closecp','down',applyIndexFilters)">↓ Down</button>
         </div>
       </div>
       <div class="active-filters" id="idx-activeFilters" style="margin-top:10px;"></div>
@@ -740,7 +838,7 @@ h1 span { /* inherits gradient naturally */ }
             <option value="close">Close</option>
             <option value="high">High</option>
             <option value="low">Low</option>
-            <option value="highVolQty">High Volume</option>
+            <option value="structure">Structure</option>
             <option value="pe">P/E</option>
             <option value="pb">P/B</option>
             <option value="vsLastPeriod">vs Last Period</option>
@@ -776,6 +874,9 @@ h1 span { /* inherits gradient naturally */ }
               <th class="ctx-col" id="idx-thContext">PREV · CURR · NEXT</th>
               <th onclick="doIndexSort('pctChange')" class="td-right">% Chg<span class="sort-arrow" id="idx-arr-pctChange"></span></th>
               <th onclick="doIndexSort('trend')">Trend<span class="sort-arrow" id="idx-arr-trend"></span></th>
+              <th onclick="doIndexSort('structure')" class="sig-col" style="min-width:80px" title="Candle Structure">STRUCTURE <span class="sort-arrow" id="idx-arr-structure"></span></th>
+              <th class="sig-col" title="Volume Breakout">VOL-BO</th>
+              <th class="sig-col" title="Close vs Prev Close">CLOSE-CP</th>
               <th onclick="doIndexSort('high')" class="td-right">High<span class="sort-arrow" id="idx-arr-high"></span></th>
               <th onclick="doIndexSort('low')" class="td-right">Low<span class="sort-arrow" id="idx-arr-low"></span></th>
               <th onclick="doIndexSort('pe')" class="td-right">P/E<span class="sort-arrow" id="idx-arr-pe"></span></th>
@@ -798,6 +899,254 @@ h1 span { /* inherits gradient naturally */ }
     </div>
 
   </div><!-- end indices-tab -->
+
+  <!-- ── BREAKOUTS OVERVIEW TAB ── -->
+  <div id="breakouts-tab" class="tab-content">
+
+    <!-- Load panel -->
+    <div class="load-panel">
+      <div class="field">
+        <label>Timeframe</label>
+        <select id="bo-tf">
+          <option value="YEAR">YEAR</option>
+          <option value="QUARTER">QUARTER</option>
+          <option value="MONTH">MONTH</option>
+          <option value="WEEK">WEEK</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Period</label>
+        <select id="bo-period">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max Stocks</label>
+        <select id="bo-maxSize">
+          <option value="500">500</option>
+          <option value="1000">1000</option>
+          <option value="2500" selected>All (~2400)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="bo-btnLoad" onclick="loadBreakoutsData()">Load Data</button>
+    </div>
+
+    <!-- States -->
+    <div class="state-box visible" id="bo-stateEmpty">
+      <div class="state-icon" style="color:var(--muted)">◎</div>
+      <div class="state-msg">Select a timeframe and period, then click Load Data.</div>
+    </div>
+    <div class="state-box" id="bo-stateLoading">
+      <div class="spinner"></div>
+      <div class="state-msg" id="bo-loadingMsg">Loading...</div>
+    </div>
+    <div class="state-box error" id="bo-stateError">
+      <div class="state-icon">⚠</div>
+      <div class="state-msg" id="bo-errorMsg">Error</div>
+    </div>
+
+    <!-- Results -->
+    <div id="bo-resultsArea" style="display:none">
+      <div class="bo-layout">
+
+        <!-- Left: Index selector panel -->
+        <div class="bo-idx-panel">
+          <div class="bo-idx-header">
+            Indices <span id="bo-idxCount" style="opacity:.6;font-weight:400"></span>
+            <input id="bo-idx-search" type="text" placeholder="Filter indices…"
+                   oninput="applyBoIdxFilters()"
+                   style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--border2);
+                          border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;
+                          padding:6px 9px;outline:none;display:block"/>
+            <!-- Trend toggles -->
+            <div class="bo-toggle-label">Trend</div>
+            <div class="bo-toggle-group" id="bo-idx-trend-group">
+              <button class="bo-toggle-btn active" data-val="" onclick="boIdxToggle('trend','')">All</button>
+              <button class="bo-toggle-btn up"     data-val="UP"   onclick="boIdxToggle('trend','UP')">UP</button>
+              <button class="bo-toggle-btn down"   data-val="DOWN" onclick="boIdxToggle('trend','DOWN')">DOWN</button>
+              <button class="bo-toggle-btn side"   data-val="SIDE" onclick="boIdxToggle('trend','SIDE')">SIDE</button>
+            </div>
+            <!-- Structure toggles -->
+            <div class="bo-toggle-label">Structure</div>
+            <div class="bo-toggle-group" id="bo-idx-struct-group">
+              <button class="bo-toggle-btn active" data-val="" onclick="boIdxToggle('struct','')">All</button>
+              <button class="bo-toggle-btn"        data-val="THH" onclick="boIdxToggle('struct','THH')">THH</button>
+              <button class="bo-toggle-btn"        data-val="HH"  onclick="boIdxToggle('struct','HH')">HH</button>
+              <button class="bo-toggle-btn"        data-val="TLL" onclick="boIdxToggle('struct','TLL')">TLL</button>
+              <button class="bo-toggle-btn"        data-val="LL"  onclick="boIdxToggle('struct','LL')">LL</button>
+              <button class="bo-toggle-btn"        data-val="HV"  onclick="boIdxToggle('struct','HV')">HV</button>
+              <button class="bo-toggle-btn"        data-val="LV"  onclick="boIdxToggle('struct','LV')">LV</button>
+              <button class="bo-toggle-btn"        data-val="NC"  onclick="boIdxToggle('struct','NC')">NC</button>
+            </div>
+            <!-- Signal toggles -->
+            <div class="bo-toggle-label">Signals</div>
+            <div class="bo-toggle-group" id="bo-idx-volbo-group">
+              <button class="bo-toggle-btn active" data-val="" onclick="boIdxToggle('volbo','')">Vol-BO All</button>
+              <button class="bo-toggle-btn"        data-val="yes" onclick="boIdxToggle('volbo','yes')">✓ Vol-BO</button>
+              <button class="bo-toggle-btn"        data-val="no"  onclick="boIdxToggle('volbo','no')">✗ Vol-BO</button>
+            </div>
+            <div class="bo-toggle-group" style="margin-top:4px" id="bo-idx-closecp-group">
+              <button class="bo-toggle-btn active" data-val="" onclick="boIdxToggle('closecp','')">Close-CP All</button>
+              <button class="bo-toggle-btn"        data-val="up"   onclick="boIdxToggle('closecp','up')">✓ Close↑</button>
+              <button class="bo-toggle-btn"        data-val="down" onclick="boIdxToggle('closecp','down')">✗ Close↓</button>
+            </div>
+          </div>
+          <div id="bo-idxList" class="bo-idx-list"></div>
+        </div>
+
+        <!-- Right: Stock screener panel -->
+        <div class="bo-stock-panel">
+          <div id="bo-stockPlaceholder" style="padding:60px 24px;text-align:center;color:var(--muted);
+               font-family:var(--mono);font-size:11px;letter-spacing:1px;background:var(--surf);
+               border:1px solid var(--border);border-radius:14px">
+            ← Select an index to see its constituent stocks
+          </div>
+          <div id="bo-stockArea" style="display:none">
+            <!-- Selected index header -->
+            <div class="bo-stock-header" id="bo-stockHeader"></div>
+
+            <!-- Filter bar (same structure as stock screener) -->
+            <div class="filter-bar" style="margin-bottom:12px">
+              <div class="filter-bar-top">
+                <div class="filter-title">⚙ Filters</div>
+                <div class="filter-actions">
+                  <button class="btn btn-ghost" onclick="clearBreakoutsFilters()" style="padding:6px 14px;font-size:10px">Clear All</button>
+                </div>
+              </div>
+              <!-- Hidden selects -->
+              <select id="bo-f-trend" style="display:none"><option value="">All</option><option value="UP">UP</option><option value="DOWN">DOWN</option><option value="SIDE">SIDE</option></select>
+              <select id="bo-f-structure" style="display:none"><option value="">All</option><option value="THH">THH</option><option value="HH">HH</option><option value="TLL">TLL</option><option value="LL">LL</option><option value="HV">HV</option><option value="LV">LV</option><option value="NC">NC</option><option value="—">—</option></select>
+              <select id="bo-f-volbo" style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+              <select id="bo-f-delbo" style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+              <select id="bo-f-closecp" style="display:none"><option value="">All</option><option value="up">up</option><option value="down">down</option></select>
+              <!-- Symbol search -->
+              <div class="filter-field" style="margin-bottom:12px">
+                <label>Symbol Search</label>
+                <input id="bo-f-symbol" type="text" placeholder="e.g. RELIANCE, INFY..."
+                       autocomplete="off" autocapitalize="characters"
+                       oninput="this.value=this.value.toUpperCase(); applyBreakoutsFilters()"
+                       style="font-size:13px;padding:10px 13px;border-color:var(--accent);"/>
+              </div>
+              <!-- Trend -->
+              <div class="bo-toggle-label">Trend</div>
+              <div class="bo-toggle-group" id="tg-bo-trend">
+                <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-bo-trend','bo-f-trend','',applyBreakoutsFilters)">All</button>
+                <button class="bo-toggle-btn up"   data-val="UP"   onclick="togglePill('tg-bo-trend','bo-f-trend','UP',applyBreakoutsFilters)">UP</button>
+                <button class="bo-toggle-btn down" data-val="DOWN" onclick="togglePill('tg-bo-trend','bo-f-trend','DOWN',applyBreakoutsFilters)">DOWN</button>
+                <button class="bo-toggle-btn side" data-val="SIDE" onclick="togglePill('tg-bo-trend','bo-f-trend','SIDE',applyBreakoutsFilters)">SIDE</button>
+              </div>
+              <!-- Structure -->
+              <div class="bo-toggle-label" style="margin-top:8px">Candle Structure</div>
+              <div class="bo-toggle-group" id="tg-bo-structure">
+                <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-bo-structure','bo-f-structure','',applyBreakoutsFilters)">All</button>
+                <button class="bo-toggle-btn" data-val="THH" onclick="togglePill('tg-bo-structure','bo-f-structure','THH',applyBreakoutsFilters)" title="Trending Higher High">THH</button>
+                <button class="bo-toggle-btn" data-val="HH"  onclick="togglePill('tg-bo-structure','bo-f-structure','HH',applyBreakoutsFilters)"  title="Higher High">HH</button>
+                <button class="bo-toggle-btn" data-val="TLL" onclick="togglePill('tg-bo-structure','bo-f-structure','TLL',applyBreakoutsFilters)" title="Trending Lower Low">TLL</button>
+                <button class="bo-toggle-btn" data-val="LL"  onclick="togglePill('tg-bo-structure','bo-f-structure','LL',applyBreakoutsFilters)"  title="Lower Low">LL</button>
+                <button class="bo-toggle-btn" data-val="HV"  onclick="togglePill('tg-bo-structure','bo-f-structure','HV',applyBreakoutsFilters)"  title="High Volatile">HV</button>
+                <button class="bo-toggle-btn" data-val="LV"  onclick="togglePill('tg-bo-structure','bo-f-structure','LV',applyBreakoutsFilters)"  title="Low Volatile">LV</button>
+                <button class="bo-toggle-btn" data-val="NC"  onclick="togglePill('tg-bo-structure','bo-f-structure','NC',applyBreakoutsFilters)"  title="No Change">NC</button>
+              </div>
+              <!-- Signals + sort -->
+              <div class="bo-toggle-label" style="margin-top:8px">Signals</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                <div class="bo-toggle-group" id="tg-bo-volbo">
+                  <span class="bo-toggle-sep">VOL-BO</span>
+                  <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-bo-volbo','bo-f-volbo','',applyBreakoutsFilters)">All</button>
+                  <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('tg-bo-volbo','bo-f-volbo','yes',applyBreakoutsFilters)">✓ Yes</button>
+                  <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('tg-bo-volbo','bo-f-volbo','no',applyBreakoutsFilters)">✗ No</button>
+                </div>
+                <div class="bo-toggle-group" id="tg-bo-delbo">
+                  <span class="bo-toggle-sep">DEL-BO</span>
+                  <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-bo-delbo','bo-f-delbo','',applyBreakoutsFilters)">All</button>
+                  <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('tg-bo-delbo','bo-f-delbo','yes',applyBreakoutsFilters)">✓ Yes</button>
+                  <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('tg-bo-delbo','bo-f-delbo','no',applyBreakoutsFilters)">✗ No</button>
+                </div>
+                <div class="bo-toggle-group" id="tg-bo-closecp">
+                  <span class="bo-toggle-sep">CLOSE-CP</span>
+                  <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-bo-closecp','bo-f-closecp','',applyBreakoutsFilters)">All</button>
+                  <button class="bo-toggle-btn" data-val="up"   onclick="togglePill('tg-bo-closecp','bo-f-closecp','up',applyBreakoutsFilters)">↑ Up</button>
+                  <button class="bo-toggle-btn" data-val="down" onclick="togglePill('tg-bo-closecp','bo-f-closecp','down',applyBreakoutsFilters)">↓ Down</button>
+                </div>
+                <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+                  <div class="filter-field" style="margin-bottom:0">
+                    <label>Sort</label>
+                    <select id="bo-sortCol" onchange="applyBreakoutsFilters()">
+                      <option value="pctChange">% Change</option>
+                      <option value="close">Close</option>
+                      <option value="high">High</option>
+                      <option value="low">Low</option>
+                      <option value="highVolQty">High Volume</option>
+                      <option value="highDelivQty">High Delivery</option>
+                      <option value="delivPct">Delivery %</option>
+                      <option value="vsLastPeriod">vs Last Period</option>
+                      <option value="structure">Structure</option>
+                    </select>
+                  </div>
+                  <div class="filter-field" style="margin-bottom:0">
+                    <label>Dir</label>
+                    <select id="bo-sortDir" onchange="applyBreakoutsFilters()">
+                      <option value="desc">DESC</option>
+                      <option value="asc">ASC</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="stats-bar" style="margin-bottom:12px">
+              <div class="stats-chips">
+                <div class="chip">Stocks <strong id="bo-statTotal">0</strong></div>
+                <div class="chip">Matched <strong id="bo-statMatched">0</strong></div>
+                <div class="chip up">UP <strong id="bo-statUp">0</strong></div>
+                <div class="chip down">DOWN <strong id="bo-statDown">0</strong></div>
+                <div class="chip side">SIDE <strong id="bo-statSide">0</strong></div>
+              </div>
+            </div>
+
+            <!-- Table (same structure as stock screener) -->
+            <div id="bo-topScroll" style="overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:3px;">
+              <div id="bo-topScrollInner" style="height:1px;"></div>
+            </div>
+            <div class="table-wrap fade" id="bo-tableWrap">
+              <table class="tbl" id="bo-mainTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th onclick="boSort('symbol')">Symbol<span class="sort-arrow" id="bo-arr-symbol"></span></th>
+                    <th class="ctx-col" id="bo-thContext">PREV · CURR · NEXT</th>
+                    <th onclick="boSort('pctChange')" class="td-right">% Chg<span class="sort-arrow" id="bo-arr-pctChange"></span></th>
+                    <th onclick="boSort('trend')">Trend<span class="sort-arrow" id="bo-arr-trend"></span></th>
+                    <th onclick="boSort('structure')" class="sig-col" style="min-width:80px" title="Candle Structure">STRUCTURE <span class="sort-arrow" id="bo-arr-structure"></span></th>
+                    <th class="sig-col" title="Volume Breakout">VOL-BO</th>
+                    <th class="sig-col" title="Delivery Breakout">DEL-BO</th>
+                    <th class="sig-col" title="Close vs Prev Close">CLOSE-CP</th>
+                    <th onclick="boSort('highVolQty')" class="td-right">High Vol<span class="sort-arrow" id="bo-arr-highVolQty"></span></th>
+                    <th onclick="boSort('highDelivQty')" class="td-right">High Deliv<span class="sort-arrow" id="bo-arr-highDelivQty"></span></th>
+                    <th onclick="boSort('delivPct')" class="td-right">Del%<span class="sort-arrow" id="bo-arr-delivPct"></span></th>
+                    <th>High Date</th>
+                    <th>Low Date</th>
+                    <th onclick="boSort('vsLastPeriod')" class="td-right prev-col" id="bo-thPrevClose">Prev Close</th>
+                    <th onclick="boSort('vsLastPeriod')" class="td-right prev-col" id="bo-thVsLastPeriod">vs Last Period</th>
+                  </tr>
+                </thead>
+                <tbody id="bo-tableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+              <div class="page-info" id="bo-pageInfo">—</div>
+              <div class="page-btns" id="bo-pageBtns"></div>
+            </div>
+          </div><!-- end bo-stockArea -->
+        </div><!-- end bo-stock-panel -->
+
+      </div><!-- end bo-layout -->
+    </div><!-- end bo-resultsArea -->
+
+  </div><!-- end breakouts-tab -->
 
 </div>
 
@@ -892,6 +1241,41 @@ function showSkeletonTable() {
     </tr>`;
   }
   tbody.innerHTML = html;
+}
+
+// ── Index drill-down cache ────────────────────────────────────────────────────
+let idxDrillStockCache = {};  // 'tf:period' → normalised stock[]
+let idxDrillPrevCache  = {};  // 'tf:period' → { symbol → normalised stock }
+let idxDrillNextCache  = {};  // 'tf:period' → { symbol → normalised stock }
+let idxDrillSymbolMap  = {};  // compressedIndexName (no spaces) → Set<symbol>
+let idxDrillDataStore  = {};  // safeId → { stocks, prevMap, nextMap }
+
+// Maps index_daily_close display name (uppercased, spaces removed) → index_master key
+// Needed for sectoral indices where space-removal doesn't produce the right index_master code.
+// Indices NOT listed here have display names that already match their index_master key:
+//   NIFTYCHEMICALS  → "Nifty Chemicals"   → remove spaces → NIFTYCHEMICALS  ✓ (no mapping needed)
+//   NIFTYFINSERVICE → "Nifty Financial Services" → NIFTYFINANCIALSERVICES → mapped below
+const IDX_KEY_MAP = {
+  'NIFTYFINANCIALSERVICES': 'NIFTYFINSERVICE',
+  'NIFTYCONSUMERDURABLES':  'NIFTYCONSUMERDURAB',
+  'NIFTYPRIVATEBANK':       'NIFTYPRIVBANK',
+  'NIFTYOILANDGAS':         'NIFTYOILGAS',
+};
+
+// Returns the Set of enabled canonical index keys from admin config, or null (= show all)
+function getActiveIndexKeys() {
+  try {
+    const v = localStorage.getItem('nse_active_indices');
+    if (!v) return null;
+    const arr = JSON.parse(v);
+    return arr.length ? new Set(arr) : null;
+  } catch { return null; }
+}
+
+// Normalises any display symbol to a canonical index_master key
+function toCanonicalIndexKey(symbol) {
+  const raw = symbol.toUpperCase().replace(/[\s_-]/g, '');
+  return IDX_KEY_MAP[raw] || raw;
 }
 
 const PAGE_SIZE = 100;
@@ -1784,11 +2168,11 @@ function goPage(p) {
 function renderBadges(f) {
   const badges = [];
   if (f.symbolFilter)    badges.push(['Symbol: '+f.symbolFilter,       ()=>clearField('f-symbol')]);
-  if (f.trendFilter)     badges.push(['Trend: '+f.trendFilter,         ()=>{ document.getElementById('f-trend').value=''; applyFilters(); }]);
-  if (f.structureFilter) badges.push(['Structure: '+f.structureFilter, ()=>{ document.getElementById('f-structure').value=''; applyFilters(); }]);
-  if (f.volBoFilter)     badges.push(['Vol-BO: '+f.volBoFilter,        ()=>{ document.getElementById('f-volbo').value=''; applyFilters(); }]);
-  if (f.delBoFilter)     badges.push(['Del-BO: '+f.delBoFilter,        ()=>{ document.getElementById('f-delbo').value=''; applyFilters(); }]);
-  if (f.closeCpFilter)   badges.push(['Close-CP: '+f.closeCpFilter,    ()=>{ document.getElementById('f-closecp').value=''; applyFilters(); }]);
+  if (f.trendFilter)     badges.push(['Trend: '+f.trendFilter,         ()=>{ resetTogglePill('tg-f-trend','f-trend'); applyFilters(); }]);
+  if (f.structureFilter) badges.push(['Structure: '+f.structureFilter, ()=>{ resetTogglePill('tg-f-structure','f-structure'); applyFilters(); }]);
+  if (f.volBoFilter)     badges.push(['Vol-BO: '+f.volBoFilter,        ()=>{ resetTogglePill('tg-f-volbo','f-volbo'); applyFilters(); }]);
+  if (f.delBoFilter)     badges.push(['Del-BO: '+f.delBoFilter,        ()=>{ resetTogglePill('tg-f-delbo','f-delbo'); applyFilters(); }]);
+  if (f.closeCpFilter)   badges.push(['Close-CP: '+f.closeCpFilter,    ()=>{ resetTogglePill('tg-f-closecp','f-closecp'); applyFilters(); }]);
 
   const container = document.getElementById('activeFilters');
   container.innerHTML = badges.map((b, i) =>
@@ -1809,11 +2193,11 @@ function clearField(id) {
 
 function clearFilters(andApply = true) {
   document.getElementById('f-symbol').value    = '';
-  document.getElementById('f-trend').value     = '';
-  document.getElementById('f-structure').value = '';
-  document.getElementById('f-volbo').value     = '';
-  document.getElementById('f-delbo').value     = '';
-  document.getElementById('f-closecp').value   = '';
+  resetTogglePill('tg-f-trend',     'f-trend');
+  resetTogglePill('tg-f-structure', 'f-structure');
+  resetTogglePill('tg-f-volbo',     'f-volbo');
+  resetTogglePill('tg-f-delbo',     'f-delbo');
+  resetTogglePill('tg-f-closecp',   'f-closecp');
   if (andApply && allData.length > 0) applyFilters();
 }
 
@@ -1821,6 +2205,21 @@ function midDate(start, end) {
   const s = new Date(start).getTime();
   const e = new Date(end).getTime();
   return new Date(s + (e - s) / 2);
+}
+
+// ── Toggle pill utility ───────────────────────────────────────────────────────
+function togglePill(groupId, selectId, val, filterFn) {
+  const sel = document.getElementById(selectId);
+  if (sel) sel.value = val;
+  document.querySelectorAll('#' + groupId + ' .bo-toggle-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.val === val));
+  if (filterFn) filterFn();
+}
+function resetTogglePill(groupId, selectId) {
+  const sel = document.getElementById(selectId);
+  if (sel) sel.value = '';
+  document.querySelectorAll('#' + groupId + ' .bo-toggle-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.val === ''));
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -1979,9 +2378,10 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
   document.getElementById(tabName + '-tab').classList.add('active');
 
-  // Initialize period dropdown if switching to indices
   if (tabName === 'indices') {
-    updateIndexPeriodField('YEAR');
+    updateIndexPeriodField(document.getElementById('idx-tf').value);
+  } else if (tabName === 'breakouts') {
+    updateBreakoutsPeriodField(document.getElementById('bo-tf').value);
   }
 }
 
@@ -2067,6 +2467,11 @@ async function loadIndexData() {
   idxFiltered = [];
   idxPrevMap = {};
   idxNextMap = {};
+  idxDrillStockCache = {};
+  idxDrillPrevCache  = {};
+  idxDrillNextCache  = {};
+  idxDrillSymbolMap  = {};
+  idxDrillDataStore  = {};
 
   try {
     const url  = `${getBaseUrl()}/api/v1/index-candles/stats/screen?timeframe=${tf}&period=${period}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`;
@@ -2169,6 +2574,9 @@ function showIndexSkeletonTable() {
       <td class="skeleton-cell ctx-col"><div class="skeleton-bar lg"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
+      <td class="skeleton-cell sig-col"><div class="skeleton-bar circle"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar sm"></div></td>
       <td class="skeleton-cell"><div class="skeleton-bar xs"></div></td>
@@ -2189,10 +2597,11 @@ function idxVsLastPeriodVal(r) {
 }
 
 function clearIndexFilters() {
-  document.getElementById('idx-f-symbol').value    = '';
-  document.getElementById('idx-f-trend').value     = '';
-  document.getElementById('idx-f-closerange').value = '';
-  document.getElementById('idx-f-closecp').value   = '';
+  document.getElementById('idx-f-symbol').value = '';
+  resetTogglePill('tg-idx-trend',       'idx-f-trend');
+  resetTogglePill('tg-idx-closerange',  'idx-f-closerange');
+  resetTogglePill('tg-idx-volbo',       'idx-f-volbo');
+  resetTogglePill('tg-idx-closecp',     'idx-f-closecp');
   applyIndexFilters();
 }
 
@@ -2200,15 +2609,25 @@ function applyIndexFilters() {
   const symbol      = document.getElementById('idx-f-symbol').value.trim().toUpperCase();
   const trend       = document.getElementById('idx-f-trend').value;
   const closerange  = document.getElementById('idx-f-closerange').value;
+  const volBoFilter   = document.getElementById('idx-f-volbo').value;
   const closeCpFilter = document.getElementById('idx-f-closecp').value;
   const hasPrev     = Object.keys(idxPrevMap).length > 0;
+  const activeKeys  = getActiveIndexKeys();
 
   idxFiltered = idxAllData.filter(r => {
+    if (activeKeys && !activeKeys.has(toCanonicalIndexKey(r.symbol))) return false;
     if (symbol && !r.symbol.includes(symbol)) return false;
     if (trend && r.trend !== trend) return false;
     if (closerange === 'high' && r.close < 20000) return false;
     if (closerange === 'mid' && (r.close < 10000 || r.close >= 20000)) return false;
     if (closerange === 'low' && r.close >= 10000) return false;
+    if (volBoFilter && hasPrev) {
+      const prevR = idxPrevMap[r.symbol];
+      const volBo = (prevR && r.highVolQty != null && prevR.highVolQty != null)
+                  ? r.highVolQty > prevR.highVolQty : null;
+      if (volBoFilter === 'yes' && volBo !== true)  return false;
+      if (volBoFilter === 'no'  && volBo !== false) return false;
+    }
     if (closeCpFilter && hasPrev) {
       const prevR = idxPrevMap[r.symbol];
       if (!prevR || r.close == null || prevR.close == null) return false;
@@ -2222,6 +2641,13 @@ function applyIndexFilters() {
   idxSortCol = document.getElementById('idx-sortCol').value;
   idxSortDir = document.getElementById('idx-sortDir').value;
 
+  // Pre-compute structure codes for sorting
+  idxFiltered.forEach(r => {
+    if (r.structure == null) {
+      r.structure = candleStructure(r, idxPrevMap[r.symbol]).code;
+    }
+  });
+
   // Update stats
   document.getElementById('idx-statMatched').textContent = idxFiltered.length;
   document.getElementById('idx-statUp').textContent      = idxFiltered.filter(r => r.trend === 'UP').length;
@@ -2229,7 +2655,7 @@ function applyIndexFilters() {
   document.getElementById('idx-statSide').textContent    = idxFiltered.filter(r => r.trend === 'SIDE').length;
 
   // Active filter badges
-  renderIndexBadges({ symbol, trend, closerange, closeCpFilter });
+  renderIndexBadges({ symbol, trend, closerange, volBoFilter, closeCpFilter });
 
   // Reset pagination and render
   idxCurrentPage = 0;
@@ -2282,12 +2708,50 @@ function renderIndexTable() {
     const prevClose = prevR ? fP(prevR.close) : '—';
     const ctxCell  = buildContextCell(r, prevR, nextR);
 
-    html += `<tr class="clickable" onclick="openIndexComparison('${r.symbol}')">
-      <td class="td-muted">${start + i + 1}</td>
+    // Candle structure
+    const cs = candleStructure(r, prevR);
+    r.structure = cs.code;
+    const structHtml = `<span class="struct ${cs.cls}" data-tip="${cs.tip}">${cs.code}</span>`;
+
+    // VOL-BO: current highVolQty > prev highVolQty
+    const volBo = (!prevR) ? null
+      : (r.highVolQty != null && prevR.highVolQty != null)
+        ? r.highVolQty > prevR.highVolQty
+        : null;
+    const volBoHtml = sigIcon(volBo,
+      `Vol BO ✓ ${fV(r.highVolQty)} > ${fV(prevR?.highVolQty)}`,
+      `No Vol BO — ${fV(r.highVolQty)} ≤ ${fV(prevR?.highVolQty)}`,
+      'No prev period data');
+
+    // CLOSE-CP: close vs prev close
+    let closeCpClass = 'na';
+    let closeCpTip   = 'No prev period data';
+    if (prevR && r.close != null && prevR.close != null) {
+      if      (r.close > prevR.close) { closeCpClass = 'yes'; closeCpTip = `Close ↑ vs prev (${fP(prevR.close)})`; }
+      else if (r.close < prevR.close) { closeCpClass = 'no';  closeCpTip = `Close ↓ vs prev (${fP(prevR.close)})`; }
+      else                            { closeCpClass = 'neu'; closeCpTip = `Close = prev (${fP(prevR.close)})`; }
+    }
+    const closeHtml = closeCpClass === 'na'
+      ? `<span class="sig na" data-tip="${closeCpTip}">—</span>`
+      : closeCpClass === 'neu'
+        ? `<span class="sig neu" data-tip="${closeCpTip}">~</span>`
+        : `<span class="sig ${closeCpClass}" data-tip="${closeCpTip}">${closeCpClass==='yes'?'✓':'✗'}</span>`;
+
+    const pctCls = r.pctChange != null ? (r.pctChange >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+
+    const safeId = r.symbol.replace(/[^a-zA-Z0-9]/g, '_');
+    html += `<tr class="clickable idx-row" onclick="openIndexComparison('${r.symbol.replace(/'/g,"\\'")}')">
+      <td class="td-muted">
+        <button class="drill-btn" id="idx-drillbtn-${safeId}" title="Expand constituent stocks"
+                onclick="toggleIndexDrill(event,'${r.symbol.replace(/'/g,"\\'")}')">▶</button>${start + i + 1}
+      </td>
       <td class="td-symbol">${r.symbol}</td>
       ${ctxCell}
-      <td class="td-right" style="color:${r.pctChange >= 0 ? 'var(--up)' : 'var(--down)'}; font-weight:600">${fPct(r.pctChange)}</td>
+      <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
       <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
+      <td class="sig-col">${structHtml}</td>
+      <td class="sig-col">${volBoHtml}</td>
+      <td class="sig-col">${closeHtml}</td>
       <td class="td-right">${fP(r.high)}</td>
       <td class="td-right">${fP(r.low)}</td>
       <td class="td-right">${r.pe != null ? r.pe.toFixed(2) : '—'}</td>
@@ -2296,11 +2760,16 @@ function renderIndexTable() {
       <td class="td-muted">${fD(r.lowPriceDate)}</td>
       <td class="td-right td-muted prev-col">${prevClose}</td>
       <td class="td-right ${vsCls} prev-col" style="font-weight:600">${vsTxt}</td>
+    </tr>
+    <tr class="idx-drill-row" id="idx-drill-${safeId}" style="display:none">
+      <td colspan="16" style="padding:0">
+        <div class="drill-panel"><div id="idx-drillcontent-${safeId}"></div></div>
+      </td>
     </tr>`;
   });
 
   if (html === '') {
-    html = `<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--muted);">No indices found</td></tr>`;
+    html = `<tr><td colspan="16" style="text-align:center;padding:20px;color:var(--muted);">No indices found</td></tr>`;
   }
 
   document.getElementById('idx-tableBody').innerHTML = html;
@@ -2341,7 +2810,7 @@ function goIndexPage(p) {
 
 // ── Index sort arrows ─────────────────────────────────────────────────────────
 function updateIndexSortArrows() {
-  const cols = ['symbol','close','high','low','pctChange','trend','pe','pb','vsLastPeriod','prevClose'];
+  const cols = ['symbol','close','high','low','pctChange','trend','pe','pb','vsLastPeriod','prevClose','structure'];
   cols.forEach(c => {
     const el = document.getElementById('idx-arr-' + c);
     if (el) el.textContent = '';
@@ -2350,13 +2819,364 @@ function updateIndexSortArrows() {
   if (activeEl) activeEl.textContent = idxSortDir === 'asc' ? ' ↑' : ' ↓';
 }
 
+// ── Index drill-down ─────────────────────────────────────────────────────────
+function toggleIndexDrill(event, symbol) {
+  event.stopPropagation();
+  const safeId = symbol.replace(/[^a-zA-Z0-9]/g, '_');
+  const row    = document.getElementById('idx-drill-' + safeId);
+  const btn    = document.getElementById('idx-drillbtn-' + safeId);
+  if (!row) return;
+  const opening = row.style.display === 'none';
+  row.style.display = opening ? '' : 'none';
+  if (btn) { btn.textContent = opening ? '▼' : '▶'; btn.classList.toggle('open', opening); }
+  if (opening) loadIndexDrillDown(symbol);
+}
+
+async function loadIndexDrillDown(symbol) {
+  const safeId    = symbol.replace(/[^a-zA-Z0-9]/g, '_');
+  const contentEl = document.getElementById('idx-drillcontent-' + safeId);
+  if (!contentEl || contentEl.dataset.loaded === '1') return;
+
+  const tf       = document.getElementById('idx-tf').value;
+  const period   = document.getElementById('idx-period').value;
+  const cacheKey = tf + ':' + period;
+
+  contentEl.innerHTML = `<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--muted)"><div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0 auto 8px"></div>LOADING STOCKS…</div>`;
+
+  try {
+    // Load stock candle stats (shared across all index expansions for this period)
+    if (!idxDrillStockCache[cacheKey]) {
+      const url = `${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(period)}&size=2500&page=0&sortBy=PCT_CHANGE&sortDir=DESC`;
+      const j   = await fetch(url).then(r => r.json());
+      const w   = j.data !== undefined ? j.data : j;
+      const rows = Array.isArray(w) ? w : Array.isArray(w.results) ? w.results : Array.isArray(w.data) ? w.data : [];
+      idxDrillStockCache[cacheKey] = rows.map(normalise);
+
+      // Load prev + next period in parallel (for context cell and signal columns)
+      const prevP = prevPeriod(tf, period);
+      const nextP = nextPeriod(tf, period);
+      const fetchPeriodMap = async (pk) => {
+        if (!pk) return {};
+        try {
+          const url2  = `${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(pk)}&size=2500&page=0&sortBy=CLOSE&sortDir=DESC`;
+          const j2    = await fetch(url2).then(r => r.json());
+          const w2    = j2.data !== undefined ? j2.data : j2;
+          const rows2 = Array.isArray(w2) ? w2 : Array.isArray(w2.results) ? w2.results : Array.isArray(w2.data) ? w2.data : [];
+          const pm = {};
+          rows2.map(normalise).forEach(s => { pm[s.symbol] = s; });
+          return pm;
+        } catch(_) { return {}; }
+      };
+      const [pm, nm] = await Promise.all([fetchPeriodMap(prevP), fetchPeriodMap(nextP)]);
+      idxDrillPrevCache[cacheKey] = pm;
+      idxDrillNextCache[cacheKey] = nm;
+    }
+
+    // Load index-to-symbol mapping (cached per compressed index name)
+    // Use IDX_KEY_MAP for sectoral indices where space-removal doesn't produce the right index_master key
+    const rawKey  = symbol.replace(/\s+/g, '');           // e.g. "NIFTYFINANCIALSERVICES"
+    const compKey = IDX_KEY_MAP[rawKey] || rawKey;         // e.g. "NIFTYFINSERVICE"
+    if (!idxDrillSymbolMap[compKey]) {
+      // Omit date — let the API resolve latest trade date; avoids failures when
+      // candleEndDate is a holiday/weekend not present in nse_daily_price
+      try {
+        const j2   = await fetch(`${getBaseUrl()}/api/v1/stocks/by-index?index=${encodeURIComponent(compKey)}`).then(r => r.json());
+        const stks = j2.data?.stocks || j2.data?.results || (Array.isArray(j2.data) ? j2.data : []);
+        if (!stks.length && j2.message) {
+          // API returned an error (e.g. no constituents synced) — surface it
+          contentEl.innerHTML = `<div style="padding:14px 0;color:var(--down);font-family:var(--mono);font-size:10px;letter-spacing:1px">
+            ⚠ ${j2.message}</div>`;
+          contentEl.dataset.loaded = '1';
+          return;
+        }
+        idxDrillSymbolMap[compKey] = new Set(stks.map(s => s.symbol).filter(Boolean));
+      } catch(_) { idxDrillSymbolMap[compKey] = new Set(); }
+    }
+
+    const symbolSet  = idxDrillSymbolMap[compKey];
+    const allStocks  = idxDrillStockCache[cacheKey];
+    const prevStocks = idxDrillPrevCache[cacheKey] || {};
+    const nextStocks = idxDrillNextCache[cacheKey] || {};
+    const filtered   = symbolSet.size > 0 ? allStocks.filter(s => symbolSet.has(s.symbol)) : [];
+    console.log(`[DrillDown] ${symbol} → key:${compKey} symbolSet:${symbolSet.size} allStocks:${allStocks.length} filtered:${filtered.length}`);
+
+    renderIndexDrillContent(symbol, filtered, prevStocks, nextStocks, contentEl);
+    contentEl.dataset.loaded = '1';
+  } catch(e) {
+    contentEl.innerHTML = `<div style="padding:16px;text-align:center;color:var(--down);font-family:var(--mono);font-size:11px">⚠ ${e.message}</div>`;
+  }
+}
+
+function renderIndexDrillContent(indexSymbol, stocks, prevMap, nextMap, el) {
+  const safeId = indexSymbol.replace(/[^a-zA-Z0-9]/g, '_');
+
+  if (!stocks.length) {
+    el.innerHTML = `<div style="padding:14px 0;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:1px;line-height:1.8">
+      NO STOCKS FOUND FOR THIS INDEX / PERIOD<br>
+      <span style="color:var(--down)">Possible causes:</span><br>
+      1. Index constituents not synced — run POST /api/v1/index-constituents/sync<br>
+      2. Stock candle stats not built for this timeframe+period<br>
+      3. Index key mismatch — check browser console for the resolved index key</div>`;
+    return;
+  }
+
+  // Store full dataset for re-filtering
+  idxDrillDataStore[safeId] = { indexSymbol, stocks, prevMap, nextMap };
+
+  const up   = stocks.filter(s => s.trend === 'UP').length;
+  const dn   = stocks.filter(s => s.trend === 'DOWN').length;
+  const side = stocks.filter(s => s.trend === 'SIDE').length;
+
+  el.innerHTML = `
+    <div class="drill-meta">
+      <span>${indexSymbol} — ${stocks.length} STOCKS</span>
+      <span class="chip up">↑ UP ${up}</span>
+      <span class="chip down">↓ DOWN ${dn}</span>
+      <span class="chip side">→ SIDE ${side}</span>
+    </div>
+    <div id="dfbar-${safeId}" style="margin-bottom:10px">
+      <!-- Hidden selects — read by applyDrillFilter -->
+      <select id="df-trend-${safeId}"  style="display:none"><option value="">All</option><option value="UP">UP</option><option value="DOWN">DOWN</option><option value="SIDE">SIDE</option></select>
+      <select id="df-struct-${safeId}" style="display:none"><option value="">All</option><option value="THH">THH</option><option value="HH">HH</option><option value="TLL">TLL</option><option value="LL">LL</option><option value="HV">HV</option><option value="LV">LV</option><option value="NC">NC</option></select>
+      <select id="df-volbo-${safeId}"  style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+      <select id="df-delbo-${safeId}"  style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
+      <select id="df-closecp-${safeId}" style="display:none"><option value="">All</option><option value="up">up</option><option value="down">down</option></select>
+      <!-- Symbol search + sort (keep as inputs) -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">
+        <input id="df-sym-${safeId}" type="text" placeholder="Symbol…" autocomplete="off"
+               oninput="this.value=this.value.toUpperCase();applyDrillFilter('${safeId}')"
+               style="font-size:11px;padding:5px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surf);color:var(--text);font-family:var(--mono);height:30px;width:130px;outline:none" />
+        <select id="df-sort-${safeId}" onchange="applyDrillFilter('${safeId}')"
+                style="font-size:11px;padding:5px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surf);color:var(--text);font-family:var(--mono);height:30px;cursor:pointer;outline:none">
+          <option value="pctChange">Sort: % Chg</option>
+          <option value="close">Close</option>
+          <option value="highVolQty">High Vol</option>
+          <option value="highDelivQty">High Deliv</option>
+          <option value="delivPct">Del%</option>
+          <option value="vsLastPeriod">vs Last Period</option>
+          <option value="structure">Structure</option>
+        </select>
+        <select id="df-dir-${safeId}" onchange="applyDrillFilter('${safeId}')"
+                style="font-size:11px;padding:5px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surf);color:var(--text);font-family:var(--mono);height:30px;cursor:pointer;outline:none">
+          <option value="desc">DESC</option><option value="asc">ASC</option>
+        </select>
+        <button class="btn btn-ghost" onclick="clearDrillFilters('${safeId}')"
+                style="padding:4px 10px;font-size:10px;height:30px">Clear</button>
+        <span class="drill-filter-stats" id="df-stats-${safeId}">Showing ${stocks.length} / ${stocks.length}</span>
+      </div>
+      <!-- Toggle filter rows -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;row-gap:6px;align-items:center">
+        <div class="bo-toggle-group" id="dtg-trend-${safeId}">
+          <span class="bo-toggle-sep">TREND</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('dtg-trend-${safeId}','df-trend-${safeId}','',()=>applyDrillFilter('${safeId}'))">All</button>
+          <button class="bo-toggle-btn up"   data-val="UP"   onclick="togglePill('dtg-trend-${safeId}','df-trend-${safeId}','UP',()=>applyDrillFilter('${safeId}'))">UP</button>
+          <button class="bo-toggle-btn down" data-val="DOWN" onclick="togglePill('dtg-trend-${safeId}','df-trend-${safeId}','DOWN',()=>applyDrillFilter('${safeId}'))">DOWN</button>
+          <button class="bo-toggle-btn side" data-val="SIDE" onclick="togglePill('dtg-trend-${safeId}','df-trend-${safeId}','SIDE',()=>applyDrillFilter('${safeId}'))">SIDE</button>
+        </div>
+        <div class="bo-toggle-group" id="dtg-struct-${safeId}">
+          <span class="bo-toggle-sep">STRUCTURE</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','',()=>applyDrillFilter('${safeId}'))">All</button>
+          <button class="bo-toggle-btn" data-val="THH" onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','THH',()=>applyDrillFilter('${safeId}'))" title="Trending Higher High">THH</button>
+          <button class="bo-toggle-btn" data-val="HH"  onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','HH',()=>applyDrillFilter('${safeId}'))"  title="Higher High">HH</button>
+          <button class="bo-toggle-btn" data-val="TLL" onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','TLL',()=>applyDrillFilter('${safeId}'))" title="Trending Lower Low">TLL</button>
+          <button class="bo-toggle-btn" data-val="LL"  onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','LL',()=>applyDrillFilter('${safeId}'))"  title="Lower Low">LL</button>
+          <button class="bo-toggle-btn" data-val="HV"  onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','HV',()=>applyDrillFilter('${safeId}'))"  title="High Volatile">HV</button>
+          <button class="bo-toggle-btn" data-val="LV"  onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','LV',()=>applyDrillFilter('${safeId}'))"  title="Low Volatile">LV</button>
+          <button class="bo-toggle-btn" data-val="NC"  onclick="togglePill('dtg-struct-${safeId}','df-struct-${safeId}','NC',()=>applyDrillFilter('${safeId}'))"  title="No Change">NC</button>
+        </div>
+        <div class="bo-toggle-group" id="dtg-volbo-${safeId}">
+          <span class="bo-toggle-sep">VOL-BO</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('dtg-volbo-${safeId}','df-volbo-${safeId}','',()=>applyDrillFilter('${safeId}'))">All</button>
+          <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('dtg-volbo-${safeId}','df-volbo-${safeId}','yes',()=>applyDrillFilter('${safeId}'))">✓</button>
+          <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('dtg-volbo-${safeId}','df-volbo-${safeId}','no',()=>applyDrillFilter('${safeId}'))">✗</button>
+        </div>
+        <div class="bo-toggle-group" id="dtg-delbo-${safeId}">
+          <span class="bo-toggle-sep">DEL-BO</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('dtg-delbo-${safeId}','df-delbo-${safeId}','',()=>applyDrillFilter('${safeId}'))">All</button>
+          <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('dtg-delbo-${safeId}','df-delbo-${safeId}','yes',()=>applyDrillFilter('${safeId}'))">✓</button>
+          <button class="bo-toggle-btn" data-val="no"  onclick="togglePill('dtg-delbo-${safeId}','df-delbo-${safeId}','no',()=>applyDrillFilter('${safeId}'))">✗</button>
+        </div>
+        <div class="bo-toggle-group" id="dtg-closecp-${safeId}">
+          <span class="bo-toggle-sep">CLOSE-CP</span>
+          <button class="bo-toggle-btn active" data-val="" onclick="togglePill('dtg-closecp-${safeId}','df-closecp-${safeId}','',()=>applyDrillFilter('${safeId}'))">All</button>
+          <button class="bo-toggle-btn" data-val="up"   onclick="togglePill('dtg-closecp-${safeId}','df-closecp-${safeId}','up',()=>applyDrillFilter('${safeId}'))">↑</button>
+          <button class="bo-toggle-btn" data-val="down" onclick="togglePill('dtg-closecp-${safeId}','df-closecp-${safeId}','down',()=>applyDrillFilter('${safeId}'))">↓</button>
+        </div>
+      </div>
+    </div>
+    <div id="df-tbl-${safeId}"></div>`;
+
+  renderDrillTable(safeId, stocks);
+}
+
+function applyDrillFilter(safeId) {
+  const store = idxDrillDataStore[safeId];
+  if (!store) return;
+  const { stocks, prevMap } = store;
+
+  const sym     = (document.getElementById('df-sym-'    + safeId)?.value || '').trim();
+  const trend   =  document.getElementById('df-trend-'  + safeId)?.value || '';
+  const struct  =  document.getElementById('df-struct-' + safeId)?.value || '';
+  const volbo   =  document.getElementById('df-volbo-'  + safeId)?.value || '';
+  const delbo   =  document.getElementById('df-delbo-'  + safeId)?.value || '';
+  const closecp =  document.getElementById('df-closecp-'+ safeId)?.value || '';
+  const sortCol =  document.getElementById('df-sort-'   + safeId)?.value || 'pctChange';
+  const sortDir =  document.getElementById('df-dir-'    + safeId)?.value || 'desc';
+
+  let filtered = stocks.filter(r => {
+    if (sym    && !r.symbol.includes(sym)) return false;
+    if (trend  && r.trend !== trend)       return false;
+    const prevR = prevMap[r.symbol];
+    const cs    = candleStructure(r, prevR);
+    if (struct && cs.code !== struct)      return false;
+    if (volbo) {
+      const vb = (!prevR || r.highVolQty == null || prevR.highVolQty == null) ? null
+               : r.highVolQty > prevR.highVolQty;
+      if (volbo === 'yes' && vb !== true)  return false;
+      if (volbo === 'no'  && vb !== false) return false;
+    }
+    if (delbo) {
+      const db = (!prevR || r.highDelivQty == null || prevR.highDelivQty == null) ? null
+               : r.highDelivQty > prevR.highDelivQty;
+      if (delbo === 'yes' && db !== true)  return false;
+      if (delbo === 'no'  && db !== false) return false;
+    }
+    if (closecp) {
+      if (!prevR || r.close == null || prevR.close == null) return false;
+      const up = r.close > prevR.close;
+      if (closecp === 'up'   && !up) return false;
+      if (closecp === 'down' &&  up) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filtered = filtered.slice().sort((a, b) => {
+    let av, bv;
+    if (sortCol === 'vsLastPeriod') {
+      const pa = prevMap[a.symbol], pb = prevMap[b.symbol];
+      av = (pa && pa.close && a.close && pa.close !== 0) ? (a.close - pa.close) / Math.abs(pa.close) : null;
+      bv = (pb && pb.close && b.close && pb.close !== 0) ? (b.close - pb.close) / Math.abs(pb.close) : null;
+    } else if (sortCol === 'structure') {
+      av = candleStructure(a, prevMap[a.symbol]).code;
+      bv = candleStructure(b, prevMap[b.symbol]).code;
+    } else {
+      av = a[sortCol]; bv = b[sortCol];
+    }
+    if (av == null) av = sortDir === 'desc' ? -Infinity : Infinity;
+    if (bv == null) bv = sortDir === 'desc' ? -Infinity : Infinity;
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const statsEl = document.getElementById('df-stats-' + safeId);
+  if (statsEl) statsEl.textContent = `Showing ${filtered.length} / ${stocks.length}`;
+  renderDrillTable(safeId, filtered);
+}
+
+function clearDrillFilters(safeId) {
+  const symEl = document.getElementById('df-sym-' + safeId);
+  if (symEl) symEl.value = '';
+  resetTogglePill('dtg-trend-'  + safeId, 'df-trend-'  + safeId);
+  resetTogglePill('dtg-struct-' + safeId, 'df-struct-' + safeId);
+  resetTogglePill('dtg-volbo-'  + safeId, 'df-volbo-'  + safeId);
+  resetTogglePill('dtg-delbo-'  + safeId, 'df-delbo-'  + safeId);
+  resetTogglePill('dtg-closecp-'+ safeId, 'df-closecp-'+ safeId);
+  applyDrillFilter(safeId);
+}
+
+function renderDrillTable(safeId, stocks) {
+  const store = idxDrillDataStore[safeId];
+  if (!store) return;
+  const { indexSymbol, prevMap, nextMap } = store;
+  const tblEl = document.getElementById('df-tbl-' + safeId);
+  if (!tblEl) return;
+
+  if (!stocks.length) {
+    tblEl.innerHTML = `<div style="padding:14px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:10px">No stocks match filters</div>`;
+    return;
+  }
+
+  let html = `<div class="drill-tbl-wrap"><table class="tbl drill-tbl">
+    <thead><tr>
+      <th>#</th>
+      <th>Symbol</th>
+      <th class="ctx-col">PREV · CURR · NEXT</th>
+      <th class="td-right">% Chg</th>
+      <th>Trend</th>
+      <th class="sig-col" style="min-width:72px">STRUCTURE</th>
+      <th class="sig-col">VOL-BO</th>
+      <th class="sig-col">DEL-BO</th>
+      <th class="sig-col">CLOSE-CP</th>
+      <th class="td-right">High Vol</th>
+      <th class="td-right">High Deliv</th>
+      <th class="td-right">Del%</th>
+      <th>High Date</th>
+      <th>Low Date</th>
+      <th class="td-right prev-col">Prev Close</th>
+      <th class="td-right prev-col">vs Last Period</th>
+    </tr></thead><tbody>`;
+
+  stocks.forEach((r, i) => {
+    const pctCls    = r.pctChange != null ? (r.pctChange >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    const prevR     = prevMap[r.symbol];
+    const nextR     = nextMap[r.symbol];
+    const ctxCell   = buildContextCell(r, prevR, nextR);
+    const prevClose = prevR ? fP(prevR.close) : '—';
+    const vsVal     = (prevR && prevR.close && r.close && prevR.close !== 0)
+                    ? +((r.close - prevR.close) / Math.abs(prevR.close) * 100).toFixed(2) : null;
+    const vsCls     = vsVal != null ? (vsVal >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    const vsTxt     = vsVal != null ? fPct(vsVal) : '—';
+    const cs        = candleStructure(r, prevR);
+    const structH   = `<span class="struct ${cs.cls}" data-tip="${cs.tip}">${cs.code}</span>`;
+    const volBo     = (!prevR) ? null
+                    : (r.highVolQty != null && prevR.highVolQty != null) ? r.highVolQty > prevR.highVolQty : null;
+    const delBo     = (!prevR) ? null
+                    : (r.highDelivQty != null && prevR.highDelivQty != null) ? r.highDelivQty > prevR.highDelivQty : null;
+    const volBoH    = sigIcon(volBo, `Vol BO ✓ ${fV(r.highVolQty)} > ${fV(prevR?.highVolQty)}`,
+                                     `No Vol BO — ${fV(r.highVolQty)} ≤ ${fV(prevR?.highVolQty)}`, 'No prev period data');
+    const delBoH    = sigIcon(delBo, `Del BO ✓ ${fV(r.highDelivQty)} > ${fV(prevR?.highDelivQty)}`,
+                                     `No Del BO — ${fV(r.highDelivQty)} ≤ ${fV(prevR?.highDelivQty)}`, 'No prev period data');
+    let cpCls = 'na', cpTip = 'No prev period data';
+    if (prevR && r.close != null && prevR.close != null) {
+      if      (r.close > prevR.close) { cpCls = 'yes'; cpTip = `Close ↑ vs prev (${fP(prevR.close)})`; }
+      else if (r.close < prevR.close) { cpCls = 'no';  cpTip = `Close ↓ vs prev (${fP(prevR.close)})`; }
+      else                            { cpCls = 'neu'; cpTip = `Close = prev (${fP(prevR.close)})`; }
+    }
+    const closeH = cpCls === 'na'  ? `<span class="sig na"  data-tip="${cpTip}">—</span>`
+                 : cpCls === 'neu' ? `<span class="sig neu" data-tip="${cpTip}">~</span>`
+                 :                   `<span class="sig ${cpCls}" data-tip="${cpTip}">${cpCls === 'yes' ? '✓' : '✗'}</span>`;
+    html += `<tr class="clickable" onclick="openDrillComparison('${r.symbol.replace(/'/g,"\\'")}')">
+      <td class="td-muted">${i + 1}</td>
+      <td class="td-symbol">${r.symbol}</td>
+      ${ctxCell}
+      <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
+      <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
+      <td class="sig-col">${structH}</td>
+      <td class="sig-col">${volBoH}</td>
+      <td class="sig-col">${delBoH}</td>
+      <td class="sig-col">${closeH}</td>
+      <td class="td-right">${fV(r.highVolQty)}</td>
+      <td class="td-right">${fV(r.highDelivQty)}</td>
+      <td class="td-right">${r.delivPct != null ? r.delivPct.toFixed(1) + '%' : '—'}</td>
+      <td class="td-muted">${fD(r.highPriceDate)}</td>
+      <td class="td-muted">${fD(r.lowPriceDate)}</td>
+      <td class="td-right td-muted prev-col">${prevClose}</td>
+      <td class="td-right ${vsCls} prev-col" style="font-weight:600">${vsTxt}</td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  tblEl.innerHTML = html;
+}
+
 // ── Index active filter badges ────────────────────────────────────────────────
 function renderIndexBadges(f) {
   const badges = [];
-  if (f.symbol)        badges.push(['Symbol: ' + f.symbol,       () => { document.getElementById('idx-f-symbol').value = ''; applyIndexFilters(); }]);
-  if (f.trend)         badges.push(['Trend: ' + f.trend,         () => { document.getElementById('idx-f-trend').value = ''; applyIndexFilters(); }]);
-  if (f.closerange)    badges.push(['Range: ' + f.closerange,    () => { document.getElementById('idx-f-closerange').value = ''; applyIndexFilters(); }]);
-  if (f.closeCpFilter) badges.push(['Close-CP: ' + f.closeCpFilter, () => { document.getElementById('idx-f-closecp').value = ''; applyIndexFilters(); }]);
+  if (f.symbol)        badges.push(['Symbol: ' + f.symbol,         () => { document.getElementById('idx-f-symbol').value = ''; applyIndexFilters(); }]);
+  if (f.trend)         badges.push(['Trend: ' + f.trend,           () => { resetTogglePill('tg-idx-trend','idx-f-trend'); applyIndexFilters(); }]);
+  if (f.closerange)    badges.push(['Range: ' + f.closerange,      () => { resetTogglePill('tg-idx-closerange','idx-f-closerange'); applyIndexFilters(); }]);
+  if (f.volBoFilter)   badges.push(['Vol-BO: ' + f.volBoFilter,    () => { resetTogglePill('tg-idx-volbo','idx-f-volbo'); applyIndexFilters(); }]);
+  if (f.closeCpFilter) badges.push(['Close-CP: ' + f.closeCpFilter, () => { resetTogglePill('tg-idx-closecp','idx-f-closecp'); applyIndexFilters(); }]);
 
   const container = document.getElementById('idx-activeFilters');
   container.innerHTML = badges.map((b, i) =>
@@ -2514,6 +3334,42 @@ async function openIndexComparison(symbol) {
   }
 }
 
+// Opens comparison drawer for a STOCK clicked inside an Index Screener drill-down.
+// Reads idx-tf / idx-period so the timeframe matches the loaded index data.
+async function openDrillComparison(symbol) {
+  const tf     = document.getElementById('idx-tf').value;
+  const period = document.getElementById('idx-period').value;
+  const prev   = prevPeriod(tf, period);
+  if (!prev) { alert('No previous period available for comparison.'); return; }
+  document.getElementById('drawerTitle').textContent = `${symbol} — ${prev} vs ${period}`;
+  document.getElementById('drawerBody').innerHTML = `
+    <div style="text-align:center;padding:60px 0;">
+      <div style="width:28px;height:28px;border:2px solid #dde2f0;border-top-color:#4f46e5;
+                  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;"></div>
+      <div style="font-size:11px;color:#6b7280;">Loading comparison data...</div>
+    </div>`;
+  openDrawer();
+  try {
+    const cacheKey = tf + ':' + period;
+    let dA = (idxDrillPrevCache[cacheKey] || {})[symbol];
+    let dB = (idxDrillStockCache[cacheKey] || []).find(r => r.symbol === symbol);
+    if (!dA) {
+      const ja = await fetch(`${getBaseUrl()}/api/v1/candles/${symbol}/stats?timeframe=${tf}&period=${prev}`).then(r => r.json());
+      dA = normalise(ja.data || ja);
+    }
+    if (!dB) {
+      const jb = await fetch(`${getBaseUrl()}/api/v1/candles/${symbol}/stats?timeframe=${tf}&period=${period}`).then(r => r.json());
+      dB = normalise(jb.data || jb);
+    }
+    if (!dA || !dB) throw new Error('Could not load data for ' + symbol);
+    document.getElementById('drawerBody').innerHTML = buildCompareHTML(dA, dB, prev, period, tf);
+  } catch(err) {
+    console.error('[Drill Drawer] error:', err);
+    document.getElementById('drawerBody').innerHTML =
+      `<div style="text-align:center;padding:40px;color:#dc2626;font-size:12px;">⚠ ${err.message}</div>`;
+  }
+}
+
 function syncIdxTopScroll() {
   const wrap  = document.getElementById('idx-tableWrap');
   const top   = document.getElementById('idx-topScroll');
@@ -2524,10 +3380,547 @@ function syncIdxTopScroll() {
   top.addEventListener('scroll',  () => { wrap.scrollLeft = top.scrollLeft; });
 }
 
+// ── Breakouts Overview ────────────────────────────────────────────────────────
+let boAllIndexData   = [];
+let boPrevIndexMap   = {};
+let boStockData      = [];
+let boStockPrevMap   = {};
+let boStockNextMap   = {};
+let boSymbolSetMap   = {};   // compKey → Set<symbol>
+let boSelectedIndex  = null;
+let boIndexFiltered  = [];
+let boStockFiltered  = [];
+let boStockPage      = 0;
+let boSortCol        = 'pctChange';
+let boSortDir        = 'desc';
+// Index panel filter state
+let boIdxTrend   = '';
+let boIdxStruct  = '';
+let boIdxVolbo   = '';
+let boIdxClosecp = '';
+
+function boIdxToggle(type, val) {
+  if (type === 'trend')   boIdxTrend   = val;
+  if (type === 'struct')  boIdxStruct  = val;
+  if (type === 'volbo')   boIdxVolbo   = val;
+  if (type === 'closecp') boIdxClosecp = val;
+
+  // Update active button in the right group
+  const groupId = { trend:'bo-idx-trend-group', struct:'bo-idx-struct-group',
+                    volbo:'bo-idx-volbo-group',  closecp:'bo-idx-closecp-group' }[type];
+  document.querySelectorAll(`#${groupId} .bo-toggle-btn`).forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === val);
+  });
+  applyBoIdxFilters();
+}
+
+function applyBoIdxFilters() {
+  const q = (document.getElementById('bo-idx-search')?.value || '').trim().toUpperCase();
+  const hasPrev    = Object.keys(boPrevIndexMap).length > 0;
+  const activeKeys = getActiveIndexKeys();
+
+  boIndexFiltered = boAllIndexData.filter(idx => {
+    if (activeKeys && !activeKeys.has(toCanonicalIndexKey(idx.symbol))) return false;
+    if (q && !idx.symbol.includes(q)) return false;
+    if (boIdxTrend  && idx.trend !== boIdxTrend) return false;
+    if (boIdxStruct) {
+      const cs = candleStructure(idx, boPrevIndexMap[idx.symbol]);
+      if (cs.code !== boIdxStruct) return false;
+    }
+    if (boIdxVolbo && hasPrev) {
+      const prevR = boPrevIndexMap[idx.symbol];
+      const volBo = (prevR && idx.highVolQty != null && prevR.highVolQty != null)
+                  ? idx.highVolQty > prevR.highVolQty : null;
+      if (boIdxVolbo === 'yes' && volBo !== true)  return false;
+      if (boIdxVolbo === 'no'  && volBo !== false) return false;
+    }
+    if (boIdxClosecp && hasPrev) {
+      const prevR = boPrevIndexMap[idx.symbol];
+      if (!prevR || idx.close == null || prevR.close == null) return false;
+      if (boIdxClosecp === 'up'   && !(idx.close > prevR.close)) return false;
+      if (boIdxClosecp === 'down' && !(idx.close < prevR.close)) return false;
+    }
+    return true;
+  });
+
+  const configTotal = activeKeys ? boAllIndexData.filter(i => activeKeys.has(toCanonicalIndexKey(i.symbol))).length : boAllIndexData.length;
+  document.getElementById('bo-idxCount').textContent = `(${boIndexFiltered.length}/${configTotal})`;
+  renderBreakoutsIndexList(boIndexFiltered);
+}
+
+function setBoState(name) {
+  ['Empty','Loading','Error'].forEach(s =>
+    document.getElementById('bo-state' + s).classList.remove('visible'));
+  document.getElementById('bo-resultsArea').style.display = 'none';
+  if (name === 'results') {
+    document.getElementById('bo-resultsArea').style.display = 'block';
+  } else if (name) {
+    const el = document.getElementById('bo-state' + name.charAt(0).toUpperCase() + name.slice(1));
+    if (el) el.classList.add('visible');
+  }
+}
+
+async function updateBreakoutsPeriodField(tf) {
+  const sel = document.getElementById('bo-period');
+  sel.innerHTML = '<option value="">Loading...</option>';
+  sel.disabled  = true;
+  try {
+    const res  = await fetch(`${getBaseUrl()}/api/v1/candles/stats/available?timeframe=${tf}`);
+    const json = await res.json();
+    const wrapper = json.data !== undefined ? json.data : json;
+    const periods = wrapper.periods || [];
+    if (periods.length === 0) { sel.innerHTML = '<option value="">No periods built yet</option>'; return; }
+    const reversed = [...periods].reverse();
+    sel.innerHTML = reversed.map(p =>
+      `<option value="${p.periodKey}">${p.periodKey} &nbsp;(${fmtDateShort(p.candleDate)} – ${fmtDateShort(p.candleEndDate)})</option>`
+    ).join('');
+    sel.disabled = false;
+  } catch(e) {
+    const FB = { YEAR:'2024', QUARTER:'2024-Q1', MONTH:'2024-01', WEEK:'2024-W03' };
+    sel.innerHTML = `<option value="${FB[tf]}">${FB[tf]}</option>`;
+    sel.disabled = false;
+  }
+}
+
+document.getElementById('bo-tf').addEventListener('change', function() {
+  updateBreakoutsPeriodField(this.value);
+});
+
+async function loadBreakoutsData() {
+  const tf     = document.getElementById('bo-tf').value;
+  const period = document.getElementById('bo-period').value;
+  const size   = parseInt(document.getElementById('bo-maxSize').value) || 2500;
+  if (!period) { alert('Select a period'); return; }
+
+  setBoState('loading');
+  document.getElementById('bo-btnLoad').disabled = true;
+  boAllIndexData = []; boPrevIndexMap = {}; boStockData = [];
+  boStockPrevMap = {}; boStockNextMap = {}; boSymbolSetMap = {};
+  boSelectedIndex = null;
+
+  try {
+    document.getElementById('bo-loadingMsg').textContent = 'Loading index data…';
+    const idxRes  = await fetch(`${getBaseUrl()}/api/v1/index-candles/stats/screen?timeframe=${tf}&period=${period}&size=500&page=0&sortBy=CLOSE&sortDir=DESC`);
+    const idxJson = await idxRes.json();
+    const idxW    = idxJson.data !== undefined ? idxJson.data : idxJson;
+    const idxRows = Array.isArray(idxW) ? idxW : Array.isArray(idxW.results) ? idxW.results : Array.isArray(idxW.data) ? idxW.data : [];
+    if (idxRows.length === 0) {
+      document.getElementById('bo-errorMsg').textContent = `No index stats found for ${tf} · ${period}.`;
+      setBoState('error'); return;
+    }
+    boAllIndexData = idxRows.map(normaliseIndex);
+
+    document.getElementById('bo-loadingMsg').textContent = 'Loading stock data…';
+    const stkRes  = await fetch(`${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(period)}&size=${size}&page=0&sortBy=PCT_CHANGE&sortDir=DESC`);
+    const stkJson = await stkRes.json();
+    const stkW    = stkJson.data !== undefined ? stkJson.data : stkJson;
+    const stkRows = Array.isArray(stkW) ? stkW : Array.isArray(stkW.results) ? stkW.results : Array.isArray(stkW.data) ? stkW.data : [];
+    boStockData = stkRows.map(normalise);
+
+    document.getElementById('bo-loadingMsg').textContent = 'Loading context periods…';
+    const prevP = prevPeriod(tf, period);
+    const nextP = nextPeriod(tf, period);
+
+    const fetchIdxPeriod = async (pk) => {
+      if (!pk) return [];
+      try {
+        const r = await fetch(`${getBaseUrl()}/api/v1/index-candles/stats/screen?timeframe=${tf}&period=${pk}&size=500&page=0&sortBy=CLOSE&sortDir=DESC`);
+        const j = await r.json(); const w = j.data !== undefined ? j.data : j;
+        return Array.isArray(w) ? w : Array.isArray(w.results) ? w.results : Array.isArray(w.data) ? w.data : [];
+      } catch(_) { return []; }
+    };
+    const fetchStkMap = async (pk) => {
+      if (!pk) return {};
+      try {
+        const r = await fetch(`${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(pk)}&size=${size}&page=0&sortBy=CLOSE&sortDir=DESC`);
+        const j = await r.json(); const w = j.data !== undefined ? j.data : j;
+        const rows = Array.isArray(w) ? w : Array.isArray(w.results) ? w.results : Array.isArray(w.data) ? w.data : [];
+        const m = {}; rows.map(normalise).forEach(s => { m[s.symbol] = s; }); return m;
+      } catch(_) { return {}; }
+    };
+
+    const [prevIdxRows, stkPrev, stkNext] = await Promise.all([
+      fetchIdxPeriod(prevP), fetchStkMap(prevP), fetchStkMap(nextP)
+    ]);
+    prevIdxRows.forEach(r => { const n = normaliseIndex(r); if (n.symbol) boPrevIndexMap[n.symbol] = n; });
+    boStockPrevMap = stkPrev;
+    boStockNextMap = stkNext;
+
+    // Update column headers
+    const ctxH = document.getElementById('bo-thContext');
+    const pcH  = document.getElementById('bo-thPrevClose');
+    const vsH  = document.getElementById('bo-thVsLastPeriod');
+    if (ctxH) ctxH.textContent = `${prevP||'—'} · CURR · ${nextP||'—'}`;
+    if (pcH && prevP) pcH.childNodes[0].textContent = `Close ${prevP} `;
+    if (vsH && prevP) vsH.childNodes[0].textContent = `vs ${prevP} `;
+
+    console.log(`[Breakouts] Loaded ${boAllIndexData.length} indices, ${boStockData.length} stocks`);
+    boIndexFiltered = [...boAllIndexData];
+    // Reset index filters
+    boIdxTrend = ''; boIdxStruct = ''; boIdxVolbo = ''; boIdxClosecp = '';
+    document.querySelectorAll('.bo-toggle-btn').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.val === ''));
+    document.getElementById('bo-idx-search').value = '';
+    setBoState('results');
+    applyBoIdxFilters();
+    document.getElementById('bo-stockPlaceholder').style.display = 'block';
+    document.getElementById('bo-stockArea').style.display = 'none';
+
+  } catch(e) {
+    console.error('[Breakouts] load error:', e);
+    document.getElementById('bo-errorMsg').textContent = e.message || 'Load failed';
+    setBoState('error');
+  } finally {
+    document.getElementById('bo-btnLoad').disabled = false;
+  }
+}
+
+function renderBreakoutsIndexList(indices) {
+  const container = document.getElementById('bo-idxList');
+  if (!indices.length) {
+    container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:10px">No indices</div>`;
+    return;
+  }
+  container.innerHTML = indices.map(idx => {
+    const prevR  = boPrevIndexMap[idx.symbol];
+    const vs     = (prevR && prevR.close && idx.close && prevR.close !== 0)
+                 ? +((idx.close - prevR.close) / Math.abs(prevR.close) * 100).toFixed(2) : null;
+    const pctCls = idx.pctChange != null ? (idx.pctChange >= 0 ? 'color:var(--up)' : 'color:var(--down)') : '';
+    const vsCls  = vs != null ? (vs >= 0 ? 'color:var(--up)' : 'color:var(--down)') : '';
+    const cs     = candleStructure(idx, prevR);
+    const active = boSelectedIndex === idx.symbol ? 'active' : '';
+    return `<div class="bo-idx-card ${active}" onclick="selectBreakoutsIndex('${idx.symbol.replace(/'/g,"\\'")}')">
+      <div class="bo-idx-name">${idx.symbol}</div>
+      <div class="bo-idx-meta">
+        <span style="${pctCls};font-weight:600;font-family:var(--mono);font-size:10px">${idx.pctChange != null ? fPct(idx.pctChange) : '—'}</span>
+        <span class="trend-tag ${idx.trend}" style="font-size:9px;padding:1px 6px">${idx.trend}</span>
+        <span class="struct ${cs.cls}" style="font-size:9px;padding:1px 5px" data-tip="${cs.tip}">${cs.code}</span>
+        ${vs != null ? `<span style="${vsCls};font-family:var(--mono);font-size:10px">vs ${fPct(vs)}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function selectBreakoutsIndex(symbol) {
+  boSelectedIndex = symbol;
+  renderBreakoutsIndexList(boIndexFiltered);
+
+  const stockArea   = document.getElementById('bo-stockArea');
+  const placeholder = document.getElementById('bo-stockPlaceholder');
+  placeholder.style.display = 'none';
+  stockArea.style.display   = 'block';
+
+  // Show loading spinner in header
+  document.getElementById('bo-stockHeader').innerHTML = `
+    <span style="color:var(--accent);font-weight:700;font-size:13px">${symbol}</span>
+    <span style="color:var(--muted)">·</span>
+    <span>Constituent Stocks</span>
+    <span style="display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-left:4px;vertical-align:middle"></span>`;
+
+  document.getElementById('bo-tableBody').innerHTML = '';
+
+  // Resolve index key and load symbol set if not cached
+  const rawKey  = symbol.replace(/\s+/g, '');
+  const compKey = IDX_KEY_MAP[rawKey] || rawKey;
+
+  if (!boSymbolSetMap[compKey]) {
+    try {
+      const j2   = await fetch(`${getBaseUrl()}/api/v1/stocks/by-index?index=${encodeURIComponent(compKey)}`).then(r => r.json());
+      const stks = j2.data?.stocks || j2.data?.results || (Array.isArray(j2.data) ? j2.data : []);
+      if (!stks.length && j2.message) {
+        document.getElementById('bo-stockHeader').innerHTML = `
+          <span style="color:var(--accent);font-weight:700;font-size:13px">${symbol}</span>
+          <span style="color:var(--down);font-size:11px;font-family:var(--mono)">⚠ ${j2.message}</span>`;
+        document.getElementById('bo-tableBody').innerHTML =
+          `<tr><td colspan="16" style="text-align:center;padding:24px;color:var(--down);font-family:var(--mono);font-size:10px">No constituents found — run sync first</td></tr>`;
+        return;
+      }
+      boSymbolSetMap[compKey] = new Set(stks.map(s => s.symbol).filter(Boolean));
+    } catch(e) {
+      boSymbolSetMap[compKey] = new Set();
+    }
+  }
+
+  const symbolSet = boSymbolSetMap[compKey];
+  const stocks    = symbolSet.size > 0 ? boStockData.filter(s => symbolSet.has(s.symbol)) : [];
+  console.log(`[Breakouts] ${symbol} → key:${compKey} constituents:${symbolSet.size} boStockData:${boStockData.length} matched:${stocks.length}`);
+
+  const up   = stocks.filter(s => s.trend === 'UP').length;
+  const dn   = stocks.filter(s => s.trend === 'DOWN').length;
+  const side = stocks.filter(s => s.trend === 'SIDE').length;
+  document.getElementById('bo-stockHeader').innerHTML = `
+    <span style="color:var(--accent);font-weight:700;font-size:13px;font-family:var(--mono)">${symbol}</span>
+    <span style="color:var(--muted)">·</span>
+    <span style="font-family:var(--mono)">${stocks.length} stocks</span>
+    <span class="chip up" style="margin-left:6px">↑ UP <strong>${up}</strong></span>
+    <span class="chip down">↓ DOWN <strong>${dn}</strong></span>
+    <span class="chip side">→ SIDE <strong>${side}</strong></span>`;
+
+  document.getElementById('bo-statTotal').textContent = stocks.length;
+
+  clearBreakoutsFilters(false);
+  applyBreakoutsFilters();
+}
+
+function clearBreakoutsFilters(andApply = true) {
+  const el = document.getElementById('bo-f-symbol'); if (el) el.value = '';
+  resetTogglePill('tg-bo-trend',     'bo-f-trend');
+  resetTogglePill('tg-bo-structure', 'bo-f-structure');
+  resetTogglePill('tg-bo-volbo',     'bo-f-volbo');
+  resetTogglePill('tg-bo-delbo',     'bo-f-delbo');
+  resetTogglePill('tg-bo-closecp',   'bo-f-closecp');
+  if (andApply) applyBreakoutsFilters();
+}
+
+function applyBreakoutsFilters() {
+  if (!boSelectedIndex) return;
+  const rawKey  = boSelectedIndex.replace(/\s+/g, '');
+  const compKey = IDX_KEY_MAP[rawKey] || rawKey;
+  const symSet  = boSymbolSetMap[compKey];
+  if (!symSet) return;
+
+  const stocks = boStockData.filter(s => symSet.has(s.symbol));
+
+  const symbolFilter    = document.getElementById('bo-f-symbol').value.trim().toUpperCase();
+  const trendFilter     = document.getElementById('bo-f-trend').value;
+  const structureFilter = document.getElementById('bo-f-structure').value;
+  const volBoFilter     = document.getElementById('bo-f-volbo').value;
+  const delBoFilter     = document.getElementById('bo-f-delbo').value;
+  const closeCpFilter   = document.getElementById('bo-f-closecp').value;
+  const hasPrev         = Object.keys(boStockPrevMap).length > 0;
+
+  let filtered = stocks.filter(r => {
+    if (symbolFilter    && !r.symbol.includes(symbolFilter))    return false;
+    if (trendFilter     && r.trend !== trendFilter)             return false;
+    if (structureFilter) {
+      const cs = candleStructure(r, boStockPrevMap[r.symbol]);
+      if (cs.code !== structureFilter) return false;
+    }
+    if (volBoFilter && hasPrev) {
+      const prevR = boStockPrevMap[r.symbol];
+      const volBo = (prevR && r.highVolQty != null && prevR.highVolQty != null) ? r.highVolQty > prevR.highVolQty : null;
+      if (volBoFilter === 'yes' && volBo !== true)  return false;
+      if (volBoFilter === 'no'  && volBo !== false) return false;
+    }
+    if (delBoFilter && hasPrev) {
+      const prevR = boStockPrevMap[r.symbol];
+      const delBo = (prevR && r.highDelivQty != null && prevR.highDelivQty != null) ? r.highDelivQty > prevR.highDelivQty : null;
+      if (delBoFilter === 'yes' && delBo !== true)  return false;
+      if (delBoFilter === 'no'  && delBo !== false) return false;
+    }
+    if (closeCpFilter && hasPrev) {
+      const prevR = boStockPrevMap[r.symbol];
+      if (!prevR || r.close == null || prevR.close == null) return false;
+      if (closeCpFilter === 'up'   && !(r.close > prevR.close)) return false;
+      if (closeCpFilter === 'down' && !(r.close < prevR.close)) return false;
+    }
+    return true;
+  });
+
+  boSortCol = document.getElementById('bo-sortCol').value;
+  boSortDir = document.getElementById('bo-sortDir').value;
+
+  filtered.forEach(r => {
+    if (r.structure == null) r.structure = candleStructure(r, boStockPrevMap[r.symbol]).code;
+  });
+
+  const dm = boSortDir === 'asc' ? 1 : -1;
+  filtered.sort((a, b) => {
+    let av = a[boSortCol], bv = b[boSortCol];
+    if (boSortCol === 'vsLastPeriod') {
+      const pa = boStockPrevMap[a.symbol], pb = boStockPrevMap[b.symbol];
+      av = (pa && pa.close && a.close && pa.close !== 0) ? (a.close - pa.close) / Math.abs(pa.close) : null;
+      bv = (pb && pb.close && b.close && pb.close !== 0) ? (b.close - pb.close) / Math.abs(pb.close) : null;
+    }
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1; if (bv == null) return -1;
+    return typeof av === 'string' ? dm * av.localeCompare(bv) : dm * (av - bv);
+  });
+
+  boStockFiltered  = filtered;
+  boStockPage      = 0;
+  document.getElementById('bo-statMatched').textContent = filtered.length;
+  document.getElementById('bo-statUp').textContent      = filtered.filter(r => r.trend === 'UP').length;
+  document.getElementById('bo-statDown').textContent    = filtered.filter(r => r.trend === 'DOWN').length;
+  document.getElementById('bo-statSide').textContent    = filtered.filter(r => r.trend === 'SIDE').length;
+
+  renderBreakoutsTable();
+}
+
+function boSort(col) {
+  const colEl = document.getElementById('bo-sortCol');
+  const dirEl = document.getElementById('bo-sortDir');
+  if (boSortCol === col) {
+    dirEl.value = boSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    colEl.value = col; dirEl.value = 'desc';
+  }
+  applyBreakoutsFilters();
+}
+
+function renderBreakoutsTable() {
+  const start   = boStockPage * PAGE_SIZE;
+  const rows    = boStockFiltered.slice(start, start + PAGE_SIZE);
+  const tbody   = document.getElementById('bo-tableBody');
+  const hasPrev = Object.keys(boStockPrevMap).length > 0;
+
+  if (!rows.length) {
+    let msg;
+    const total = parseInt(document.getElementById('bo-statTotal').textContent) || 0;
+    if (total > 0) {
+      msg = 'No stocks match the current filters — try clearing filters.';
+    } else if (boStockData.length === 0) {
+      msg = 'Stock candle data not loaded. Reload data or check the API.';
+    } else {
+      msg = 'No constituent stocks found for this index. Run index sync: POST /api/v1/index-constituents/sync';
+    }
+    tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.5px">${msg}</td></tr>`;
+    renderBoPagination();
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const pctCls = r.pctChange != null ? (r.pctChange >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    const prevR  = boStockPrevMap[r.symbol];
+    const nextR  = boStockNextMap[r.symbol];
+    const prevClose = prevR ? fP(prevR.close) : '—';
+    const vsVal  = (prevR && prevR.close && r.close && prevR.close !== 0)
+                 ? +((r.close - prevR.close) / Math.abs(prevR.close) * 100).toFixed(2) : null;
+    const vsCls  = vsVal != null ? (vsVal >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    const vsTxt  = vsVal != null ? fPct(vsVal) : '—';
+    const ctxCell = buildContextCell(r, prevR, nextR);
+
+    const volBo = (!hasPrev || !prevR) ? null
+                : (r.highVolQty != null && prevR.highVolQty != null) ? r.highVolQty > prevR.highVolQty : null;
+    const delBo = (!hasPrev || !prevR) ? null
+                : (r.highDelivQty != null && prevR.highDelivQty != null) ? r.highDelivQty > prevR.highDelivQty : null;
+
+    let cpCls = 'na', cpTip = 'No prev period data';
+    if (hasPrev && prevR && r.close != null && prevR.close != null) {
+      if      (r.close > prevR.close) { cpCls = 'yes'; cpTip = `Close ↑ vs prev (${fP(prevR.close)})`; }
+      else if (r.close < prevR.close) { cpCls = 'no';  cpTip = `Close ↓ vs prev (${fP(prevR.close)})`; }
+      else                            { cpCls = 'neu'; cpTip = `Close = prev (${fP(prevR.close)})`; }
+    }
+
+    const volBoH  = sigIcon(volBo,
+      `Vol BO ✓ ${fV(r.highVolQty)} > ${fV(prevR?.highVolQty)}`,
+      `No Vol BO — ${fV(r.highVolQty)} ≤ ${fV(prevR?.highVolQty)}`, 'No prev period data');
+    const delBoH  = sigIcon(delBo,
+      `Del BO ✓ ${fV(r.highDelivQty)} > ${fV(prevR?.highDelivQty)}`,
+      `No Del BO — ${fV(r.highDelivQty)} ≤ ${fV(prevR?.highDelivQty)}`, 'No prev period data');
+    const closeH  = cpCls === 'na'  ? `<span class="sig na"  data-tip="${cpTip}">—</span>`
+                  : cpCls === 'neu' ? `<span class="sig neu" data-tip="${cpTip}">~</span>`
+                  :                   `<span class="sig ${cpCls}" data-tip="${cpTip}">${cpCls === 'yes' ? '✓' : '✗'}</span>`;
+    const cs      = candleStructure(r, prevR);
+    r.structure   = cs.code;
+    const structH = `<span class="struct ${cs.cls}" data-tip="${cs.tip}">${cs.code}</span>`;
+
+    return `
+      <tr class="clickable" onclick="openBoComparison('${r.symbol.replace(/'/g,"\\'")}')">
+        <td class="td-muted">${start + i + 1}</td>
+        <td class="td-symbol">${r.symbol}</td>
+        ${ctxCell}
+        <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
+        <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
+        <td class="sig-col">${structH}</td>
+        <td class="sig-col">${volBoH}</td>
+        <td class="sig-col">${delBoH}</td>
+        <td class="sig-col">${closeH}</td>
+        <td class="td-right">${fV(r.highVolQty)}</td>
+        <td class="td-right">${fV(r.highDelivQty)}</td>
+        <td class="td-right">${r.delivPct != null ? r.delivPct.toFixed(1) + '%' : '—'}</td>
+        <td class="td-muted">${fD(r.highPriceDate)}</td>
+        <td class="td-muted">${fD(r.lowPriceDate)}</td>
+        <td class="td-right td-muted prev-col">${prevClose}</td>
+        <td class="td-right ${vsCls} prev-col" style="font-weight:600">${vsTxt}</td>
+      </tr>`;
+  }).join('');
+
+  renderBoPagination();
+  updateBoSortArrows();
+  setTimeout(syncBoTopScroll, 50);
+}
+
+function renderBoPagination() {
+  const total = boStockFiltered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = boStockPage * PAGE_SIZE + 1;
+  const end   = Math.min(start + PAGE_SIZE - 1, total);
+  document.getElementById('bo-pageInfo').textContent = `Showing ${start}–${end} of ${total} stocks`;
+  let lo = Math.max(0, boStockPage - 3);
+  let hi = Math.min(pages - 1, lo + 6);
+  lo = Math.max(0, hi - 6);
+  let html = `<button class="page-btn" onclick="goBoPage(${boStockPage-1})" ${boStockPage===0?'disabled':''}>‹</button>`;
+  for (let p = lo; p <= hi; p++)
+    html += `<button class="page-btn ${p===boStockPage?'active':''}" onclick="goBoPage(${p})">${p+1}</button>`;
+  html += `<button class="page-btn" onclick="goBoPage(${boStockPage+1})" ${boStockPage>=pages-1?'disabled':''}>›</button>`;
+  document.getElementById('bo-pageBtns').innerHTML = html;
+}
+
+function goBoPage(p) {
+  const pages = Math.ceil(boStockFiltered.length / PAGE_SIZE);
+  if (p < 0 || p >= pages) return;
+  boStockPage = p;
+  renderBreakoutsTable();
+  document.getElementById('bo-stockArea').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function updateBoSortArrows() {
+  const cols = ['symbol','close','high','low','pctChange','trend',
+                'highVolQty','highDelivQty','delivPct','vsLastPeriod','structure'];
+  cols.forEach(c => { const el = document.getElementById('bo-arr-' + c); if (el) el.textContent = ''; });
+  const el = document.getElementById('bo-arr-' + boSortCol);
+  if (el) el.textContent = boSortDir === 'asc' ? ' ↑' : ' ↓';
+}
+
+function syncBoTopScroll() {
+  const wrap  = document.getElementById('bo-tableWrap');
+  const top   = document.getElementById('bo-topScroll');
+  const inner = document.getElementById('bo-topScrollInner');
+  if (!wrap || !top || !inner) return;
+  inner.style.width = wrap.scrollWidth + 'px';
+  wrap.addEventListener('scroll', () => { top.scrollLeft = wrap.scrollLeft; });
+  top.addEventListener('scroll',  () => { wrap.scrollLeft = top.scrollLeft; });
+}
+
+async function openBoComparison(symbol) {
+  const tf     = document.getElementById('bo-tf').value;
+  const period = document.getElementById('bo-period').value;
+  const prev   = prevPeriod(tf, period);
+  if (!prev) { alert('No previous period available.'); return; }
+  document.getElementById('drawerTitle').textContent = `${symbol} — ${prev} vs ${period}`;
+  document.getElementById('drawerBody').innerHTML = `
+    <div style="text-align:center;padding:60px 0;">
+      <div style="width:28px;height:28px;border:2px solid #dde2f0;border-top-color:#4f46e5;
+                  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;"></div>
+      <div style="font-size:11px;color:#6b7280;">Loading comparison data...</div>
+    </div>`;
+  openDrawer();
+  try {
+    let dA = boStockPrevMap[symbol];
+    let dB = boStockData.find(r => r.symbol === symbol);
+    if (!dA) {
+      const ja = await fetch(`${getBaseUrl()}/api/v1/candles/${symbol}/stats?timeframe=${tf}&period=${prev}`).then(r => r.json());
+      dA = normalise(ja.data || ja);
+    }
+    if (!dB) {
+      const jb = await fetch(`${getBaseUrl()}/api/v1/candles/${symbol}/stats?timeframe=${tf}&period=${period}`).then(r => r.json());
+      dB = normalise(jb.data || jb);
+    }
+    if (!dA || !dB) throw new Error('Could not load data for ' + symbol);
+    document.getElementById('drawerBody').innerHTML = buildCompareHTML(dA, dB, prev, period, tf);
+  } catch(err) {
+    document.getElementById('drawerBody').innerHTML =
+      `<div style="text-align:center;padding:40px;color:#dc2626;font-size:12px;">⚠ ${err.message}</div>`;
+  }
+}
+
 window.addEventListener('load', () => {
   syncTopScroll();
   syncIdxTopScroll();
-  updatePeriodField('YEAR');
+  updatePeriodField(document.getElementById('tf').value);
+  updateIndexPeriodField(document.getElementById('idx-tf').value);
+  updateBreakoutsPeriodField(document.getElementById('bo-tf').value);
   loadSavedApiUrl();
 });
 </script>

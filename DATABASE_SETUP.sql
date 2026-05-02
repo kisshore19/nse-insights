@@ -73,6 +73,35 @@ CREATE INDEX idx_idx_master_symbol ON index_master (symbol);
 CREATE INDEX idx_idx_master_index  ON index_master (index_name);
 CREATE INDEX idx_idx_master_sector ON index_master (sector);
 
+-- ── index_sector_map ──────────────────────────────────────────
+-- Static mapping: index_daily_close.index_name → index_master.index_name
+-- Bridges the verbose NSE CSV names to the short index codes used for constituent sync
+CREATE TABLE IF NOT EXISTS index_sector_map (
+    daily_close_name VARCHAR(100) NOT NULL PRIMARY KEY,
+    index_key        VARCHAR(50)  NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_sector_map_index_key ON index_sector_map (index_key);
+
+-- Static data — insert once; update only if NSE renames an index
+INSERT IGNORE INTO index_sector_map (daily_close_name, index_key) VALUES
+    ('Nifty IT',                   'NIFTYIT'),
+    ('Nifty Bank',                 'NIFTYBANK'),
+    ('Nifty Auto',                 'NIFTYAUTO'),
+    ('Nifty Pharma',               'NIFTYPHARMA'),
+    ('Nifty FMCG',                 'NIFTYFMCG'),
+    ('Nifty Metal',                'NIFTYMETAL'),
+    ('Nifty Realty',               'NIFTYREALTY'),
+    ('Nifty Media',                'NIFTYMEDIA'),
+    ('Nifty Energy',               'NIFTYENERGY'),
+    ('Nifty Financial Services',   'NIFTYFINSERVICE'),
+    ('Nifty Healthcare',           'NIFTYHEALTHCARE'),
+    ('Nifty Oil and Gas',          'NIFTYOILGAS'),
+    ('Nifty Consumer Durables',    'NIFTYCONSUMERDURAB'),
+    ('Nifty Chemicals',            'NIFTYCHEMICALS'),
+    ('Nifty Private Bank',         'NIFTYPRIVBANK'),
+    ('Nifty PSU Bank',             'NIFTYPSUBANK');
+
 -- ── comparison_insight ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS comparison_insight (
     id               BIGINT           NOT NULL AUTO_INCREMENT PRIMARY KEY,

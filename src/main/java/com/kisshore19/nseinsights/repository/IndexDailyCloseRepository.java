@@ -40,4 +40,7 @@ public interface IndexDailyCloseRepository extends JpaRepository<IndexDailyClose
 
     // Specific index on a specific date
     Optional<IndexDailyClose> findByIndexNameAndTradeDate(String indexName, LocalDate tradeDate);
+
+    // Multiple sectoral indices on a specific date (used for sector grouped view)
+    List<IndexDailyClose> findByTradeDateAndIndexNameIn(LocalDate tradeDate, List<String> indexNames);
 }

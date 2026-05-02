@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSE Insights — Admin Dashboard</title>
+<style>
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+
+/* ── CSS Variables ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:       #0d0f18;
+  --surf:     #151825;
+  --surf2:    #1c2033;
+  --surf3:    #222640;
+  --border:   rgba(255,255,255,.07);
+  --border2:  rgba(255,255,255,.12);
+  --text:     #e8eaf2;
+  --text2:    #b0b4c8;
+  --muted:    #6b7190;
+  --accent:   #4f46e5;
+  --accent2:  #6366f1;
+  --up:       #22c55e;
+  --down:     #ef4444;
+  --warn:     #f59e0b;
+  --info:     #3b82f6;
+  --mono:     'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --sans:     -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius:   10px;
+  --radius-sm: 6px;
+  --shadow:   0 4px 24px rgba(0,0,0,.4);
+  --sidebar-w: 230px;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surf);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.brand {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.brand-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+.brand-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--accent2);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.nav-section {
+  padding: 10px 0 4px;
+}
+.nav-label {
+  padding: 6px 18px;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 18px;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 12.5px;
+  border-left: 3px solid transparent;
+  transition: all .12s;
+  user-select: none;
+}
+.nav-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
+.nav-item.active {
+  background: rgba(79,70,229,.12);
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+.nav-item .icon { font-size: 14px; opacity: .7; }
+.nav-item .badge {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  background: var(--surf3);
+  color: var(--muted);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+.nav-item .badge.ok   { background: rgba(34,197,94,.15); color: var(--up); }
+.nav-item .badge.warn { background: rgba(245,158,11,.15); color: var(--warn); }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+.api-url-input {
+  width: 100%;
+  background: var(--surf2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 7px 10px;
+  outline: none;
+}
+.api-url-input:focus { border-color: var(--accent); }
+.api-url-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+#connStatus {
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.conn-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.conn-dot.ok   { background: var(--up); box-shadow: 0 0 6px var(--up); }
+.conn-dot.fail { background: var(--down); box-shadow: 0 0 6px var(--down); }
+
+/* ── Main Content ──────────────────────────────────────────────────────────── */
+#main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#topbar {
+  height: 52px;
+  background: var(--surf);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.topbar-sep { color: var(--muted); margin: 0 2px; }
+.topbar-crumb {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent2);
+  letter-spacing: .5px;
+}
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+#content { padding: 28px; }
+
+/* ── Sections ──────────────────────────────────────────────────────────────── */
+.section { display: none; }
+.section.active { display: block; }
+
+.section-heading {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-heading .icon { font-size: 14px; }
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.card-header {
+  background: var(--surf2);
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.card-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.card-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.card-body { padding: 18px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media(max-width:900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* ── Stat Chips (Overview) ─────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.stat-value {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  margin-top: 4px;
+}
+.stat-value.up   { color: var(--up); }
+.stat-value.down { color: var(--down); }
+.stat-value.accent { color: var(--accent2); }
+.stat-meta {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Form Controls ─────────────────────────────────────────────────────────── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.field input[type="date"],
+.field input[type="text"],
+.field select {
+  background: var(--surf2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color .15s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 2px;
+}
+.check-field input[type="checkbox"] {
+  width: 14px; height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.check-field label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  cursor: pointer;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent2); }
+.btn-success {
+  background: rgba(34,197,94,.15);
+  color: var(--up);
+  border: 1px solid rgba(34,197,94,.25);
+}
+.btn-success:hover:not(:disabled) { background: rgba(34,197,94,.25); }
+.btn-danger {
+  background: rgba(239,68,68,.12);
+  color: var(--down);
+  border: 1px solid rgba(239,68,68,.2);
+}
+.btn-danger:hover:not(:disabled) { background: rgba(239,68,68,.22); }
+.btn-ghost {
+  background: var(--surf2);
+  color: var(--text2);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover:not(:disabled) { background: var(--surf3); color: var(--text); }
+.btn-sm { padding: 5px 10px; font-size: 9px; }
+
+/* ── Tables ────────────────────────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; }
+table.dtbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.dtbl thead th {
+  background: var(--surf2);
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 9px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.dtbl tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+.dtbl tbody tr:hover { background: rgba(255,255,255,.02); }
+.dtbl tbody td { padding: 8px 12px; color: var(--text2); }
+.dtbl .td-up   { color: var(--up); font-weight: 600; }
+.dtbl .td-down { color: var(--down); font-weight: 600; }
+.dtbl .td-warn { color: var(--warn); font-weight: 600; }
+.dtbl .td-muted { color: var(--muted); }
+.dtbl .td-mono  { font-family: var(--mono); }
+.dtbl .td-right { text-align: right; }
+
+/* ── Status Badges ─────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+.badge-ok   { background: rgba(34,197,94,.15);  color: var(--up); }
+.badge-fail { background: rgba(239,68,68,.15);  color: var(--down); }
+.badge-warn { background: rgba(245,158,11,.15); color: var(--warn); }
+.badge-info { background: rgba(59,130,246,.15); color: var(--info); }
+.badge-grey { background: var(--surf3);         color: var(--muted); }
+
+/* ── Result / Log Box ──────────────────────────────────────────────────────── */
+.result-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  min-height: 48px;
+  margin-top: 12px;
+  line-height: 1.7;
+}
+.result-box.ok   { border-color: rgba(34,197,94,.3);  color: var(--up); }
+.result-box.fail { border-color: rgba(239,68,68,.3);  color: var(--down); }
+.result-box.warn { border-color: rgba(245,158,11,.3); color: var(--warn); }
+.result-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.result-kv  { display: inline-flex; gap: 5px; align-items: center; }
+.result-k   { color: var(--muted); }
+.result-v   { color: var(--text); font-weight: 600; }
+
+/* ── Spinner ───────────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Progress Bar ──────────────────────────────────────────────────────────── */
+.progress-bar {
+  height: 4px;
+  background: var(--surf3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width .3s;
+}
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+#toastContainer {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surf2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow);
+  pointer-events: all;
+  max-width: 340px;
+  animation: slideIn .2s ease;
+}
+.toast.ok   { border-color: rgba(34,197,94,.35);  }
+.toast.fail { border-color: rgba(239,68,68,.35);  }
+.toast.warn { border-color: rgba(245,158,11,.35); }
+@keyframes slideIn { from { opacity:0; transform:translateY(12px); } }
+
+/* ── Period Tags ───────────────────────────────────────────────────────────── */
+.period-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.period-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: var(--surf2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+}
+
+/* ── Index List Grid ───────────────────────────────────────────────────────── */
+.idx-sync-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.idx-sync-card {
+  background: var(--surf2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.idx-sync-name {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.idx-sync-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent2);
+  font-weight: 600;
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .5px;
+}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+<aside id="sidebar">
+  <div class="brand">
+    <div class="brand-title">NSE Insights</div>
+    <div class="brand-sub">Admin Dashboard</div>
+  </div>
+
+  <nav>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="showSection('overview',this)">
+        <span class="icon">◎</span> Overview
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Data Ingestion</div>
+      <div class="nav-item" onclick="showSection('stock-ingestion',this)">
+        <span class="icon">↓</span> Stock Prices
+        <span class="badge" id="nav-badge-stock">—</span>
+      </div>
+      <div class="nav-item" onclick="showSection('index-ingestion',this)">
+        <span class="icon">↓</span> Index Prices
+        <span class="badge" id="nav-badge-index">—</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Candle Stats</div>
+      <div class="nav-item" onclick="showSection('stock-candles',this)">
+        <span class="icon">▦</span> Stock Candles
+        <span class="badge" id="nav-badge-scandles">—</span>
+      </div>
+      <div class="nav-item" onclick="showSection('index-candles',this)">
+        <span class="icon">▦</span> Index Candles
+        <span class="badge" id="nav-badge-icandles">—</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Index Master</div>
+      <div class="nav-item" onclick="showSection('constituents',this)">
+        <span class="icon">⊞</span> Constituents
+        <span class="badge" id="nav-badge-const">—</span>
+      </div>
+      <div class="nav-item" onclick="showSection('index-config',this)">
+        <span class="icon">⚙</span> Index Config
+        <span class="badge" id="nav-badge-icfg">—</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="api-url-label">API Base URL</div>
+    <input class="api-url-input" id="apiUrl" type="text"
+           placeholder="http://localhost:8080"
+           oninput="saveApiUrl(this.value)"
+           onblur="checkConnection()"/>
+    <div id="connStatus">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connText" style="color:var(--muted)">Not checked</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ──────────────────────────────────────────────────────────────── -->
+<div id="main">
+  <div id="topbar">
+    <span class="topbar-title">Admin Dashboard</span>
+    <span class="topbar-sep">/</span>
+    <span class="topbar-crumb" id="topCrumb">Overview</span>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost btn-sm" onclick="refreshCurrentSection()">↻ Refresh</button>
+      <button class="btn btn-ghost btn-sm" onclick="checkConnection()">⚡ Test API</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         OVERVIEW
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section active" id="s-overview">
+      <div class="section-heading"><span class="icon">◎</span> Overview</div>
+
+      <div class="stat-grid" id="overviewStats">
+        <div class="stat-card"><div class="stat-label">Stock Trade Dates</div><div class="stat-value accent" id="ov-stkDates">—</div><div class="stat-meta">in nse_daily_price</div></div>
+        <div class="stat-card"><div class="stat-label">Latest Stock Date</div><div class="stat-value" id="ov-stkLatest">—</div><div class="stat-meta" id="ov-stkOldest"></div></div>
+        <div class="stat-card"><div class="stat-label">Total Stock Records</div><div class="stat-value accent" id="ov-stkRecs">—</div><div class="stat-meta">daily price rows</div></div>
+        <div class="stat-card"><div class="stat-label">Index Trade Dates</div><div class="stat-value accent" id="ov-idxDates">—</div><div class="stat-meta">in index_daily_close</div></div>
+        <div class="stat-card"><div class="stat-label">Latest Index Date</div><div class="stat-value" id="ov-idxLatest">—</div><div class="stat-meta" id="ov-idxOldest"></div></div>
+        <div class="stat-card"><div class="stat-label">Stock Candle Periods</div><div class="stat-value accent" id="ov-sCandles">—</div><div class="stat-meta" id="ov-sCandlesTf">YEAR</div></div>
+        <div class="stat-card"><div class="stat-label">Index Candle Periods</div><div class="stat-value accent" id="ov-iCandles">—</div><div class="stat-meta" id="ov-iCandlesTf">YEAR</div></div>
+        <div class="stat-card"><div class="stat-label">Synced Indices</div><div class="stat-value accent" id="ov-syncedIdx">—</div><div class="stat-meta">in index_master</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📥 Quick Download — Stocks</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><label>From Date</label><input type="date" id="ov-sFrom"></div>
+              <div class="field"><label>To Date</label><input type="date" id="ov-sTo"></div>
+              <div class="field">
+                <div class="check-field" style="padding-top:18px">
+                  <input type="checkbox" id="ov-sOverwrite">
+                  <label for="ov-sOverwrite">Overwrite existing</label>
+                </div>
+              </div>
+              <div class="field" style="padding-top:18px">
+                <button class="btn btn-primary" onclick="quickDownloadStocks()">↓ Download</button>
+              </div>
+            </div>
+            <div class="result-box" id="ov-sResult" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📥 Quick Download — Indices</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><label>From Date</label><input type="date" id="ov-iFrom"></div>
+              <div class="field"><label>To Date</label><input type="date" id="ov-iTo"></div>
+              <div class="field">
+                <div class="check-field" style="padding-top:18px">
+                  <input type="checkbox" id="ov-iOverwrite">
+                  <label for="ov-iOverwrite">Overwrite existing</label>
+                </div>
+              </div>
+              <div class="field" style="padding-top:18px">
+                <button class="btn btn-primary" onclick="quickDownloadIndices()">↓ Download</button>
+              </div>
+            </div>
+            <div class="result-box" id="ov-iResult" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">▦ Quick Build — Stock Candles</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Timeframe</label>
+                <select id="ov-scTf">
+                  <option value="YEAR">YEAR</option>
+                  <option value="QUARTER">QUARTER</option>
+                  <option value="MONTH">MONTH</option>
+                  <option value="WEEK">WEEK</option>
+                </select>
+              </div>
+              <div class="field"><label>From (yyyy-MM-dd)</label><input type="date" id="ov-scFrom"></div>
+              <div class="field"><label>To (yyyy-MM-dd)</label><input type="date" id="ov-scTo"></div>
+              <div class="field" style="padding-top:18px">
+                <button class="btn btn-success" onclick="quickBuildStockCandles()">▦ Build</button>
+              </div>
+            </div>
+            <div class="result-box" id="ov-scResult" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">▦ Quick Build — Index Candles</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Timeframe</label>
+                <select id="ov-icTf">
+                  <option value="YEAR">YEAR</option>
+                  <option value="QUARTER">QUARTER</option>
+                  <option value="MONTH">MONTH</option>
+                  <option value="WEEK">WEEK</option>
+                </select>
+              </div>
+              <div class="field"><label>From (yyyy-MM-dd)</label><input type="date" id="ov-icFrom"></div>
+              <div class="field"><label>To (yyyy-MM-dd)</label><input type="date" id="ov-icTo"></div>
+              <div class="field" style="padding-top:18px">
+                <button class="btn btn-success" onclick="quickBuildIndexCandles()">▦ Build</button>
+              </div>
+            </div>
+            <div class="result-box" id="ov-icResult" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         STOCK INGESTION
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section" id="s-stock-ingestion">
+      <div class="section-heading"><span class="icon">↓</span> Stock Price Ingestion</div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Download Stock Data</span><span class="card-sub">NSE Bhavcopy</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><label>From Date</label><input type="date" id="si-from"></div>
+              <div class="field"><label>To Date</label><input type="date" id="si-to"></div>
+              <div class="field">
+                <div class="check-field" style="padding-top:20px">
+                  <input type="checkbox" id="si-overwrite">
+                  <label for="si-overwrite">Overwrite existing</label>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primary" onclick="downloadStocks()">↓ Start Download</button>
+              <div class="spinner" id="si-spinner" style="display:none"></div>
+            </div>
+            <div class="result-box" id="si-result" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Summary</span></div>
+          <div class="card-body" id="si-summary">
+            <div class="empty-state">Click refresh to load summary</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Download History</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <select id="si-histStatus" style="background:var(--surf3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);font-family:var(--mono);font-size:9px;padding:4px 8px;outline:none" onchange="loadStockHistory()">
+              <option value="ALL">All</option>
+              <option value="SUCCESS">Success</option>
+              <option value="FAILED">Failed</option>
+              <option value="SKIPPED">Skipped</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadStockHistory()">↻ Load</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-wrap" id="si-histTable">
+            <div class="empty-state">Click Load to fetch history</div>
+          </div>
+          <div id="si-histPagination" style="display:flex;gap:8px;padding:12px 18px;align-items:center;border-top:1px solid var(--border)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Available Dates</span></div>
+        <div class="card-body" style="padding:0">
+          <div id="si-availDates"><div class="empty-state">Click refresh to load dates</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         INDEX INGESTION
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section" id="s-index-ingestion">
+      <div class="section-heading"><span class="icon">↓</span> Index Price Ingestion</div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Download Index Data</span><span class="card-sub">NSE Index CSV</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><label>From Date</label><input type="date" id="ii-from"></div>
+              <div class="field"><label>To Date</label><input type="date" id="ii-to"></div>
+              <div class="field">
+                <div class="check-field" style="padding-top:20px">
+                  <input type="checkbox" id="ii-overwrite">
+                  <label for="ii-overwrite">Overwrite existing</label>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primary" onclick="downloadIndices()">↓ Start Download</button>
+              <div class="spinner" id="ii-spinner" style="display:none"></div>
+            </div>
+            <div class="result-box" id="ii-result" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Summary</span></div>
+          <div class="card-body" id="ii-summary">
+            <div class="empty-state">Click refresh to load summary</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Available Dates</span></div>
+        <div class="card-body" style="padding:0">
+          <div id="ii-availDates"><div class="empty-state">Click refresh to load dates</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         STOCK CANDLES
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section" id="s-stock-candles">
+      <div class="section-heading"><span class="icon">▦</span> Stock Candle Stats</div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Build Candle Stats</span><span class="card-sub">Aggregates OHLCV by period</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Timeframe</label>
+                <select id="sc-tf" onchange="loadStockCandleAvailable()">
+                  <option value="YEAR">YEAR</option>
+                  <option value="QUARTER">QUARTER</option>
+                  <option value="MONTH">MONTH</option>
+                  <option value="WEEK">WEEK</option>
+                </select>
+              </div>
+              <div class="field"><label>From Date (or leave blank)</label><input type="date" id="sc-from"></div>
+              <div class="field"><label>To Date (or leave blank)</label><input type="date" id="sc-to"></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+              <button class="btn btn-success" onclick="buildStockCandles()">▦ Build Stats</button>
+              <div class="spinner" id="sc-spinner" style="display:none"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="sc-hint">Leave dates blank to build all missing periods</span>
+            </div>
+            <div class="result-box" id="sc-result" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Available Periods</span>
+            <div style="margin-left:auto">
+              <select id="sc-availTf" style="background:var(--surf3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);font-family:var(--mono);font-size:9px;padding:4px 8px;outline:none" onchange="loadStockCandleAvailable()">
+                <option value="YEAR">YEAR</option>
+                <option value="QUARTER">QUARTER</option>
+                <option value="MONTH">MONTH</option>
+                <option value="WEEK">WEEK</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="sc-availInfo" style="margin-bottom:10px"></div>
+            <div class="period-tags" id="sc-periods"><div class="empty-state" style="padding:12px 0">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         INDEX CANDLES
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section" id="s-index-candles">
+      <div class="section-heading"><span class="icon">▦</span> Index Candle Stats</div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Build Index Candle Stats</span><span class="card-sub">Aggregates index OHLCV by period</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field">
+                <label>Timeframe</label>
+                <select id="ic-tf" onchange="loadIndexCandleAvailable()">
+                  <option value="YEAR">YEAR</option>
+                  <option value="QUARTER">QUARTER</option>
+                  <option value="MONTH">MONTH</option>
+                  <option value="WEEK">WEEK</option>
+                </select>
+              </div>
+              <div class="field"><label>From Date (or leave blank)</label><input type="date" id="ic-from"></div>
+              <div class="field"><label>To Date (or leave blank)</label><input type="date" id="ic-to"></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+              <button class="btn btn-success" onclick="buildIndexCandles()">▦ Build Stats</button>
+              <div class="spinner" id="ic-spinner" style="display:none"></div>
+            </div>
+            <div class="result-box" id="ic-result" style="display:none"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Available Periods</span>
+            <div style="margin-left:auto">
+              <select id="ic-availTf" style="background:var(--surf3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);font-family:var(--mono);font-size:9px;padding:4px 8px;outline:none" onchange="loadIndexCandleAvailable()">
+                <option value="YEAR">YEAR</option>
+                <option value="QUARTER">QUARTER</option>
+                <option value="MONTH">MONTH</option>
+                <option value="WEEK">WEEK</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="ic-availInfo" style="margin-bottom:10px"></div>
+            <div class="period-tags" id="ic-periods"><div class="empty-state" style="padding:12px 0">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         INDEX CONSTITUENTS
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section" id="s-constituents">
+      <div class="section-heading"><span class="icon">⊞</span> Index Constituents</div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Sync Constituents</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <div class="spinner" id="const-spinner" style="display:none"></div>
+            <button class="btn btn-primary" onclick="syncAllIndices()">⟳ Sync All Indices</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+            Downloads constituent symbols for all supported NSE indices and upserts into <code style="font-family:var(--mono);background:var(--surf3);padding:1px 5px;border-radius:3px">index_master</code>.
+            Most indices use CSV files from <b>NSE Archives</b>. Indices marked
+            <span style="background:var(--accent);color:#fff;font-size:8px;padding:1px 5px;border-radius:3px;font-family:var(--mono)">NSE API</span>
+            (NIFTYFINSERVICE, NIFTYCHEMICALS) are fetched via the NSE live equity-indices API since their constituent CSVs are not published on archives.
+            Use <b>force sync</b> to bypass cache and re-download.
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="check-field">
+              <input type="checkbox" id="const-force">
+              <label for="const-force">Force re-download (bypass cache)</label>
+            </div>
+          </div>
+          <div class="result-box" id="const-syncResult" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Synced Indices</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="loadConstituentList()">↻ Refresh</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="const-list"><div class="empty-state">Click Refresh to load index list</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Sync Single Index</span></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field">
+              <label>Index Name</label>
+              <select id="const-singleIdx" style="min-width:180px">
+                <option value="">Select index…</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="check-field" style="padding-top:20px">
+                <input type="checkbox" id="const-singleForce">
+                <label for="const-singleForce">Force re-download</label>
+              </div>
+            </div>
+            <div class="field" style="padding-top:18px">
+              <button class="btn btn-ghost" onclick="syncSingleIndex()">⟳ Sync Selected</button>
+            </div>
+          </div>
+          <div class="result-box" id="const-singleResult" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         INDEX CONFIG
+    ══════════════════════════════════════════════════════════════════════════ -->
+    <div class="section" id="s-index-config">
+      <div class="section-heading"><span class="icon">⚙</span> Index Config</div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Active Indices for Screener</span>
+          <span id="icfg-count" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:8px">— selected</span>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="applyCommonPreset()">⚡ Common 20</button>
+            <button class="btn btn-ghost btn-sm" onclick="selectAllIndexConfig()">✓ All</button>
+            <button class="btn btn-ghost btn-sm" onclick="deselectAllIndexConfig()">✕ None</button>
+            <button class="btn btn-success" onclick="saveIndexConfig()">💾 Save</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6">
+            Select which indices appear in the Screener's <b>Index tab</b> and <b>Breakouts Overview</b>.
+            The selection is saved in your browser and applied automatically. Use <b>Common 20</b> to
+            quickly select the major broad-market and sectoral indices, or manually pick any combination.
+          </p>
+          <div id="icfg-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px 14px">
+            <div class="empty-state">Loading supported indices…</div>
+          </div>
+          <div style="margin-top:14px;padding:10px 12px;background:var(--surf3);border-radius:var(--radius-sm);font-size:10px;color:var(--muted);font-family:var(--mono)">
+            ℹ Changes take effect in the Screener immediately after saving — no page reload needed.
+            If nothing is saved (first time), all indices are shown.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── Toast Container ──────────────────────────────────────────────────────── -->
+<div id="toastContainer"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     JavaScript
+══════════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const LS_KEY = 'nse_admin_api_url';
+let BASE = '';
+
+function getBase() { return BASE || 'http://localhost:8080'; }
+
+function saveApiUrl(v) {
+  BASE = v.trim().replace(/\/$/, '');
+  localStorage.setItem(LS_KEY, BASE);
+}
+
+function loadApiUrl() {
+  BASE = localStorage.getItem(LS_KEY) || 'http://localhost:8080';
+  document.getElementById('apiUrl').value = BASE;
+}
+
+async function checkConnection() {
+  const dot  = document.getElementById('connDot');
+  const txt  = document.getElementById('connText');
+  dot.className = 'conn-dot';
+  txt.textContent = 'Checking…';
+  txt.style.color = 'var(--muted)';
+  try {
+    const r = await fetch(`${getBase()}/api/v1/ingestion/summary`, { signal: AbortSignal.timeout(4000) });
+    if (r.ok) {
+      dot.className = 'conn-dot ok';
+      txt.textContent = 'Connected';
+      txt.style.color = 'var(--up)';
+    } else {
+      throw new Error('HTTP ' + r.status);
+    }
+  } catch(e) {
+    dot.className = 'conn-dot fail';
+    txt.textContent = e.message || 'Failed';
+    txt.style.color = 'var(--down)';
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+const CRUMB_NAMES = {
+  'overview': 'Overview',
+  'stock-ingestion': 'Stock Ingestion',
+  'index-ingestion': 'Index Ingestion',
+  'stock-candles': 'Stock Candles',
+  'index-candles': 'Index Candles',
+  'constituents':  'Index Constituents',
+  'index-config':  'Index Config',
+};
+let currentSection = 'overview';
+
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('topCrumb').textContent = CRUMB_NAMES[name] || name;
+  currentSection = name;
+  onSectionEnter(name);
+}
+
+function refreshCurrentSection() { onSectionEnter(currentSection); }
+
+function onSectionEnter(name) {
+  if (name === 'overview')        loadOverview();
+  if (name === 'stock-ingestion') { loadStockSummary(); loadStockAvailDates(); }
+  if (name === 'index-ingestion') { loadIndexSummary(); loadIndexAvailDates(); }
+  if (name === 'stock-candles')   loadStockCandleAvailable();
+  if (name === 'index-candles')   loadIndexCandleAvailable();
+  if (name === 'constituents')    { loadConstituentList(); }
+  if (name === 'index-config')    { loadIndexConfig(); }
+}
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(getBase() + path, opts);
+  const j = await r.json();
+  if (!r.ok || j.status === 'ERROR') {
+    throw new Error(j.message || `HTTP ${r.status}`);
+  }
+  return j.data !== undefined ? j.data : j;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtNum(n) {
+  if (n == null) return '—';
+  return Number(n).toLocaleString('en-IN');
+}
+function fmtMs(ms) {
+  if (ms == null) return '—';
+  return ms < 1000 ? ms + 'ms' : (ms/1000).toFixed(1) + 's';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'ok', dur = 3500) {
+  const icon = type === 'ok' ? '✓' : type === 'fail' ? '✗' : '⚠';
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+
+// ── Result box helpers ────────────────────────────────────────────────────────
+function setResult(id, html, type = '') {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.className = 'result-box ' + type;
+  el.innerHTML = html;
+}
+function hideResult(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'none';
+}
+
+function kvHtml(pairs) {
+  return '<div class="result-row">' +
+    pairs.map(([k,v,cls]) =>
+      `<span class="result-kv"><span class="result-k">${k}:</span><span class="result-v ${cls||''}">${v}</span></span>`
+    ).join('') + '</div>';
+}
+
+// ── Download helpers ──────────────────────────────────────────────────────────
+function buildDlResult(d) {
+  const lines = [
+    kvHtml([
+      ['Dates requested', fmtNum(d.totalDatesRequested)],
+      ['Success',  `<span style="color:var(--up)">${fmtNum(d.successCount)}</span>`],
+      ['Failed',   `<span style="color:var(--down)">${fmtNum(d.failedCount)}</span>`],
+      ['Skipped',  fmtNum(d.skippedCount)],
+      ['Records',  fmtNum(d.totalRecordsLoaded)],
+      ['Time',     fmtMs(d.totalTimeTakenMs)],
+    ])
+  ];
+  if (d.results && d.results.length) {
+    lines.push('<hr style="border-color:var(--border);margin:8px 0">');
+    lines.push('<div style="max-height:200px;overflow-y:auto">');
+    d.results.forEach(r => {
+      const cls = r.status === 'SUCCESS' ? 'td-up' : r.status === 'FAILED' ? 'td-down' : 'td-warn';
+      lines.push(kvHtml([[r.tradeDate, `<span class="${cls}">${r.status}</span> ${r.recordsLoaded != null ? fmtNum(r.recordsLoaded) + ' recs' : ''} ${r.message ? '— ' + r.message : ''}`]]));
+    });
+    lines.push('</div>');
+  }
+  return lines.join('');
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+async function loadOverview() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  try {
+    const [ss, is] = await Promise.allSettled([
+      api('GET', '/api/v1/ingestion/summary'),
+      api('GET', '/api/v1/index-ingestion/summary'),
+    ]);
+    if (ss.status === 'fulfilled') {
+      const d = ss.value;
+      set('ov-stkDates', fmtNum(d.totalDatesLoaded));
+      set('ov-stkLatest', fmtDate(d.latestTradeDate));
+      set('ov-stkOldest', 'from ' + fmtDate(d.oldestTradeDate));
+      set('ov-stkRecs', fmtNum(d.totalRecords));
+      const el = document.getElementById('nav-badge-stock');
+      el.textContent = fmtDate(d.latestTradeDate);
+      el.className = 'badge ok';
+    }
+    if (is.status === 'fulfilled') {
+      const d = is.value;
+      set('ov-idxDates', fmtNum(d.totalDatesLoaded));
+      set('ov-idxLatest', fmtDate(d.latestTradeDate));
+      set('ov-idxOldest', 'from ' + fmtDate(d.oldestTradeDate));
+      const el = document.getElementById('nav-badge-index');
+      el.textContent = fmtDate(d.latestTradeDate);
+      el.className = 'badge ok';
+    }
+  } catch(_) {}
+
+  for (const tf of ['YEAR','QUARTER','MONTH','WEEK']) {
+    try {
+      const d = await api('GET', `/api/v1/candles/stats/available?timeframe=${tf}`);
+      if (d.totalPeriods > 0) {
+        set('ov-sCandles', fmtNum(d.totalPeriods));
+        set('ov-sCandlesTf', tf + ' · ' + d.from + ' – ' + d.to);
+        const el = document.getElementById('nav-badge-scandles');
+        el.textContent = d.totalPeriods + ' ' + tf;
+        el.className = 'badge ok';
+        break;
+      }
+    } catch(_) {}
+  }
+
+  for (const tf of ['YEAR','QUARTER','MONTH','WEEK']) {
+    try {
+      const d = await api('GET', `/api/v1/index-candles/stats/available?timeframe=${tf}`);
+      if (d.totalPeriods > 0) {
+        set('ov-iCandles', fmtNum(d.totalPeriods));
+        set('ov-iCandlesTf', tf + ' · ' + d.from + ' – ' + d.to);
+        const el = document.getElementById('nav-badge-icandles');
+        el.textContent = d.totalPeriods + ' ' + tf;
+        el.className = 'badge ok';
+        break;
+      }
+    } catch(_) {}
+  }
+
+  try {
+    const d = await api('GET', '/api/v1/index-constituents/list');
+    set('ov-syncedIdx', fmtNum(d.totalSynced));
+    const el = document.getElementById('nav-badge-const');
+    el.textContent = d.totalSynced + ' synced';
+    el.className = d.totalSynced > 0 ? 'badge ok' : 'badge warn';
+  } catch(_) {}
+}
+
+async function quickDownloadStocks() {
+  const from = document.getElementById('ov-sFrom').value;
+  const to   = document.getElementById('ov-sTo').value;
+  if (!from) { toast('Select a from date', 'warn'); return; }
+  setResult('ov-sResult', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Downloading…</div>');
+  try {
+    const d = await api('POST', '/api/v1/ingestion/download', {
+      fromTradeDate: from, toTradeDate: to || from,
+      overwrite: document.getElementById('ov-sOverwrite').checked
+    });
+    setResult('ov-sResult', buildDlResult(d), d.failedCount > 0 ? 'warn' : 'ok');
+    toast(`Stock download: ${d.successCount} success, ${d.failedCount} failed`, d.failedCount > 0 ? 'warn' : 'ok');
+  } catch(e) {
+    setResult('ov-sResult', e.message, 'fail');
+    toast('Download failed: ' + e.message, 'fail');
+  }
+}
+
+async function quickDownloadIndices() {
+  const from = document.getElementById('ov-iFrom').value;
+  const to   = document.getElementById('ov-iTo').value;
+  if (!from) { toast('Select a from date', 'warn'); return; }
+  setResult('ov-iResult', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Downloading…</div>');
+  try {
+    const d = await api('POST', '/api/v1/index-ingestion/download', {
+      fromTradeDate: from, toTradeDate: to || from,
+      overwrite: document.getElementById('ov-iOverwrite').checked
+    });
+    setResult('ov-iResult', buildDlResult(d), d.failedCount > 0 ? 'warn' : 'ok');
+    toast(`Index download: ${d.successCount} success, ${d.failedCount} failed`, d.failedCount > 0 ? 'warn' : 'ok');
+  } catch(e) {
+    setResult('ov-iResult', e.message, 'fail');
+    toast('Download failed: ' + e.message, 'fail');
+  }
+}
+
+async function quickBuildStockCandles() {
+  const tf   = document.getElementById('ov-scTf').value;
+  const from = document.getElementById('ov-scFrom').value;
+  const to   = document.getElementById('ov-scTo').value;
+  setResult('ov-scResult', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Building…</div>');
+  try {
+    let qs = `?timeframe=${tf}`;
+    if (from) qs += `&from=${from}`;
+    if (to)   qs += `&to=${to}`;
+    const d = await api('POST', `/api/v1/candles/stats/build${qs}`);
+    setResult('ov-scResult', kvHtml([
+      ['Periods inserted', String(d.periodsInserted || 0)],
+      ['Periods skipped',  String(d.periodsSkipped  || 0)],
+      ['Records inserted', fmtNum(d.recordsInserted)],
+    ]), 'ok');
+    toast(`Stock candles built: ${d.periodsInserted} periods`, 'ok');
+  } catch(e) {
+    setResult('ov-scResult', e.message, 'fail');
+    toast('Build failed: ' + e.message, 'fail');
+  }
+}
+
+async function quickBuildIndexCandles() {
+  const tf   = document.getElementById('ov-icTf').value;
+  const from = document.getElementById('ov-icFrom').value;
+  const to   = document.getElementById('ov-icTo').value;
+  setResult('ov-icResult', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Building…</div>');
+  try {
+    let qs = `?timeframe=${tf}`;
+    if (from) qs += `&from=${from}`;
+    if (to)   qs += `&to=${to}`;
+    const d = await api('POST', `/api/v1/index-candles/stats/build${qs}`);
+    setResult('ov-icResult', kvHtml([
+      ['Periods inserted', String(d.periodsInserted || 0)],
+      ['Periods skipped',  String(d.periodsSkipped  || 0)],
+      ['Records inserted', fmtNum(d.recordsInserted)],
+    ]), 'ok');
+    toast(`Index candles built: ${d.periodsInserted} periods`, 'ok');
+  } catch(e) {
+    setResult('ov-icResult', e.message, 'fail');
+    toast('Build failed: ' + e.message, 'fail');
+  }
+}
+
+// ── STOCK INGESTION ───────────────────────────────────────────────────────────
+async function downloadStocks() {
+  const from = document.getElementById('si-from').value;
+  const to   = document.getElementById('si-to').value;
+  if (!from) { toast('Select a from date', 'warn'); return; }
+  const btn = event.target;
+  btn.disabled = true;
+  document.getElementById('si-spinner').style.display = 'inline-block';
+  setResult('si-result', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Downloading from NSE…</div>');
+  try {
+    const d = await api('POST', '/api/v1/ingestion/download', {
+      fromTradeDate: from, toTradeDate: to || from,
+      overwrite: document.getElementById('si-overwrite').checked
+    });
+    setResult('si-result', buildDlResult(d), d.failedCount > 0 ? 'warn' : 'ok');
+    toast(`Download complete: ${d.successCount} dates, ${fmtNum(d.totalRecordsLoaded)} records`, d.failedCount > 0 ? 'warn' : 'ok');
+    loadStockSummary();
+    loadStockAvailDates();
+  } catch(e) {
+    setResult('si-result', e.message, 'fail');
+    toast('Download failed: ' + e.message, 'fail');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('si-spinner').style.display = 'none';
+  }
+}
+
+async function loadStockSummary() {
+  const el = document.getElementById('si-summary');
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-family:var(--mono);font-size:10px"><div class="spinner"></div> Loading…</div>';
+  try {
+    const d = await api('GET', '/api/v1/ingestion/summary');
+    el.innerHTML = `
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Total Dates</div><div class="stat-value accent" style="font-size:18px">${fmtNum(d.totalDatesLoaded)}</div></div>
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Total Records</div><div class="stat-value accent" style="font-size:18px">${fmtNum(d.totalRecords)}</div></div>
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Latest Date</div><div class="stat-value" style="font-size:14px">${fmtDate(d.latestTradeDate)}</div></div>
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Oldest Date</div><div class="stat-value" style="font-size:14px">${fmtDate(d.oldestTradeDate)}</div></div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+async function loadStockAvailDates() {
+  const el = document.getElementById('si-availDates');
+  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto 8px"></div>Loading…</div>';
+  try {
+    const d = await api('GET', '/api/v1/ingestion/available-dates');
+    const dates = (d.dates || []).slice().reverse();
+    if (!dates.length) { el.innerHTML = '<div class="empty-state">No dates found</div>'; return; }
+    el.innerHTML = `
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--muted)">
+        ${fmtNum(d.totalDays)} dates · oldest ${fmtDate(d.oldestDate)} · latest ${fmtDate(d.latestDate)}
+      </div>
+      <div style="max-height:260px;overflow-y:auto;padding:14px 18px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${dates.map(dt => `<span class="period-tag">${fmtDate(dt)}</span>`).join('')}
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+let siHistPage = 0;
+async function loadStockHistory(page = 0) {
+  siHistPage = page;
+  const status = document.getElementById('si-histStatus').value;
+  const el = document.getElementById('si-histTable');
+  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto 8px"></div>Loading history…</div>';
+  try {
+    const d = await api('GET', `/api/v1/ingestion/history?page=${page}&size=20&status=${status}`);
+    const rows = d.content || [];
+    if (!rows.length) { el.innerHTML = '<div class="empty-state">No history found</div>'; return; }
+    el.innerHTML = `<table class="dtbl">
+      <thead><tr>
+        <th>Trade Date</th><th>Status</th><th>Records</th><th>Time Taken</th><th>Downloaded At</th><th>Message</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r => `<tr>
+          <td class="td-mono">${r.tradeDate || '—'}</td>
+          <td>${badgeHtml(r.status)}</td>
+          <td class="td-right">${fmtNum(r.recordsLoaded)}</td>
+          <td class="td-right td-muted">${fmtMs(r.timeTakenMs)}</td>
+          <td class="td-muted">${fmtDate(r.downloadedAt)}</td>
+          <td class="td-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message || '—'}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+
+    const pag = document.getElementById('si-histPagination');
+    const total = d.totalPages || 1;
+    pag.innerHTML = `<span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Page ${page+1} of ${total} (${fmtNum(d.totalElements)} rows)</span>
+      ${page > 0 ? `<button class="btn btn-ghost btn-sm" onclick="loadStockHistory(${page-1})">‹ Prev</button>` : ''}
+      ${page < total-1 ? `<button class="btn btn-ghost btn-sm" onclick="loadStockHistory(${page+1})">Next ›</button>` : ''}`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+function badgeHtml(status) {
+  const map = { SUCCESS:'badge-ok', FAILED:'badge-fail', SKIPPED:'badge-warn', PARTIAL:'badge-warn' };
+  return `<span class="badge ${map[status] || 'badge-grey'}">${status || '—'}</span>`;
+}
+
+// ── INDEX INGESTION ───────────────────────────────────────────────────────────
+async function downloadIndices() {
+  const from = document.getElementById('ii-from').value;
+  const to   = document.getElementById('ii-to').value;
+  if (!from) { toast('Select a from date', 'warn'); return; }
+  const btn = event.target;
+  btn.disabled = true;
+  document.getElementById('ii-spinner').style.display = 'inline-block';
+  setResult('ii-result', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Downloading from NSE…</div>');
+  try {
+    const d = await api('POST', '/api/v1/index-ingestion/download', {
+      fromTradeDate: from, toTradeDate: to || from,
+      overwrite: document.getElementById('ii-overwrite').checked
+    });
+    setResult('ii-result', buildDlResult(d), d.failedCount > 0 ? 'warn' : 'ok');
+    toast(`Index download: ${d.successCount} dates, ${fmtNum(d.totalRecordsLoaded)} records`, d.failedCount > 0 ? 'warn' : 'ok');
+    loadIndexSummary();
+    loadIndexAvailDates();
+  } catch(e) {
+    setResult('ii-result', e.message, 'fail');
+    toast('Download failed: ' + e.message, 'fail');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('ii-spinner').style.display = 'none';
+  }
+}
+
+async function loadIndexSummary() {
+  const el = document.getElementById('ii-summary');
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-family:var(--mono);font-size:10px"><div class="spinner"></div> Loading…</div>';
+  try {
+    const d = await api('GET', '/api/v1/index-ingestion/summary');
+    el.innerHTML = `
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Total Dates</div><div class="stat-value accent" style="font-size:18px">${fmtNum(d.totalDatesLoaded)}</div></div>
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Total Records</div><div class="stat-value accent" style="font-size:18px">${fmtNum(d.totalRecords)}</div></div>
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Latest Date</div><div class="stat-value" style="font-size:14px">${fmtDate(d.latestTradeDate)}</div></div>
+        <div class="stat-card" style="padding:12px"><div class="stat-label">Oldest Date</div><div class="stat-value" style="font-size:14px">${fmtDate(d.oldestTradeDate)}</div></div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+async function loadIndexAvailDates() {
+  const el = document.getElementById('ii-availDates');
+  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto 8px"></div>Loading…</div>';
+  try {
+    const d = await api('GET', '/api/v1/index-ingestion/available-dates');
+    const dates = (d.dates || []).slice().reverse();
+    if (!dates.length) { el.innerHTML = '<div class="empty-state">No dates found</div>'; return; }
+    el.innerHTML = `
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--muted)">
+        ${fmtNum(d.totalDays)} dates · oldest ${fmtDate(d.oldestDate)} · latest ${fmtDate(d.latestDate)}
+      </div>
+      <div style="max-height:260px;overflow-y:auto;padding:14px 18px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${dates.map(dt => `<span class="period-tag">${fmtDate(dt)}</span>`).join('')}
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+// ── STOCK CANDLES ─────────────────────────────────────────────────────────────
+async function buildStockCandles() {
+  const tf   = document.getElementById('sc-tf').value;
+  const from = document.getElementById('sc-from').value;
+  const to   = document.getElementById('sc-to').value;
+  const btn  = event.target;
+  btn.disabled = true;
+  document.getElementById('sc-spinner').style.display = 'inline-block';
+  setResult('sc-result', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Building candle stats…</div>');
+  try {
+    let qs = `?timeframe=${tf}`;
+    if (from) qs += `&from=${from}`;
+    if (to)   qs += `&to=${to}`;
+    const d = await api('POST', `/api/v1/candles/stats/build${qs}`);
+    const type = d.periodsInserted > 0 ? 'ok' : 'warn';
+    setResult('sc-result', kvHtml([
+      ['Timeframe',        tf],
+      ['Periods inserted', String(d.periodsInserted || 0)],
+      ['Periods skipped',  String(d.periodsSkipped  || 0)],
+      ['Records inserted', fmtNum(d.recordsInserted)],
+    ]), type);
+    toast(`Stock candles: ${d.periodsInserted} periods built, ${d.periodsSkipped} skipped`, type);
+    loadStockCandleAvailable();
+  } catch(e) {
+    setResult('sc-result', e.message, 'fail');
+    toast('Build failed: ' + e.message, 'fail');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('sc-spinner').style.display = 'none';
+  }
+}
+
+async function loadStockCandleAvailable() {
+  const tf  = document.getElementById('sc-availTf')?.value || document.getElementById('sc-tf').value;
+  const el  = document.getElementById('sc-periods');
+  const info = document.getElementById('sc-availInfo');
+  el.innerHTML = '<div class="empty-state" style="padding:8px 0">Loading…</div>';
+  try {
+    const d = await api('GET', `/api/v1/candles/stats/available?timeframe=${tf}`);
+    const periods = d.periods || [];
+    info.innerHTML = kvHtml([
+      ['Timeframe', tf],
+      ['Total Periods', String(d.totalPeriods || 0)],
+      ['Range', `${d.from || '—'} – ${d.to || '—'}`],
+    ]);
+    el.innerHTML = periods.length
+      ? periods.map(p =>
+          `<span class="period-tag" title="${p.candleDate} – ${p.candleEndDate}">${p.periodKey}</span>`
+        ).join('')
+      : '<div class="empty-state" style="padding:8px 0">No periods built yet</div>';
+    const nb = document.getElementById('nav-badge-scandles');
+    nb.textContent = d.totalPeriods + ' ' + tf;
+    nb.className = d.totalPeriods > 0 ? 'badge ok' : 'badge grey';
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+// ── INDEX CANDLES ─────────────────────────────────────────────────────────────
+async function buildIndexCandles() {
+  const tf   = document.getElementById('ic-tf').value;
+  const from = document.getElementById('ic-from').value;
+  const to   = document.getElementById('ic-to').value;
+  const btn  = event.target;
+  btn.disabled = true;
+  document.getElementById('ic-spinner').style.display = 'inline-block';
+  setResult('ic-result', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Building index candle stats…</div>');
+  try {
+    let qs = `?timeframe=${tf}`;
+    if (from) qs += `&from=${from}`;
+    if (to)   qs += `&to=${to}`;
+    const d = await api('POST', `/api/v1/index-candles/stats/build${qs}`);
+    const type = d.periodsInserted > 0 ? 'ok' : 'warn';
+    setResult('ic-result', kvHtml([
+      ['Timeframe',        tf],
+      ['Periods inserted', String(d.periodsInserted || 0)],
+      ['Periods skipped',  String(d.periodsSkipped  || 0)],
+      ['Records inserted', fmtNum(d.recordsInserted)],
+    ]), type);
+    toast(`Index candles: ${d.periodsInserted} periods built`, type);
+    loadIndexCandleAvailable();
+  } catch(e) {
+    setResult('ic-result', e.message, 'fail');
+    toast('Build failed: ' + e.message, 'fail');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('ic-spinner').style.display = 'none';
+  }
+}
+
+async function loadIndexCandleAvailable() {
+  const tf  = document.getElementById('ic-availTf')?.value || document.getElementById('ic-tf').value;
+  const el  = document.getElementById('ic-periods');
+  const info = document.getElementById('ic-availInfo');
+  el.innerHTML = '<div class="empty-state" style="padding:8px 0">Loading…</div>';
+  try {
+    const d = await api('GET', `/api/v1/index-candles/stats/available?timeframe=${tf}`);
+    const periods = d.periods || [];
+    info.innerHTML = kvHtml([
+      ['Timeframe', tf],
+      ['Total Periods', String(d.totalPeriods || 0)],
+      ['Range', `${d.from || '—'} – ${d.to || '—'}`],
+    ]);
+    el.innerHTML = periods.length
+      ? periods.map(p =>
+          `<span class="period-tag" title="${p.candleDate} – ${p.candleEndDate}">${p.periodKey}</span>`
+        ).join('')
+      : '<div class="empty-state" style="padding:8px 0">No periods built yet</div>';
+    const nb = document.getElementById('nav-badge-icandles');
+    nb.textContent = d.totalPeriods + ' ' + tf;
+    nb.className = d.totalPeriods > 0 ? 'badge ok' : 'badge grey';
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+// Indices fetched via NSE live API (no archive CSV available for these)
+const NSE_API_INDICES = new Set(['NIFTYFINSERVICE', 'NIFTYCHEMICALS']);
+
+// ── INDEX CONSTITUENTS ────────────────────────────────────────────────────────
+async function syncAllIndices() {
+  const btn   = event.target;
+  const force = document.getElementById('const-force').checked;
+  btn.disabled = true;
+  document.getElementById('const-spinner').style.display = 'inline-block';
+  setResult('const-syncResult', '<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Syncing all indices from NSE… (this may take a minute)</div>');
+  try {
+    const d = await api('POST', `/api/v1/index-constituents/sync?force=${force}`);
+    const synced = d.syncedIndices || d.results || [];
+    const total  = Array.isArray(synced) ? synced.length : (d.totalSynced || 0);
+    setResult('const-syncResult', kvHtml([
+      ['Indices synced', String(total)],
+      ['Force', String(force)],
+    ]) + (Array.isArray(synced) && synced.length ?
+      '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">' +
+      synced.map(s => `<span class="badge badge-ok">${s.indexName || s} (${s.count ?? '?'})</span>`).join('') +
+      '</div>' : ''), 'ok');
+    toast(`Synced ${total} indices`, 'ok');
+    loadConstituentList();
+  } catch(e) {
+    setResult('const-syncResult', e.message, 'fail');
+    toast('Sync failed: ' + e.message, 'fail');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('const-spinner').style.display = 'none';
+  }
+}
+
+async function loadConstituentList() {
+  const el = document.getElementById('const-list');
+  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto 8px"></div>Loading…</div>';
+  try {
+    const d = await api('GET', '/api/v1/index-constituents/list');
+    const synced    = d.syncedIndices    || [];
+    const supported = d.supportedIndices || [];
+
+    // Populate single-sync dropdown
+    const sel = document.getElementById('const-singleIdx');
+    sel.innerHTML = '<option value="">Select index…</option>' +
+      supported.map(name => `<option value="${name}">${name}</option>`).join('');
+
+    // Badge update
+    const nb = document.getElementById('nav-badge-const');
+    nb.textContent = `${synced.length}/${supported.length}`;
+    nb.className = synced.length >= supported.length ? 'badge ok' : 'badge warn';
+
+    if (!supported.length) {
+      el.innerHTML = '<div class="empty-state">No supported indices configured</div>';
+      return;
+    }
+
+    const syncedMap = {};
+    synced.forEach(s => { syncedMap[s.indexName] = s; });
+
+    el.innerHTML = `
+      <div style="padding:10px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--muted)">
+        ${synced.length} synced / ${supported.length} supported
+      </div>
+      <div class="idx-sync-grid" style="padding:16px 18px">
+        ${supported.map(name => {
+          const s = syncedMap[name];
+          const syncdBadge = s
+            ? `<span class="badge badge-ok">${fmtNum(s.activeCount)} stocks</span>`
+            : `<span class="badge badge-grey">Not synced</span>`;
+          const srcBadge = NSE_API_INDICES.has(name)
+            ? `<span title="Fetched via NSE live equity-indices API" style="background:var(--accent);color:#fff;font-size:8px;padding:1px 5px;border-radius:3px;font-family:var(--mono);cursor:default">NSE API</span>`
+            : `<span title="Fetched from NSE archives CSV" style="background:var(--surf3);color:var(--muted);font-size:8px;padding:1px 5px;border-radius:3px;font-family:var(--mono);cursor:default">CSV</span>`;
+          const syncBtn = `<button class="btn btn-ghost btn-sm" onclick="syncSingleIndexByName('${name}')">⟳</button>`;
+          return `<div class="idx-sync-card">
+            <div class="idx-sync-name">${name}</div>
+            ${srcBadge}
+            ${syncdBadge}
+            ${syncBtn}
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+async function syncSingleIndex() {
+  const name = document.getElementById('const-singleIdx').value;
+  if (!name) { toast('Select an index first', 'warn'); return; }
+  await syncSingleIndexByName(name, 'const-singleResult');
+}
+
+async function syncSingleIndexByName(name, resultId) {
+  // Card ⟳ buttons use the bulk force checkbox; single-sync form uses its own
+  const force = (document.getElementById('const-singleForce')?.checked ||
+                 document.getElementById('const-force')?.checked) || false;
+  const rid   = resultId || 'const-syncResult';
+  setResult(rid, `<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div> Syncing ${name}…</div>`);
+  try {
+    const d = await api('POST', `/api/v1/index-constituents/sync/${encodeURIComponent(name)}?force=${force}`);
+    const count = d.count ?? d.activeCount ?? d.totalSynced ?? '?';
+    setResult(rid, kvHtml([['Index', name], ['Constituents', String(count)]]), 'ok');
+    toast(`Synced ${name}: ${count} stocks`, 'ok');
+    loadConstituentList();
+  } catch(e) {
+    setResult(rid, e.message, 'fail');
+    toast(`Sync failed for ${name}: ` + e.message, 'fail');
+  }
+}
+
+// ── INDEX CONFIG ──────────────────────────────────────────────────────────────
+const LS_ACTIVE_INDICES = 'nse_active_indices';
+
+// The recommended "Common 20" preset: 4 broad-market + 16 sectoral indices
+const COMMON_20 = new Set([
+  'NIFTY50','NIFTYNEXT50','NIFTY100','NIFTY500',
+  'NIFTYBANK','NIFTYIT','NIFTYAUTO','NIFTYPHARMA','NIFTYFMCG','NIFTYMETAL',
+  'NIFTYREALTY','NIFTYMEDIA','NIFTYENERGY','NIFTYFINSERVICE','NIFTYHEALTHCARE',
+  'NIFTYOILGAS','NIFTYCONSUMERDURAB','NIFTYCHEMICALS','NIFTYPRIVBANK','NIFTYPSUBANK',
+]);
+
+// Broad-market index keys (for grouping display)
+const BROAD_MARKET_KEYS = new Set([
+  'NIFTY50','NIFTYNEXT50','NIFTY100','NIFTY200','NIFTY500',
+  'NIFTYMIDCAP50','NIFTYMIDCAP100','NIFTYMIDCAP150',
+  'NIFTYSMALLCAP50','NIFTYSMALLCAP100','NIFTYSMALLCAP250','NIFTYLARGEMIDCAP250',
+]);
+
+let icfgAllIndices = [];  // full supported list, populated when section loads
+
+async function loadIndexConfig() {
+  const grid = document.getElementById('icfg-grid');
+  grid.innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const d = await api('GET', '/api/v1/index-constituents/list');
+    icfgAllIndices = (d.supportedIndices || []).sort();
+
+    const saved = getSavedActiveIndices();  // null = all, Set otherwise
+    renderIndexConfigGrid(icfgAllIndices, saved);
+    updateIndexConfigCount();
+    updateIndexConfigBadge();
+  } catch(e) {
+    grid.innerHTML = `<div class="empty-state" style="color:var(--down)">${e.message}</div>`;
+  }
+}
+
+function getSavedActiveIndices() {
+  try {
+    const v = localStorage.getItem(LS_ACTIVE_INDICES);
+    if (!v) return null;
+    const arr = JSON.parse(v);
+    return arr.length ? new Set(arr) : null;
+  } catch { return null; }
+}
+
+function renderIndexConfigGrid(indices, activeSet) {
+  const grid = document.getElementById('icfg-grid');
+  const broad = indices.filter(n => BROAD_MARKET_KEYS.has(n));
+  const sect  = indices.filter(n => !BROAD_MARKET_KEYS.has(n));
+
+  const makeGroup = (label, items) => {
+    if (!items.length) return '';
+    return `
+      <div style="grid-column:1/-1;margin-top:10px;margin-bottom:4px;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:4px">${label}</div>
+      ${items.map(name => {
+        const checked = !activeSet || activeSet.has(name) ? 'checked' : '';
+        const isApi = NSE_API_INDICES.has(name);
+        const apiBadge = isApi
+          ? `<span style="background:var(--accent);color:#fff;font-size:7px;padding:0 4px;border-radius:2px;font-family:var(--mono);margin-left:4px;vertical-align:middle">API</span>`
+          : '';
+        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--radius-sm);cursor:pointer;transition:background .12s" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''">
+          <input type="checkbox" data-key="${name}" ${checked} onchange="updateIndexConfigCount()" style="accent-color:var(--accent);cursor:pointer">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text)">${name}${apiBadge}</span>
+        </label>`;
+      }).join('')}`;
+  };
+
+  grid.innerHTML = makeGroup('Broad Market', broad) + makeGroup('Sectoral', sect);
+}
+
+function updateIndexConfigCount() {
+  const checked = document.querySelectorAll('#icfg-grid input[type=checkbox]:checked');
+  const total   = document.querySelectorAll('#icfg-grid input[type=checkbox]').length;
+  const el = document.getElementById('icfg-count');
+  if (el) el.textContent = `${checked.length} / ${total} selected`;
+}
+
+function updateIndexConfigBadge() {
+  const saved = getSavedActiveIndices();
+  const nb = document.getElementById('nav-badge-icfg');
+  if (!saved) {
+    nb.textContent = 'all';
+    nb.className = 'badge grey';
+  } else {
+    nb.textContent = saved.size + ' active';
+    nb.className = saved.size > 0 ? 'badge ok' : 'badge warn';
+  }
+}
+
+function saveIndexConfig() {
+  const checked = [...document.querySelectorAll('#icfg-grid input[type=checkbox]:checked')]
+    .map(cb => cb.dataset.key);
+  const total = document.querySelectorAll('#icfg-grid input[type=checkbox]').length;
+
+  if (checked.length === total) {
+    // All selected = same as no filter; clear the key
+    localStorage.removeItem(LS_ACTIVE_INDICES);
+    toast('Showing all indices (no filter saved)', 'ok');
+  } else {
+    localStorage.setItem(LS_ACTIVE_INDICES, JSON.stringify(checked));
+    toast(`Saved: ${checked.length} active indices`, 'ok');
+  }
+  updateIndexConfigBadge();
+}
+
+function applyCommonPreset() {
+  document.querySelectorAll('#icfg-grid input[type=checkbox]').forEach(cb => {
+    cb.checked = COMMON_20.has(cb.dataset.key);
+  });
+  updateIndexConfigCount();
+}
+
+function selectAllIndexConfig() {
+  document.querySelectorAll('#icfg-grid input[type=checkbox]').forEach(cb => cb.checked = true);
+  updateIndexConfigCount();
+}
+
+function deselectAllIndexConfig() {
+  document.querySelectorAll('#icfg-grid input[type=checkbox]').forEach(cb => cb.checked = false);
+  updateIndexConfigCount();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadApiUrl();
+checkConnection();
+loadOverview();
+</script>
+</body>
+</html>

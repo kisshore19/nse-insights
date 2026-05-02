@@ -273,9 +273,136 @@
       ]
     },
     {
-      "name": "3. Stock Explorer",
+      "name": "3. Index Constituents",
+      "description": "Sync NSE index constituent data (index_master table). Run POST /sync once before using grouped-by-index or index-filtered screener APIs.",
+      "item": [
+        {
+          "name": "Sync All Indices",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-constituents/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-constituents", "sync"],
+              "query": [
+                { "key": "force", "value": "false", "disabled": true, "description": "true to bypass cache and re-download from NSE" }
+              ]
+            },
+            "description": "Download constituent CSVs from NSE and upsert all 12 supported indices (NIFTY50, NIFTYNEXT50, NIFTY100, NIFTY200, NIFTY500, NIFTYMIDCAP50, NIFTYMIDCAP100, NIFTYMIDCAP150, NIFTYSMALLCAP50, NIFTYSMALLCAP100, NIFTYSMALLCAP250, NIFTYLARGEMIDCAP250) into index_master. Run this once before using any index-filtered APIs."
+          }
+        },
+        {
+          "name": "Sync All Indices — Force Refresh",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-constituents/sync?force=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-constituents", "sync"],
+              "query": [
+                { "key": "force", "value": "true" }
+              ]
+            },
+            "description": "Bypass the local cache and re-download all constituent CSVs from NSE. Use when index composition changes."
+          }
+        },
+        {
+          "name": "Sync Single Index",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-constituents/sync/{{indexName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-constituents", "sync", "{{indexName}}"],
+              "query": [
+                { "key": "force", "value": "false", "disabled": true }
+              ]
+            },
+            "description": "Sync constituents for a single index only. indexName examples: NIFTY50, NIFTYBANK, NIFTY100, NIFTYMIDCAP50."
+          }
+        },
+        {
+          "name": "Sync Single Index — Force Refresh",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-constituents/sync/{{indexName}}?force=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-constituents", "sync", "{{indexName}}"],
+              "query": [
+                { "key": "force", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Synced Indices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/index-constituents/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "index-constituents", "list"]
+            },
+            "description": "Returns all indices that have been synced with their active constituent counts, plus the full list of supported index names."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Stock Explorer",
       "description": "Query, filter, and explore stock price data. Supports index and sector filtering.",
       "item": [
+        {
+          "name": "Search Stocks — All (no filters)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks?page=0&size=50&sortBy=pctChange&sortDir=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks"],
+              "query": [
+                { "key": "date",           "value": "",    "disabled": true, "description": "dd-MM-yyyy (default: latest)" },
+                { "key": "index",          "value": "",    "disabled": true, "description": "e.g. NIFTY50 — filter to index constituents" },
+                { "key": "sector",         "value": "",    "disabled": true, "description": "e.g. Financial Services" },
+                { "key": "minPrice",       "value": "",    "disabled": true, "description": "Minimum close price" },
+                { "key": "maxPrice",       "value": "",    "disabled": true, "description": "Maximum close price" },
+                { "key": "minVolume",      "value": "",    "disabled": true, "description": "Minimum traded quantity" },
+                { "key": "minPctChange",   "value": "",    "disabled": true, "description": "Minimum % change" },
+                { "key": "maxPctChange",   "value": "",    "disabled": true, "description": "Maximum % change" },
+                { "key": "minDeliveryPct", "value": "",    "disabled": true, "description": "Minimum delivery %" },
+                { "key": "page",           "value": "0" },
+                { "key": "size",           "value": "50" },
+                { "key": "sortBy",         "value": "pctChange",  "description": "pctChange | closePrice | tradedQuantity | tradeDate" },
+                { "key": "sortDir",        "value": "DESC",       "description": "ASC | DESC" }
+              ]
+            },
+            "description": "Advanced stock search with optional filters for date, index, sector, price range, volume, % change, and delivery %. Paginated and sortable."
+          }
+        },
+        {
+          "name": "Search Stocks — With Filters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks?minPrice=100&minPctChange=5&sortBy=pctChange&sortDir=DESC&page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks"],
+              "query": [
+                { "key": "date",           "value": "",    "disabled": true, "description": "dd-MM-yyyy (default: latest)" },
+                { "key": "index",          "value": "",    "disabled": true, "description": "e.g. NIFTY50" },
+                { "key": "minPrice",       "value": "100" },
+                { "key": "minPctChange",   "value": "5" },
+                { "key": "minDeliveryPct", "value": "",    "disabled": true },
+                { "key": "page",           "value": "0" },
+                { "key": "size",           "value": "50" },
+                { "key": "sortBy",         "value": "pctChange" },
+                { "key": "sortDir",        "value": "DESC" }
+              ]
+            },
+            "description": "Stocks above ₹100 with min 5% change, sorted by % change desc."
+          }
+        },
         {
           "name": "Get Top Gainers",
           "request": {
@@ -396,11 +523,69 @@
             },
             "description": "Distinct sector names from the index_master table."
           }
+        },
+        {
+          "name": "Get Stocks Grouped by Index",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/grouped-by-index",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "grouped-by-index"],
+              "query": [
+                { "key": "date", "value": "", "disabled": true, "description": "dd-MM-yyyy (default: latest). e.g. 30-04-2026" }
+              ]
+            },
+            "description": "Returns all synced indices, each with their constituent stocks and daily price data for the given date. Uses 2 DB queries regardless of index count. Stocks within each group are sorted by % change desc. Requires index_master to be populated — run POST /api/v1/index-constituents/sync first."
+          }
+        },
+        {
+          "name": "Get Stocks Grouped by Index — Specific Date",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/grouped-by-index?date=30-04-2026",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "grouped-by-index"],
+              "query": [
+                { "key": "date", "value": "30-04-2026", "description": "dd-MM-yyyy" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Stocks Grouped by Sector",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/grouped-by-sector",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "grouped-by-sector"],
+              "query": [
+                { "key": "date", "value": "", "disabled": true, "description": "dd-MM-yyyy (default: latest). e.g. 30-04-2026" }
+              ]
+            },
+            "description": "Returns all sectors, each with their constituent stocks and the list of indices each stock belongs to. Stocks within each sector are sorted by % change desc. Sectors are sorted alphabetically. Each stock's 'indices' field shows e.g. [\"NIFTY50\", \"NIFTY100\"]. Requires index_master to be populated — run POST /api/v1/index-constituents/sync first."
+          }
+        },
+        {
+          "name": "Get Stocks Grouped by Sector — Specific Date",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/grouped-by-sector?date=30-04-2026",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "stocks", "grouped-by-sector"],
+              "query": [
+                { "key": "date", "value": "30-04-2026", "description": "dd-MM-yyyy" }
+              ]
+            }
+          }
         }
       ]
     },
     {
-      "name": "4. Candle Stats",
+      "name": "5. Candle Stats",
       "description": "Build and query pre-computed OHLC + volume + delivery statistics per symbol per timeframe period.",
       "item": [
         {
@@ -637,7 +822,7 @@
       ]
     },
     {
-      "name": "5. Index Candle Stats",
+      "name": "6. Index Candle Stats",
       "description": "Build and query pre-computed OHLC + P/E + P/B statistics per index per timeframe period.",
       "item": [
         {
