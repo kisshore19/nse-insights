@@ -607,6 +607,16 @@ h1 span { /* inherits gradient naturally */ }
         <button class="bo-toggle-btn" data-val="down" onclick="togglePill('tg-f-closecp','f-closecp','down',applyFilters)">↓ Down</button>
       </div>
     </div>
+    <!-- F&O Stocks filter -->
+    <div class="bo-toggle-label" style="margin-top:8px">Watchlist</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <div class="bo-toggle-group" id="tg-f-fno">
+        <span class="bo-toggle-sep">F&amp;O</span>
+        <button class="bo-toggle-btn active" data-val="" onclick="togglePill('tg-f-fno','f-fno','',applyFilters)">All</button>
+        <button class="bo-toggle-btn" data-val="yes" onclick="togglePill('tg-f-fno','f-fno','yes',applyFilters)">F&amp;O Only</button>
+      </div>
+    </div>
+    <select id="f-fno" style="display:none"><option value="">All</option><option value="yes">yes</option></select>
     <div class="active-filters" id="activeFilters" style="margin-top:10px;"></div>
   </div>
 
@@ -642,6 +652,7 @@ h1 span { /* inherits gradient naturally */ }
       </div>
       <div class="sort-controls">
         <button class="btn btn-ghost" onclick="showTrendCloseStats()" style="padding:5px 12px;font-size:10px;margin-right:8px">📊 Stats</button>
+        <button class="btn btn-ghost" onclick="exportFilteredSymbols()" style="padding:5px 12px;font-size:10px;margin-right:8px" title="Export filtered symbols in NSE:SYMBOL-EQ format">⬇ Export</button>
         <label>Sort</label>
         <select id="sortCol" onchange="applyFilters()">
           <option value="pctChange">% Change</option>
@@ -757,6 +768,7 @@ h1 span { /* inherits gradient naturally */ }
       <select id="idx-f-closerange" style="display:none"><option value="">All</option><option value="high">high</option><option value="mid">mid</option><option value="low">low</option></select>
       <select id="idx-f-volbo" style="display:none"><option value="">All</option><option value="yes">yes</option><option value="no">no</option></select>
       <select id="idx-f-closecp" style="display:none"><option value="">All</option><option value="up">up</option><option value="down">down</option></select>
+      <select id="idx-f-struct" style="display:none"><option value="">All</option><option value="THH">THH</option><option value="HH">HH</option><option value="TLL">TLL</option><option value="LL">LL</option><option value="HV">HV</option><option value="LV">LV</option><option value="NC">NC</option></select>
       <!-- Index Search -->
       <div class="filter-field" style="margin-bottom:12px">
         <label>Index Search</label>
@@ -780,6 +792,18 @@ h1 span { /* inherits gradient naturally */ }
         <button class="bo-toggle-btn"        data-val="high" onclick="togglePill('tg-idx-closerange','idx-f-closerange','high',applyIndexFilters)">&gt;20k</button>
         <button class="bo-toggle-btn"        data-val="mid"  onclick="togglePill('tg-idx-closerange','idx-f-closerange','mid',applyIndexFilters)">10k–20k</button>
         <button class="bo-toggle-btn"        data-val="low"  onclick="togglePill('tg-idx-closerange','idx-f-closerange','low',applyIndexFilters)">&lt;10k</button>
+      </div>
+      <!-- Structure -->
+      <div class="bo-toggle-label" style="margin-top:8px">Structure</div>
+      <div class="bo-toggle-group" id="tg-idx-struct">
+        <button class="bo-toggle-btn active" data-val=""    onclick="togglePill('tg-idx-struct','idx-f-struct','',applyIndexFilters)">All</button>
+        <button class="bo-toggle-btn" data-val="THH" onclick="togglePill('tg-idx-struct','idx-f-struct','THH',applyIndexFilters)" title="Trending Higher High">THH</button>
+        <button class="bo-toggle-btn" data-val="HH"  onclick="togglePill('tg-idx-struct','idx-f-struct','HH',applyIndexFilters)"  title="Higher High">HH</button>
+        <button class="bo-toggle-btn" data-val="TLL" onclick="togglePill('tg-idx-struct','idx-f-struct','TLL',applyIndexFilters)" title="Trending Lower Low">TLL</button>
+        <button class="bo-toggle-btn" data-val="LL"  onclick="togglePill('tg-idx-struct','idx-f-struct','LL',applyIndexFilters)"  title="Lower Low">LL</button>
+        <button class="bo-toggle-btn" data-val="HV"  onclick="togglePill('tg-idx-struct','idx-f-struct','HV',applyIndexFilters)"  title="High Volatile">HV</button>
+        <button class="bo-toggle-btn" data-val="LV"  onclick="togglePill('tg-idx-struct','idx-f-struct','LV',applyIndexFilters)"  title="Low Volatile">LV</button>
+        <button class="bo-toggle-btn" data-val="NC"  onclick="togglePill('tg-idx-struct','idx-f-struct','NC',applyIndexFilters)"  title="No Change">NC</button>
       </div>
       <!-- Signals -->
       <div class="bo-toggle-label" style="margin-top:8px">Signals</div>
@@ -829,12 +853,16 @@ h1 span { /* inherits gradient naturally */ }
           <div class="chip up">UP <strong id="idx-statUp">0</strong></div>
           <div class="chip down">DOWN <strong id="idx-statDown">0</strong></div>
           <div class="chip side">SIDE <strong id="idx-statSide">0</strong></div>
+          <div class="chip" id="idx-configChip" title="Configured in Admin → Index Config" style="cursor:default"></div>
         </div>
         <div class="sort-controls">
-          <button class="btn btn-ghost" onclick="showIndexTrendCloseStats()" style="padding:5px 12px;font-size:10px;margin-right:8px">📊 Stats</button>
+          <button class="btn btn-ghost" onclick="showIndexTrendCloseStats()" style="padding:5px 12px;font-size:10px;margin-right:4px">📊 Stats</button>
+          <button class="btn btn-ghost" id="idx-dlBtn" onclick="downloadAllIndexWithStocksCSV()" title="Download all indices + constituent stocks as CSV" style="padding:5px 12px;font-size:10px;margin-right:8px">⬇ CSV</button>
           <label>Sort</label>
           <select id="idx-sortCol" onchange="applyIndexFilters()">
             <option value="pctChange">% Change</option>
+            <option value="symbol">Index Name</option>
+            <option value="trend">Trend</option>
             <option value="close">Close</option>
             <option value="high">High</option>
             <option value="low">Low</option>
@@ -1268,8 +1296,27 @@ function getActiveIndexKeys() {
     const v = localStorage.getItem('nse_active_indices');
     if (!v) return null;
     const arr = JSON.parse(v);
-    return arr.length ? new Set(arr) : null;
+    if (!arr.length) return null;
+    // Normalise stored keys the same way toCanonicalIndexKey normalises display symbols,
+    // so the comparison always works regardless of format saved by the admin dashboard.
+    return new Set(arr.map(k => {
+      const raw = k.toUpperCase().replace(/[\s_-]/g, '');
+      return IDX_KEY_MAP[raw] || raw;
+    }));
   } catch { return null; }
+}
+
+function updateIdxConfigChip() {
+  const chip = document.getElementById('idx-configChip');
+  if (!chip) return;
+  const keys = getActiveIndexKeys();
+  if (!keys) {
+    chip.textContent = 'Config: All indices';
+    chip.style.color = 'var(--muted)';
+  } else {
+    chip.textContent = `Config: ${keys.size} indices`;
+    chip.style.color = 'var(--accent, #4f8ef7)';
+  }
 }
 
 // Normalises any display symbol to a canonical index_master key
@@ -1279,6 +1326,8 @@ function toCanonicalIndexKey(symbol) {
 }
 
 const PAGE_SIZE = 100;
+
+const FNO_STOCKS = new Set(['360ONE','ABB','ABCAPITAL','ADANIENSOL','ADANIENT','ADANIGREEN','ADANIPORTS','ADANIPOWER','ALKEM','AMBER','AMBUJACEM','ANGELONE','APLAPOLLO','APOLLOHOSP','ASHOKLEY','ASIANPAINT','ASTRAL','AUBANK','AUROPHARMA','AXISBANK','BAJAJ-AUTO','BAJAJFINSV','BAJAJHLDNG','BAJFINANCE','BANDHANBNK','BANKBARODA','BANKINDIA','BDL','BEL','BHARATFORG','BHARTIARTL','BHEL','BIOCON','BLUESTARCO','BOSCHLTD','BPCL','BRITANNIA','BSE','CAMS','CANBK','CDSL','CGPOWER','CHOLAFIN','CIPLA','COALINDIA','COCHINSHIP','COFORGE','COLPAL','CONCOR','CROMPTON','CUMMINSIND','DABUR','DALBHARAT','DELHIVERY','DIVISLAB','DIXON','DLF','DMART','DRREDDY','EICHERMOT','ETERNAL','EXIDEIND','FEDERALBNK','FORCEMOT','FORTIS','GAIL','GLENMARK','GMRAIRPORT','GODFRYPHLP','GODREJCP','GODREJPROP','GRASIM','GVT&D','HAL','HAVELLS','HCLTECH','HDFCAMC','HDFCBANK','HDFCLIFE','HEROMOTOCO','HINDALCO','HINDPETRO','HINDUNILVR','HINDZINC','HYUNDAI','ICICIBANK','ICICIGI','ICICIPRULI','IDEA','IDFCFIRSTB','IEX','INDHOTEL','INDIANB','INDIGO','INDUSINDBK','INDUSTOWER','INFY','INOXWIND','IOC','IREDA','IRFC','ITC','JINDALSTEL','JIOFIN','JSWENERGY','JSWSTEEL','JUBLFOOD','KALYANKJIL','KAYNES','KEI','KFINTECH','KOTAKBANK','KPITTECH','LAURUSLABS','LICHSGFIN','LICI','LODHA','LT','LTF','LTM','LUPIN','M&M','MANAPPURAM','MANKIND','MARICO','MARUTI','MAXHEALTH','MAZDOCK','MCX','MFSL','MOTHERSON','MOTILALOFS','MPHASIS','MUTHOOTFIN','NAM-INDIA','NATIONALUM','NAUKRI','NBCC','NESTLEIND','NHPC','NMDC','NTPC','NUVAMA','NYKAA','OBEROIRLTY','OFSS','OIL','ONGC','PAGEIND','PATANJALI','PAYTM','PERSISTENT','PETRONET','PFC','PGEL','PHOENIXLTD','PIDILITIND','PIIND','PNB','PNBHOUSING','POLICYBZR','POLYCAB','POWERGRID','POWERINDIA','PREMIERENE','PRESTIGE','RADICO','RBLBANK','RECLTD','RELIANCE','RVNL','SAIL','SAMMAANCAP','SBICARD','SBILIFE','SBIN','SHREECEM','SHRIRAMFIN','SIEMENS','SOLARINDS','SONACOMS','SRF','SUNPHARMA','SUPREMEIND','SUZLON','SWIGGY','TATACONSUM','TATAELXSI','TATAPOWER','TATASTEEL','TCS','TECHM','TIINDIA','TITAN','TMPV','TORNTPHARM','TRENT','TVSMOTOR','ULTRACEMCO','UNIONBANK','UNITDSPR','UNOMINDA','UPL','VBL','VEDL','VMM','VOLTAS','WAAREEENER','WIPRO','YESBANK','ZYDUSLIFE']);
 
 // ── Global state ──────────────────────────────────────────────────────────────
 let allData     = [];          // current period — all symbols
@@ -1547,10 +1596,12 @@ function applyFilters() {
   const volBoFilter     = document.getElementById('f-volbo').value;
   const delBoFilter     = document.getElementById('f-delbo').value;
   const closeCpFilter   = document.getElementById('f-closecp').value;
+  const fnoFilter       = document.getElementById('f-fno').value;
   const hasPrev         = Object.keys(prevMap).length > 0;
 
   filtered = allData.filter(r => {
     if (symbolFilter    && !r.symbol.includes(symbolFilter))    return false;
+    if (fnoFilter === 'yes' && !FNO_STOCKS.has(r.symbol))       return false;
     if (trendFilter     && r.trend !== trendFilter)             return false;
     if (structureFilter) {
       const cs = candleStructure(r, prevMap[r.symbol]);
@@ -1615,7 +1666,7 @@ function applyFilters() {
   document.getElementById('statSide').textContent    = filtered.filter(r => r.trend === 'SIDE').length;
 
   // ── Badges ────────────────────────────────────────────────────────────────
-  renderBadges({ symbolFilter, trendFilter, structureFilter, volBoFilter, delBoFilter, closeCpFilter });
+  renderBadges({ symbolFilter, trendFilter, structureFilter, volBoFilter, delBoFilter, closeCpFilter, fnoFilter });
 
   currentPage = 0;
   if (filtered.length === 0) {
@@ -2173,6 +2224,7 @@ function renderBadges(f) {
   if (f.volBoFilter)     badges.push(['Vol-BO: '+f.volBoFilter,        ()=>{ resetTogglePill('tg-f-volbo','f-volbo'); applyFilters(); }]);
   if (f.delBoFilter)     badges.push(['Del-BO: '+f.delBoFilter,        ()=>{ resetTogglePill('tg-f-delbo','f-delbo'); applyFilters(); }]);
   if (f.closeCpFilter)   badges.push(['Close-CP: '+f.closeCpFilter,    ()=>{ resetTogglePill('tg-f-closecp','f-closecp'); applyFilters(); }]);
+  if (f.fnoFilter)       badges.push(['F&O Only',                       ()=>{ resetTogglePill('tg-f-fno','f-fno'); applyFilters(); }]);
 
   const container = document.getElementById('activeFilters');
   container.innerHTML = badges.map((b, i) =>
@@ -2191,6 +2243,38 @@ function clearField(id) {
   applyFilters();
 }
 
+function exportFilteredSymbols() {
+  if (filtered.length === 0) { alert('No symbols to export.'); return; }
+  const parts = [];
+  const tf        = document.getElementById('tf').value;
+  const period    = document.getElementById('period').value;
+  const sym       = document.getElementById('f-symbol').value.trim().toUpperCase();
+  const trend     = document.getElementById('f-trend').value;
+  const structure = document.getElementById('f-structure').value;
+  const volbo     = document.getElementById('f-volbo').value;
+  const delbo     = document.getElementById('f-delbo').value;
+  const closecp   = document.getElementById('f-closecp').value;
+  const fno       = document.getElementById('f-fno').value;
+  if (tf)            parts.push(tf);
+  if (period)        parts.push(period);
+  if (fno === 'yes') parts.push('FnO');
+  if (trend)         parts.push(trend);
+  if (structure)     parts.push(structure);
+  if (volbo)         parts.push('VolBO-' + volbo);
+  if (delbo)         parts.push('DelBO-' + delbo);
+  if (closecp)       parts.push('CloseCP-' + closecp);
+  if (sym)           parts.push(sym);
+  const filename = (parts.length ? parts.join('_') : 'all-stocks') + '.txt';
+  const content = filtered.map(r => 'NSE:' + r.symbol + '-EQ').join(',');
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function clearFilters(andApply = true) {
   document.getElementById('f-symbol').value    = '';
   resetTogglePill('tg-f-trend',     'f-trend');
@@ -2198,6 +2282,7 @@ function clearFilters(andApply = true) {
   resetTogglePill('tg-f-volbo',     'f-volbo');
   resetTogglePill('tg-f-delbo',     'f-delbo');
   resetTogglePill('tg-f-closecp',   'f-closecp');
+  resetTogglePill('tg-f-fno',       'f-fno');
   if (andApply && allData.length > 0) applyFilters();
 }
 
@@ -2600,24 +2685,31 @@ function clearIndexFilters() {
   document.getElementById('idx-f-symbol').value = '';
   resetTogglePill('tg-idx-trend',       'idx-f-trend');
   resetTogglePill('tg-idx-closerange',  'idx-f-closerange');
+  resetTogglePill('tg-idx-struct',      'idx-f-struct');
   resetTogglePill('tg-idx-volbo',       'idx-f-volbo');
   resetTogglePill('tg-idx-closecp',     'idx-f-closecp');
   applyIndexFilters();
 }
 
 function applyIndexFilters() {
-  const symbol      = document.getElementById('idx-f-symbol').value.trim().toUpperCase();
-  const trend       = document.getElementById('idx-f-trend').value;
-  const closerange  = document.getElementById('idx-f-closerange').value;
+  updateIdxConfigChip();
+  const symbol        = document.getElementById('idx-f-symbol').value.trim().toUpperCase();
+  const trend         = document.getElementById('idx-f-trend').value;
+  const closerange    = document.getElementById('idx-f-closerange').value;
   const volBoFilter   = document.getElementById('idx-f-volbo').value;
   const closeCpFilter = document.getElementById('idx-f-closecp').value;
-  const hasPrev     = Object.keys(idxPrevMap).length > 0;
-  const activeKeys  = getActiveIndexKeys();
+  const structFilter  = document.getElementById('idx-f-struct').value;
+  const hasPrev       = Object.keys(idxPrevMap).length > 0;
+  const activeKeys    = getActiveIndexKeys();
 
   idxFiltered = idxAllData.filter(r => {
     if (activeKeys && !activeKeys.has(toCanonicalIndexKey(r.symbol))) return false;
     if (symbol && !r.symbol.includes(symbol)) return false;
     if (trend && r.trend !== trend) return false;
+    if (structFilter) {
+      const cs = candleStructure(r, idxPrevMap[r.symbol]);
+      if (cs.code !== structFilter) return false;
+    }
     if (closerange === 'high' && r.close < 20000) return false;
     if (closerange === 'mid' && (r.close < 10000 || r.close >= 20000)) return false;
     if (closerange === 'low' && r.close >= 10000) return false;
@@ -2655,7 +2747,7 @@ function applyIndexFilters() {
   document.getElementById('idx-statSide').textContent    = idxFiltered.filter(r => r.trend === 'SIDE').length;
 
   // Active filter badges
-  renderIndexBadges({ symbol, trend, closerange, volBoFilter, closeCpFilter });
+  renderIndexBadges({ symbol, trend, closerange, volBoFilter, closeCpFilter, structFilter });
 
   // Reset pagination and render
   idxCurrentPage = 0;
@@ -2819,6 +2911,255 @@ function updateIndexSortArrows() {
   if (activeEl) activeEl.textContent = idxSortDir === 'asc' ? ' ↑' : ' ↓';
 }
 
+// ── CSV download helpers ──────────────────────────────────────────────────────
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v);
+  return (s.includes(',') || s.includes('"') || s.includes('\n'))
+    ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function triggerCSVDownload(filename, headerRow, dataRows) {
+  const lines = [headerRow, ...dataRows].map(row => row.map(csvEscape).join(','));
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function downloadAllIndexWithStocksCSV() {
+  if (!idxFiltered.length) { alert('No index data to download.'); return; }
+
+  const btn    = document.getElementById('idx-dlBtn');
+  const tf     = document.getElementById('idx-tf').value;
+  const period = document.getElementById('idx-period').value;
+  const cacheKey = tf + ':' + period;
+
+  // Show loading state
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+
+  try {
+    // ── 1. Ensure stock candle cache is loaded ────────────────────────────────
+    if (!idxDrillStockCache[cacheKey]) {
+      const url = `${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(period)}&size=2500&page=0&sortBy=PCT_CHANGE&sortDir=DESC`;
+      const j   = await fetch(url).then(r => r.json());
+      const w   = j.data !== undefined ? j.data : j;
+      const rows = Array.isArray(w) ? w : Array.isArray(w.results) ? w.results : Array.isArray(w.data) ? w.data : [];
+      idxDrillStockCache[cacheKey] = rows.map(normalise);
+
+      const prevP = prevPeriod(tf, period);
+      const nextP = nextPeriod(tf, period);
+      const fetchPM = async (pk) => {
+        if (!pk) return {};
+        try {
+          const u2  = `${getBaseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(pk)}&size=2500&page=0&sortBy=CLOSE&sortDir=DESC`;
+          const j2  = await fetch(u2).then(r => r.json());
+          const w2  = j2.data !== undefined ? j2.data : j2;
+          const r2  = Array.isArray(w2) ? w2 : Array.isArray(w2.results) ? w2.results : Array.isArray(w2.data) ? w2.data : [];
+          const pm  = {}; r2.map(normalise).forEach(s => { pm[s.symbol] = s; }); return pm;
+        } catch(_) { return {}; }
+      };
+      const [pm, nm] = await Promise.all([fetchPM(prevP), fetchPM(nextP)]);
+      idxDrillPrevCache[cacheKey] = pm;
+      idxDrillNextCache[cacheKey] = nm;
+    }
+
+    const allStocks  = idxDrillStockCache[cacheKey];
+    const prevStocks = idxDrillPrevCache[cacheKey]  || {};
+
+    // ── 2. Ensure symbol-map for every filtered index ─────────────────────────
+    await Promise.all(idxFiltered.map(async (r) => {
+      const rawKey  = r.symbol.replace(/\s+/g, '');
+      const compKey = IDX_KEY_MAP[rawKey] || rawKey;
+      if (!idxDrillSymbolMap[compKey]) {
+        try {
+          const j2   = await fetch(`${getBaseUrl()}/api/v1/stocks/by-index?index=${encodeURIComponent(compKey)}`).then(r => r.json());
+          const stks = j2.data?.stocks || j2.data?.results || (Array.isArray(j2.data) ? j2.data : []);
+          idxDrillSymbolMap[compKey] = new Set(stks.map(s => s.symbol).filter(Boolean));
+        } catch(_) { idxDrillSymbolMap[compKey] = new Set(); }
+      }
+    }));
+
+    // ── 3. Build combined CSV rows ────────────────────────────────────────────
+    // Exact column order as specified
+    const headers = [
+      'Type','Index','Symbol',
+      'Close','% Chg',
+      'Index VOL-BO','Index Structure',
+      'VOL-BO','DEL-BO','Structure','Trend',
+      'High','Low','High Date','Low Date',
+      'CLOSE-CP','Prev Close','vs Last Period %',
+      'High Vol','High Deliv','Del%',
+    ];
+
+    const csvRows = [];
+
+    for (const r of idxFiltered) {
+      // ── Index row ──────────────────────────────────────────────────────────
+      const iPrev    = idxPrevMap[r.symbol];
+      const iVs      = idxVsLastPeriodVal(r);
+      const iCs      = candleStructure(r, iPrev);
+      const iVolBo   = (!iPrev || r.highVolQty == null || iPrev.highVolQty == null) ? ''
+                     : r.highVolQty > iPrev.highVolQty ? 'Yes' : 'No';
+      const iClosecp = (!iPrev || r.close == null || iPrev.close == null) ? ''
+                     : r.close > iPrev.close ? 'Up' : r.close < iPrev.close ? 'Down' : 'Flat';
+      csvRows.push([
+        'INDEX', r.symbol, r.symbol,
+        r.close     != null ? r.close     : '',
+        r.pctChange != null ? r.pctChange : '',
+        iVolBo, iCs.code,               // Index VOL-BO, Index Structure
+        iVolBo, '', iCs.code, r.trend || '',
+        r.high      != null ? r.high     : '',
+        r.low       != null ? r.low      : '',
+        r.highPriceDate || '', r.lowPriceDate || '',
+        iClosecp,
+        iPrev?.close != null ? iPrev.close : '',
+        iVs          != null ? iVs         : '',
+        r.highVolQty != null ? r.highVolQty : '', '', '',
+      ]);
+
+      // ── Stock rows for this index ──────────────────────────────────────────
+      const rawKey  = r.symbol.replace(/\s+/g, '');
+      const compKey = IDX_KEY_MAP[rawKey] || rawKey;
+      const symSet  = idxDrillSymbolMap[compKey];
+      const stocks  = (symSet?.size > 0) ? allStocks.filter(s => symSet.has(s.symbol)) : [];
+
+      for (const s of stocks) {
+        const sPrev  = prevStocks[s.symbol];
+        const sCs    = candleStructure(s, sPrev);
+        const sVb    = (!sPrev || s.highVolQty   == null || sPrev.highVolQty   == null) ? ''
+                     : s.highVolQty   > sPrev.highVolQty   ? 'Yes' : 'No';
+        const sDb    = (!sPrev || s.highDelivQty == null || sPrev.highDelivQty == null) ? ''
+                     : s.highDelivQty > sPrev.highDelivQty ? 'Yes' : 'No';
+        const sCp    = (!sPrev || s.close == null || sPrev.close == null) ? ''
+                     : s.close > sPrev.close ? 'Up' : s.close < sPrev.close ? 'Down' : 'Flat';
+        const sVs    = (sPrev?.close && s.close && sPrev.close !== 0)
+                     ? +((s.close - sPrev.close) / Math.abs(sPrev.close) * 100).toFixed(2) : '';
+        csvRows.push([
+          'STOCK', r.symbol, s.symbol,
+          s.close       != null ? s.close       : '',
+          s.pctChange   != null ? s.pctChange   : '',
+          iVolBo, iCs.code,             // Index VOL-BO, Index Structure (parent values)
+          sVb, sDb, sCs.code, s.trend || '',
+          s.high        != null ? s.high        : '',
+          s.low         != null ? s.low         : '',
+          s.highPriceDate || '', s.lowPriceDate || '',
+          sCp,
+          sPrev?.close  != null ? sPrev.close   : '',
+          sVs,
+          s.highVolQty   != null ? s.highVolQty   : '',
+          s.highDelivQty != null ? s.highDelivQty : '',
+          s.delivPct     != null ? s.delivPct.toFixed(1) : '',
+        ]);
+      }
+    }
+
+    triggerCSVDownload(`index_with_stocks_${tf}_${period}.csv`, headers, csvRows);
+
+  } catch(e) {
+    alert('Download failed: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⬇ CSV'; }
+  }
+}
+
+function downloadDrillCSV(safeId) {
+  const store = idxDrillDataStore[safeId];
+  if (!store) return;
+  const { indexSymbol, stocks: allStocks, prevMap } = store;
+
+  // Re-apply current filter + sort to get exactly what's on screen
+  const sym     = (document.getElementById('df-sym-'    + safeId)?.value || '').trim();
+  const trend   =  document.getElementById('df-trend-'  + safeId)?.value || '';
+  const struct  =  document.getElementById('df-struct-' + safeId)?.value || '';
+  const volbo   =  document.getElementById('df-volbo-'  + safeId)?.value || '';
+  const delbo   =  document.getElementById('df-delbo-'  + safeId)?.value || '';
+  const closecp =  document.getElementById('df-closecp-'+ safeId)?.value || '';
+  const sortCol =  document.getElementById('df-sort-'   + safeId)?.value || 'pctChange';
+  const sortDir =  document.getElementById('df-dir-'    + safeId)?.value || 'desc';
+
+  let stocks = allStocks.filter(r => {
+    if (sym   && !r.symbol.includes(sym)) return false;
+    if (trend && r.trend !== trend)       return false;
+    const prevR = prevMap[r.symbol];
+    if (struct && candleStructure(r, prevR).code !== struct) return false;
+    if (volbo) {
+      const vb = (!prevR || r.highVolQty == null || prevR.highVolQty == null) ? null
+               : r.highVolQty > prevR.highVolQty;
+      if (volbo === 'yes' && vb !== true)  return false;
+      if (volbo === 'no'  && vb !== false) return false;
+    }
+    if (delbo) {
+      const db = (!prevR || r.highDelivQty == null || prevR.highDelivQty == null) ? null
+               : r.highDelivQty > prevR.highDelivQty;
+      if (delbo === 'yes' && db !== true)  return false;
+      if (delbo === 'no'  && db !== false) return false;
+    }
+    if (closecp) {
+      if (!prevR || r.close == null || prevR.close == null) return false;
+      if (closecp === 'up'   && !(r.close > prevR.close)) return false;
+      if (closecp === 'down' && !(r.close < prevR.close)) return false;
+    }
+    return true;
+  });
+
+  stocks = stocks.slice().sort((a, b) => {
+    let av, bv;
+    if (sortCol === 'vsLastPeriod') {
+      const pa = prevMap[a.symbol], pb = prevMap[b.symbol];
+      av = (pa?.close && a.close && pa.close !== 0) ? (a.close - pa.close) / Math.abs(pa.close) : null;
+      bv = (pb?.close && b.close && pb.close !== 0) ? (b.close - pb.close) / Math.abs(pb.close) : null;
+    } else if (sortCol === 'structure') {
+      av = candleStructure(a, prevMap[a.symbol]).code;
+      bv = candleStructure(b, prevMap[b.symbol]).code;
+    } else { av = a[sortCol]; bv = b[sortCol]; }
+    if (av == null) av = sortDir === 'desc' ? -Infinity : Infinity;
+    if (bv == null) bv = sortDir === 'desc' ? -Infinity : Infinity;
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  if (!stocks.length) { alert('No stocks to download.'); return; }
+
+  const tf     = document.getElementById('idx-tf').value;
+  const period = document.getElementById('idx-period').value;
+
+  const headers = ['Symbol','Close','% Chg','Trend','Structure','VOL-BO','DEL-BO','CLOSE-CP',
+                   'High Vol','High Deliv','Del%','High Date','Low Date',
+                   'Prev Close','vs Last Period %'];
+
+  const rows = stocks.map(r => {
+    const prevR = prevMap[r.symbol];
+    const cs    = candleStructure(r, prevR);
+    const vbVal = (!prevR || r.highVolQty == null   || prevR.highVolQty == null)   ? ''
+                : r.highVolQty   > prevR.highVolQty   ? 'Yes' : 'No';
+    const dbVal = (!prevR || r.highDelivQty == null || prevR.highDelivQty == null) ? ''
+                : r.highDelivQty > prevR.highDelivQty ? 'Yes' : 'No';
+    const cpVal = (!prevR || r.close == null || prevR.close == null) ? ''
+                : r.close > prevR.close ? 'Up' : r.close < prevR.close ? 'Down' : 'Flat';
+    const vsVal = (prevR?.close && r.close && prevR.close !== 0)
+                ? +((r.close - prevR.close) / Math.abs(prevR.close) * 100).toFixed(2) : '';
+    return [
+      r.symbol,
+      r.close        != null ? r.close        : '',
+      r.pctChange    != null ? r.pctChange    : '',
+      r.trend || '',
+      cs.code,
+      vbVal, dbVal, cpVal,
+      r.highVolQty   != null ? r.highVolQty   : '',
+      r.highDelivQty != null ? r.highDelivQty : '',
+      r.delivPct     != null ? r.delivPct.toFixed(1) : '',
+      r.highPriceDate || '',
+      r.lowPriceDate  || '',
+      prevR?.close   != null ? prevR.close    : '',
+      vsVal,
+    ];
+  });
+
+  triggerCSVDownload(`${indexSymbol}_stocks_${tf}_${period}.csv`, headers, rows);
+}
+
 // ── Index drill-down ─────────────────────────────────────────────────────────
 function toggleIndexDrill(event, symbol) {
   event.stopPropagation();
@@ -2933,6 +3274,7 @@ function renderIndexDrillContent(indexSymbol, stocks, prevMap, nextMap, el) {
       <span class="chip up">↑ UP ${up}</span>
       <span class="chip down">↓ DOWN ${dn}</span>
       <span class="chip side">→ SIDE ${side}</span>
+      <button class="btn btn-ghost" onclick="downloadDrillCSV('${safeId}')" title="Download visible stocks as CSV" style="margin-left:auto;padding:3px 10px;font-size:10px">⬇ CSV</button>
     </div>
     <div id="dfbar-${safeId}" style="margin-bottom:10px">
       <!-- Hidden selects — read by applyDrillFilter -->
@@ -2949,6 +3291,8 @@ function renderIndexDrillContent(indexSymbol, stocks, prevMap, nextMap, el) {
         <select id="df-sort-${safeId}" onchange="applyDrillFilter('${safeId}')"
                 style="font-size:11px;padding:5px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surf);color:var(--text);font-family:var(--mono);height:30px;cursor:pointer;outline:none">
           <option value="pctChange">Sort: % Chg</option>
+          <option value="symbol">Symbol</option>
+          <option value="trend">Trend</option>
           <option value="close">Close</option>
           <option value="highVolQty">High Vol</option>
           <option value="highDelivQty">High Deliv</option>
@@ -3085,6 +3429,19 @@ function clearDrillFilters(safeId) {
   applyDrillFilter(safeId);
 }
 
+function doDrillSort(safeId, col) {
+  const sortEl = document.getElementById('df-sort-' + safeId);
+  const dirEl  = document.getElementById('df-dir-'  + safeId);
+  if (!sortEl || !dirEl) return;
+  if (sortEl.value === col) {
+    dirEl.value = dirEl.value === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortEl.value = col;
+    dirEl.value  = 'desc';
+  }
+  applyDrillFilter(safeId);
+}
+
 function renderDrillTable(safeId, stocks) {
   const store = idxDrillDataStore[safeId];
   if (!store) return;
@@ -3097,24 +3454,35 @@ function renderDrillTable(safeId, stocks) {
     return;
   }
 
+  const curCol = document.getElementById('df-sort-' + safeId)?.value || 'pctChange';
+  const curDir = document.getElementById('df-dir-'  + safeId)?.value || 'desc';
+  const thS = (col, label, cls, extraStyle) => {
+    const arrow = col === curCol ? (curDir === 'asc' ? '↑' : '↓') : '';
+    const clsAttr = cls ? ` class="${cls}"` : '';
+    const styleAttr = extraStyle
+      ? ` style="cursor:pointer;${extraStyle}"`
+      : ' style="cursor:pointer"';
+    return `<th${clsAttr}${styleAttr} onclick="doDrillSort('${safeId}','${col}')">${label}<span class="sort-arrow">${arrow}</span></th>`;
+  };
+
   let html = `<div class="drill-tbl-wrap"><table class="tbl drill-tbl">
     <thead><tr>
       <th>#</th>
-      <th>Symbol</th>
+      ${thS('symbol', 'Symbol')}
       <th class="ctx-col">PREV · CURR · NEXT</th>
-      <th class="td-right">% Chg</th>
-      <th>Trend</th>
-      <th class="sig-col" style="min-width:72px">STRUCTURE</th>
+      ${thS('pctChange', '% Chg', 'td-right')}
+      ${thS('trend', 'Trend')}
+      ${thS('structure', 'STRUCTURE', 'sig-col', 'min-width:72px')}
       <th class="sig-col">VOL-BO</th>
       <th class="sig-col">DEL-BO</th>
       <th class="sig-col">CLOSE-CP</th>
-      <th class="td-right">High Vol</th>
-      <th class="td-right">High Deliv</th>
-      <th class="td-right">Del%</th>
+      ${thS('highVolQty', 'High Vol', 'td-right')}
+      ${thS('highDelivQty', 'High Deliv', 'td-right')}
+      ${thS('delivPct', 'Del%', 'td-right')}
       <th>High Date</th>
       <th>Low Date</th>
       <th class="td-right prev-col">Prev Close</th>
-      <th class="td-right prev-col">vs Last Period</th>
+      ${thS('vsLastPeriod', 'vs Last Period', 'td-right prev-col')}
     </tr></thead><tbody>`;
 
   stocks.forEach((r, i) => {
@@ -3172,11 +3540,12 @@ function renderDrillTable(safeId, stocks) {
 // ── Index active filter badges ────────────────────────────────────────────────
 function renderIndexBadges(f) {
   const badges = [];
-  if (f.symbol)        badges.push(['Symbol: ' + f.symbol,         () => { document.getElementById('idx-f-symbol').value = ''; applyIndexFilters(); }]);
-  if (f.trend)         badges.push(['Trend: ' + f.trend,           () => { resetTogglePill('tg-idx-trend','idx-f-trend'); applyIndexFilters(); }]);
-  if (f.closerange)    badges.push(['Range: ' + f.closerange,      () => { resetTogglePill('tg-idx-closerange','idx-f-closerange'); applyIndexFilters(); }]);
-  if (f.volBoFilter)   badges.push(['Vol-BO: ' + f.volBoFilter,    () => { resetTogglePill('tg-idx-volbo','idx-f-volbo'); applyIndexFilters(); }]);
-  if (f.closeCpFilter) badges.push(['Close-CP: ' + f.closeCpFilter, () => { resetTogglePill('tg-idx-closecp','idx-f-closecp'); applyIndexFilters(); }]);
+  if (f.symbol)        badges.push(['Symbol: ' + f.symbol,           () => { document.getElementById('idx-f-symbol').value = ''; applyIndexFilters(); }]);
+  if (f.trend)         badges.push(['Trend: ' + f.trend,             () => { resetTogglePill('tg-idx-trend','idx-f-trend'); applyIndexFilters(); }]);
+  if (f.structFilter)  badges.push(['Structure: ' + f.structFilter,  () => { resetTogglePill('tg-idx-struct','idx-f-struct'); applyIndexFilters(); }]);
+  if (f.closerange)    badges.push(['Range: ' + f.closerange,        () => { resetTogglePill('tg-idx-closerange','idx-f-closerange'); applyIndexFilters(); }]);
+  if (f.volBoFilter)   badges.push(['Vol-BO: ' + f.volBoFilter,      () => { resetTogglePill('tg-idx-volbo','idx-f-volbo'); applyIndexFilters(); }]);
+  if (f.closeCpFilter) badges.push(['Close-CP: ' + f.closeCpFilter,  () => { resetTogglePill('tg-idx-closecp','idx-f-closecp'); applyIndexFilters(); }]);
 
   const container = document.getElementById('idx-activeFilters');
   container.innerHTML = badges.map((b, i) =>
@@ -3922,6 +4291,7 @@ window.addEventListener('load', () => {
   updateIndexPeriodField(document.getElementById('idx-tf').value);
   updateBreakoutsPeriodField(document.getElementById('bo-tf').value);
   loadSavedApiUrl();
+  updateIdxConfigChip();
 });
 </script>
 </body>
