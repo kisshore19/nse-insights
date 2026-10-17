@@ -35,6 +35,7 @@ public class NseBhavatopyDownloader {
         String fileName = "sec_bhavdata_full_" + dateStr + ".csv";
         String url      = "https://archives.nseindia.com/products/content/" + fileName;
 
+        //https://www.nseindia.com/api/reports?archives=%5B%7B%22name%22%3A%22Full%20Bhavcopy%20and%20Security%20Deliverable%20data%22%2C%22type%22%3A%22daily-reports%22%2C%22category%22%3A%22capital-market%22%2C%22section%22%3A%22equities%22%7D%5D&date=01-Oct-2026&type=equities&mode=single
         Path filePath = Paths.get(storagePath, fileName);
 
         // ── Step 1: Check local disk first ────────────────────────────────────

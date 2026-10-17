@@ -25,6 +25,7 @@ public class NseIndexCloseDownloader {
 
     @Value("${nse.index.storage-path}")
     private String storagePath;
+    //https://www.niftyindices.com/Daily_Snapshot/ind_close_all_06102026.csv
 
     // URL: https://nsearchives.nseindia.com/content/indices/ind_close_all_28042026.csv
     private static final String BASE_URL =
