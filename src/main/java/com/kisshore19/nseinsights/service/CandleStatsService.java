@@ -9,6 +9,7 @@ import com.kisshore19.nseinsights.repository.CandlePeriodProjection;
 import com.kisshore19.nseinsights.repository.CandleStatsProjection;
 import com.kisshore19.nseinsights.repository.CandleStatsRepository;
 import com.kisshore19.nseinsights.repository.NseDailyPriceRepository;
+import com.kisshore19.nseinsights.util.CandleColorUtils;
 import com.kisshore19.nseinsights.util.PeriodKeyUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -126,8 +127,9 @@ public class CandleStatsService {
                 if (current == null) {
                     toSave.add(toEntity(p, timeframe, pk));
                     newCount++;
-                } else if (p.getCandleEndDate() != null
-                        && p.getCandleEndDate().isAfter(current.getCandleEndDate())) {
+                } else if (current.getCandleColor() == null
+                        || (p.getCandleEndDate() != null
+                            && p.getCandleEndDate().isAfter(current.getCandleEndDate()))) {
                     applyProjection(current, p);
                     toSave.add(current);
                     refreshed++;
@@ -237,6 +239,7 @@ public class CandleStatsService {
         s.setHighPriceDate(p.getHighPriceDate());
         s.setLowPriceDate(p.getLowPriceDate());
         s.setTrend(p.getTrend());
+        s.setCandleColor(CandleColorUtils.of(p.getOpenPrice(), p.getLastPrice()));
         s.setHighVolQty(p.getHighVolQty());
         s.setHighVolDate(p.getHighVolDate());
         s.setLowVolQty(p.getLowVolQty());
@@ -261,6 +264,7 @@ public class CandleStatsService {
                 .highPriceDate(s.getHighPriceDate())
                 .lowPriceDate(s.getLowPriceDate())
                 .trend(s.getTrend())
+                .candleColor(s.getCandleColor())
                 .highestVolume(CandleStatsResponse.VolumePoint.builder()
                         .date(s.getHighVolDate()).quantity(s.getHighVolQty()).build())
                 .lowestVolume(CandleStatsResponse.VolumePoint.builder()

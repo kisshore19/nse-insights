@@ -188,6 +188,7 @@ CREATE TABLE candle_stats (
     low_price       DECIMAL(12,2)   NULL,
     last_price      DECIMAL(12,2)   NULL,
     trend           VARCHAR(5)      NULL,       -- UP | DOWN | SIDE
+    candle_color    VARCHAR(5)      NULL,       -- GREEN | RED | DOJI (last vs open)
 
     -- Volume extremes
     high_vol_qty    BIGINT          NULL,
@@ -251,6 +252,7 @@ CREATE TABLE IF NOT EXISTS index_candle_stats (
     low_value       DECIMAL(12,2)    NULL,
     last__value      DECIMAL(12,2)    NULL,
     trend           VARCHAR(10) NULL,
+    candle_color    VARCHAR(5)       NULL,      -- GREEN | RED | DOJI (last vs open)
     high_value_date DATE             NULL,
     low_value_date  DATE             NULL,
     high_vol_qty    BIGINT           NULL,
@@ -267,3 +269,15 @@ CREATE TABLE IF NOT EXISTS index_candle_stats (
 
 CREATE INDEX idx_idx_stats_name_tf ON index_candle_stats (index_name, timeframe);
 CREATE INDEX idx_idx_stats_tf      ON index_candle_stats (timeframe);
+
+-- ── Migration: candle_color (existing installs) ──────────────────────────────
+-- ALTER TABLE candle_stats       ADD COLUMN candle_color VARCHAR(5) NULL AFTER trend;
+-- ALTER TABLE index_candle_stats ADD COLUMN candle_color VARCHAR(5) NULL AFTER trend;
+-- UPDATE candle_stats SET candle_color = CASE
+--     WHEN last_price > open_price THEN 'GREEN'
+--     WHEN last_price < open_price THEN 'RED' ELSE 'DOJI' END
+--  WHERE open_price IS NOT NULL AND last_price IS NOT NULL;
+-- UPDATE index_candle_stats SET candle_color = CASE
+--     WHEN last__value > open_value THEN 'GREEN'
+--     WHEN last__value < open_value THEN 'RED' ELSE 'DOJI' END
+--  WHERE open_value IS NOT NULL AND last__value IS NOT NULL;
