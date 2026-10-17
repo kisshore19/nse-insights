@@ -18,8 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -41,12 +42,14 @@ public class CandleStatsService {
      *
      * For each period:
      *   1. Resolve periodKey → fromDate / toDate via PeriodKeyUtils
-     *   2. Find symbols already in candle_stats for this period (skip set)
+     *   2. Load stats already in candle_stats for this period, keyed by symbol
      *   3. Run ONE optimised CTE query scoped by date range (fast index hit)
-     *   4. Filter out already-existing symbols
-     *   5. Batch save new records
+     *   4. Insert new symbols; update existing ones whose candleEndDate is stale
+     *   5. Batch save
      *
-     * No existing record is ever deleted or overwritten.
+     * Existing records are never deleted. A record is refreshed in place only
+     * when nse_daily_price has newer data than it was built from (i.e. the
+     * period is still running); completed periods are left untouched.
      */
     @Transactional
     public CandleStatsBuildResponse buildStats(
@@ -93,9 +96,11 @@ public class CandleStatsService {
 
         for (String pk : periodsToProcess) {
 
-            // Step 1: symbols already done for this period — skip set
-            Set<String> existingSymbols =
-                    statsRepository.findExistingSymbolsForPeriod(timeframe, pk);
+            // Step 1: stats already built for this period, keyed by symbol
+            Map<String, CandleStats> existing = new HashMap<>();
+            for (CandleStats cs : statsRepository.findByTimeframeAndPeriodKey(timeframe, pk)) {
+                existing.put(cs.getSymbol(), cs);
+            }
 
             // Step 2: resolve period key → date range
             LocalDate fromDate = PeriodKeyUtils.periodStart(timeframe, pk);
@@ -112,26 +117,38 @@ public class CandleStatsService {
                 continue;
             }
 
-            // Step 4: filter out already-existing symbols
-            List<CandleStats> toSave = projections.stream()
-                    .filter(p -> !existingSymbols.contains(p.getSymbol()))
-                    .map(p -> toEntity(p, timeframe, pk))
-                    .toList();
+            // Step 4: insert new symbols; refresh existing ones if new days arrived
+            List<CandleStats> toSave = new ArrayList<>();
+            int newCount = 0;
+            int refreshed = 0;
+            for (CandleStatsProjection p : projections) {
+                CandleStats current = existing.get(p.getSymbol());
+                if (current == null) {
+                    toSave.add(toEntity(p, timeframe, pk));
+                    newCount++;
+                } else if (p.getCandleEndDate() != null
+                        && p.getCandleEndDate().isAfter(current.getCandleEndDate())) {
+                    applyProjection(current, p);
+                    toSave.add(current);
+                    refreshed++;
+                }
+            }
 
             if (toSave.isEmpty()) {
-                log.info("period={} — all {} symbols already exist, skipping",
-                        pk, existingSymbols.size());
+                log.info("period={} — all {} symbols up to date, skipping",
+                        pk, existing.size());
                 skipped.add(pk);
                 continue;
             }
 
-            // Step 5: batch save
+            // Step 5: batch save (inserts + updates)
             statsRepository.saveAll(toSave);
             totalRecords += toSave.size();
             inserted.add(pk);
 
-            log.info("period={} ({} to {}) — inserted={} skippedSymbols={}",
-                    pk, fromDate, toDate, toSave.size(), existingSymbols.size());
+            log.info("period={} ({} to {}) — inserted={} refreshed={} unchanged={}",
+                    pk, fromDate, toDate, newCount, refreshed,
+                    existing.size() - refreshed);
         }
 
         log.info("Build complete — timeframe={} inserted={} skipped={} totalRecords={}",
@@ -201,28 +218,33 @@ public class CandleStatsService {
     // =========================================================================
 
     private CandleStats toEntity(CandleStatsProjection p, String timeframe, String periodKey) {
-        return CandleStats.builder()
+        CandleStats stats = CandleStats.builder()
                 .symbol(p.getSymbol())
                 .timeframe(timeframe)
                 .periodKey(periodKey)
-                .candleDate(p.getCandleDate())
-                .candleEndDate(p.getCandleEndDate())
-                .openPrice(p.getOpenPrice())
-                .highPrice(p.getHighPrice())
-                .lowPrice(p.getLowPrice())
-                .lastPrice(p.getLastPrice())
-                .highPriceDate(p.getHighPriceDate())
-                .lowPriceDate(p.getLowPriceDate())
-                .trend(p.getTrend())
-                .highVolQty(p.getHighVolQty())
-                .highVolDate(p.getHighVolDate())
-                .lowVolQty(p.getLowVolQty())
-                .lowVolDate(p.getLowVolDate())
-                .highDelivQty(p.getHighDelivQty())
-                .highDelivDate(p.getHighDelivDate())
-                .lowDelivQty(p.getLowDelivQty())
-                .lowDelivDate(p.getLowDelivDate())
                 .build();
+        applyProjection(stats, p);
+        return stats;
+    }
+
+    private void applyProjection(CandleStats s, CandleStatsProjection p) {
+        s.setCandleDate(p.getCandleDate());
+        s.setCandleEndDate(p.getCandleEndDate());
+        s.setOpenPrice(p.getOpenPrice());
+        s.setHighPrice(p.getHighPrice());
+        s.setLowPrice(p.getLowPrice());
+        s.setLastPrice(p.getLastPrice());
+        s.setHighPriceDate(p.getHighPriceDate());
+        s.setLowPriceDate(p.getLowPriceDate());
+        s.setTrend(p.getTrend());
+        s.setHighVolQty(p.getHighVolQty());
+        s.setHighVolDate(p.getHighVolDate());
+        s.setLowVolQty(p.getLowVolQty());
+        s.setLowVolDate(p.getLowVolDate());
+        s.setHighDelivQty(p.getHighDelivQty());
+        s.setHighDelivDate(p.getHighDelivDate());
+        s.setLowDelivQty(p.getLowDelivQty());
+        s.setLowDelivDate(p.getLowDelivDate());
     }
 
     private CandleStatsResponse toResponse(CandleStats s) {

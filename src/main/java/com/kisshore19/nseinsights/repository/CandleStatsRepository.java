@@ -42,6 +42,17 @@ public interface CandleStatsRepository extends JpaRepository<CandleStats, Long>,
             @Param("timeframe") String timeframe,
             @Param("periodKey") String periodKey);
 
+    // ── Refresh logic — full rows so an in-progress period can be updated ─────
+
+    @Query("""
+            SELECT s FROM CandleStats s
+            WHERE s.timeframe = :timeframe
+              AND s.periodKey = :periodKey
+            """)
+    List<CandleStats> findByTimeframeAndPeriodKey(
+            @Param("timeframe") String timeframe,
+            @Param("periodKey") String periodKey);
+
     // ── Available periods — for the /available endpoint ───────────────────────
     // Groups by period_key only — one row per period regardless of how many
     // symbols have slightly different candle_date values within the same period.
