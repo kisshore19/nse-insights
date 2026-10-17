@@ -25,6 +25,9 @@ public class ScreenerRequest {
     // ── Trend ─────────────────────────────────────────────────────────────────
     private String     trend;           // UP | DOWN | SIDE  (null = all)
 
+    // ── Candle colour (close vs open) ─────────────────────────────────────────
+    private String     candleColor;     // GREEN | RED | DOJI  (null = all)
+
     // ── Volume filter (value in crores — multiplied by 1_00_00_000 internally) ─
     private BigDecimal minHighVol;      // high_vol_qty >= minHighVol * 1Cr
 

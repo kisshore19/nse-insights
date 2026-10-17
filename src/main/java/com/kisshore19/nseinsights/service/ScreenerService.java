@@ -86,6 +86,7 @@ public class ScreenerService {
                 .pctChange(pctChange)
                 .delivPct(delivPct)
                 .trend(s.getTrend())
+                .candleColor(s.getCandleColor())
                 .highPriceDate(s.getHighPriceDate())
                 .lowPriceDate(s.getLowPriceDate())
                 .highVolQty(s.getHighVolQty())

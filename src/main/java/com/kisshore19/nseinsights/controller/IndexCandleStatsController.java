@@ -73,6 +73,28 @@ public class IndexCandleStatsController {
         }
     }
 
+    // ── GET /api/v1/index-candles/{indexName}/stats/history?timeframe=QUARTER&from=2023-Q1&to=2024-Q4 ──
+    // Every stored period of one timeframe for a single index, oldest first.
+    // Optional from/to are period keys (e.g. 2023-Q1).
+    @GetMapping("/{indexName}/stats/history")
+    public ResponseEntity<ApiResponse<IndexCandleStatsHistoryResponse>> getHistory(
+            @PathVariable                        String indexName,
+            @RequestParam(defaultValue = "YEAR") String timeframe,
+            @RequestParam(required = false)      String from,
+            @RequestParam(required = false)      String to) {
+
+        try {
+            return ResponseEntity.ok(ApiResponse.success(
+                    indexCandleStatsService.getHistory(indexName, timeframe.toUpperCase(), from, to)));
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(404)
+                    .body(ApiResponse.error("404", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("400", ex.getMessage()));
+        }
+    }
+
     // ── GET /api/v1/index-candles/stats/screen ────────────────────────────────
     // sortBy: PCT_CHANGE | CLOSE | HIGH_VOL | PE | PB
     @GetMapping("/stats/screen")
@@ -84,6 +106,7 @@ public class IndexCandleStatsController {
             @RequestParam(required = false)      BigDecimal minPctChange,
             @RequestParam(required = false)      BigDecimal maxPctChange,
             @RequestParam(required = false)      String     trend,
+            @RequestParam(required = false)      String     candleColor,
             @RequestParam(required = false)      BigDecimal minHighVol,
             @RequestParam(required = false)      String     highDatePos,
             @RequestParam(required = false)      String     lowDatePos,
@@ -100,6 +123,7 @@ public class IndexCandleStatsController {
                 .minPctChange(minPctChange)
                 .maxPctChange(maxPctChange)
                 .trend(trend != null ? trend.toUpperCase() : null)
+                .candleColor(candleColor != null ? candleColor.toUpperCase() : null)
                 .minHighVol(minHighVol)
                 .highDatePos(highDatePos)
                 .lowDatePos(lowDatePos)

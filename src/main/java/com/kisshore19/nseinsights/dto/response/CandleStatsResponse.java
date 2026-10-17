@@ -22,6 +22,7 @@ public class CandleStatsResponse {
     private BigDecimal low;
     private BigDecimal lastPrice;
     private String     trend;           // UP | DOWN | SIDE
+    private String     candleColor;      // GREEN | RED | DOJI (close vs open)
     private LocalDate  highPriceDate;   // date when period high was first reached
     private LocalDate  lowPriceDate;    // date when period low  was first reached
 
@@ -32,6 +33,10 @@ public class CandleStatsResponse {
     // Delivery extremes
     private VolumePoint highestDelivery;
     private VolumePoint lowestDelivery;
+
+    // Breakouts vs previous period — populated by the history endpoint only
+    private BreakoutInfo volumeBreakout;
+    private BreakoutInfo deliveryBreakout;
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     @JsonInclude(JsonInclude.Include.NON_NULL)

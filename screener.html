@@ -301,6 +301,13 @@ h1 span { /* inherits gradient naturally */ }
 
 .tbl td { padding:11px 14px; font-family:var(--mono); font-size:12px; white-space:nowrap; }
 
+.hist-btn { margin-left:6px; background:none; border:1px solid var(--border); border-radius:6px; cursor:pointer;
+  font-size:11px; line-height:1; padding:2px 5px; opacity:.55; transition:all .15s; }
+.hist-btn:hover { opacity:1; border-color:var(--accent); background:var(--surf2); }
+.candle-tag { display:inline-block; font-family:var(--mono); font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+.candle-tag.GREEN { background:rgba(5,150,105,.12); color:var(--up); }
+.candle-tag.RED   { background:rgba(220,38,38,.12); color:var(--down); }
+.candle-tag.DOJI  { background:rgba(217,119,6,.12); color:var(--side); }
 .td-symbol { font-weight:700; color:#111827; font-size:13px; letter-spacing:.3px; }
 .td-up     { color:var(--up); }
 .td-down   { color:var(--down); }
@@ -1198,7 +1205,7 @@ h1 span { /* inherits gradient naturally */ }
     padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
   ">
     <div>
-      <div style="font-size:9px;letter-spacing:3px;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">Period Comparison</div>
+      <div style="font-size:9px;letter-spacing:3px;color:#6b7280;text-transform:uppercase;margin-bottom:4px;"><span id="drawerKind">Period Comparison</span></div>
       <div id="drawerTitle" style="font-size:18px;font-weight:700;color:#111827;letter-spacing:-.5px;">—</div>
     </div>
     <button onclick="closeDrawer()" style="
@@ -1791,15 +1798,167 @@ function closeDrawer() {
   setTimeout(() => { drawer.style.display = 'none'; }, 300);
 }
 
-function openDrawer() {
+function openDrawer(kind = 'Period Comparison', width = 'min(680px, 100vw)') {
   const drawer  = document.getElementById('drawer');
   const overlay = document.getElementById('drawerOverlay');
+  document.getElementById('drawerKind').textContent = kind;
+  drawer.style.width      = width;
   drawer.style.display    = 'block';
   overlay.style.display   = 'block';
   // Trigger transition on next frame
   requestAnimationFrame(() => {
     requestAnimationFrame(() => { drawer.style.transform = 'translateX(0)'; });
   });
+}
+
+
+// ── Timeframe history drawer (single stock / index across all periods) ───────
+function histBtn(kind, symbol) {
+  const sym = String(symbol).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return `<button class="hist-btn" title="Timeframe history" onclick="event.stopPropagation();openHistory('${kind}','${sym}')">📈</button>`;
+}
+
+function candleColorOf(r) {
+  if (r.candleColor) return r.candleColor;
+  if (r.open == null || r.close == null) return null;
+  return r.close > r.open ? 'GREEN' : r.close < r.open ? 'RED' : 'DOJI';
+}
+
+function normaliseHistory(r) {
+  const open  = toNum(r.open);
+  const close = toNum(r.lastPrice ?? r.lastValue);
+  return {
+    periodKey:     r.periodKey,
+    candleDate:    r.candleDate,
+    candleEndDate: r.candleEndDate,
+    open, close,
+    high:          toNum(r.high),
+    low:           toNum(r.low),
+    pctChange:     open && close != null && open !== 0 ? +((close - open) / Math.abs(open) * 100).toFixed(2) : null,
+    trend:         r.trend || '—',
+    candleColor:   r.candleColor,
+    highVolQty:    toNum(r.highestVolume?.quantity),
+    highVolDate:   r.highestVolume?.date,
+    highDelivQty:  toNum(r.highestDelivery?.quantity),
+    highDelivDate: r.highestDelivery?.date,
+    volBo:         r.volumeBreakout,
+    delivBo:       r.deliveryBreakout,
+  };
+}
+
+async function openHistory(kind, symbol, tf) {
+  tf = tf || document.getElementById(kind === 'index' ? 'idx-tf' : 'tf')?.value || 'QUARTER';
+  document.getElementById('drawerTitle').textContent = `${symbol} — ${tf} history`;
+  document.getElementById('drawerBody').innerHTML = `
+    <div style="text-align:center;padding:60px 0;">
+      <div style="width:28px;height:28px;border:2px solid #dde2f0;border-top-color:#4f46e5;
+                  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px;"></div>
+      <div style="font-size:11px;color:#6b7280;">Loading history...</div>
+    </div>`;
+  openDrawer('Timeframe History', 'min(960px, 100vw)');
+
+  try {
+    const base = kind === 'index' ? 'index-candles' : 'candles';
+    const res  = await fetch(`${getBaseUrl()}/api/v1/${base}/${encodeURIComponent(symbol)}/stats/history?timeframe=${tf}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || json.error?.message || `No ${tf} stats found for ${symbol}`);
+    const rows = (json.data?.periods || []).map(normaliseHistory).reverse(); // newest first
+    document.getElementById('drawerBody').innerHTML = buildHistoryHTML(kind, symbol, tf, rows, json.data);
+    setTimeout(syncHistoryScroll, 50);
+  } catch (err) {
+    console.error('[History] error:', err);
+    document.getElementById('drawerBody').innerHTML = `
+      ${historyTfPills(kind, symbol, tf)}
+      <div style="text-align:center;padding:40px;color:#dc2626;font-size:12px;">⚠ ${err.message}</div>`;
+  }
+}
+
+function historyTfPills(kind, symbol, tf) {
+  const sym = String(symbol).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return `<div class="bo-toggle-group" style="margin-bottom:16px">` +
+    ['WEEK','MONTH','QUARTER','YEAR'].map(t =>
+      `<button class="bo-toggle-btn ${t === tf ? 'active' : ''}" onclick="openHistory('${kind}','${sym}','${t}')">${t}</button>`
+    ).join('') + `</div>`;
+}
+
+// Breakout badge: ✓ +x% when high qty beat the previous period, ✗ when not, — when no prior period
+function boBadge(bo) {
+  if (!bo || bo.breakout == null) return '<span class="sig na" data-tip="No previous period">—</span>';
+  const pct = bo.changePct != null ? ` ${bo.changePct >= 0 ? '+' : ''}${bo.changePct}%` : '';
+  const tip = `${fV(bo.quantity)} vs prev ${fV(bo.previousQuantity)}`;
+  return bo.breakout
+    ? `<span class="td-up" style="font-weight:700" title="${tip}">✓${pct}</span>`
+    : `<span class="td-muted" title="${tip}">✗${pct}</span>`;
+}
+
+// Keep the scrollbar above the history table in step with the one below it
+function syncHistoryScroll() {
+  const wrap  = document.getElementById('histTableWrap');
+  const top   = document.getElementById('histTopScroll');
+  const inner = document.getElementById('histTopScrollInner');
+  if (!wrap || !top || !inner) return;
+  inner.style.width = wrap.scrollWidth + 'px';
+  wrap.onscroll = () => { top.scrollLeft = wrap.scrollLeft; };
+  top.onscroll  = () => { wrap.scrollLeft = top.scrollLeft; };
+}
+
+function buildHistoryHTML(kind, symbol, tf, rows, data) {
+  const green = rows.filter(r => candleColorOf(r) === 'GREEN').length;
+  const red   = rows.filter(r => candleColorOf(r) === 'RED').length;
+  const isStock = kind !== 'index';
+  const body = rows.map(r => {
+    const c      = candleColorOf(r);
+    const pctCls = r.pctChange != null ? (r.pctChange >= 0 ? 'td-up' : 'td-down') : 'td-muted';
+    return `<tr>
+      <td class="td-symbol" style="font-size:12px">${r.periodKey}</td>
+      <td class="td-muted">${fD(r.candleDate)} → ${fD(r.candleEndDate)}</td>
+      <td>${boBadge(r.volBo)}</td>
+      <td class="td-right">${fV(r.highVolQty)}</td>
+      <td class="td-muted">${fD(r.highVolDate)}</td>
+      <td class="td-right">${fP(r.open)}</td>
+      <td class="td-right">${fP(r.high)}</td>
+      <td class="td-right">${fP(r.low)}</td>
+      <td class="td-right">${fP(r.close)}</td>
+      <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
+      <td>${c ? `<span class="candle-tag ${c}">${c}</span>` : '—'}</td>
+      <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
+      ${isStock ? `<td class="td-right">${fV(r.highDelivQty)}</td>
+      <td class="td-muted">${fD(r.highDelivDate)}</td>
+      <td>${boBadge(r.delivBo)}</td>` : ''}
+    </tr>`;
+  }).join('');
+
+  return `
+    ${historyTfPills(kind, symbol, tf)}
+    <div class="stat-chips" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="chip">Periods <strong>${rows.length}</strong></div>
+      <div class="chip up">GREEN <strong>${green}</strong></div>
+      <div class="chip down">RED <strong>${red}</strong></div>
+      <div class="chip up">Vol BO <strong>${data?.volumeBreakoutCount ?? 0}</strong></div>
+      ${isStock ? `<div class="chip up">Del BO <strong>${data?.deliveryBreakoutCount ?? 0}</strong></div>` : ''}
+    </div>
+    ${(data?.volumeBreakouts || []).length ? `
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.9">
+        <strong style="color:var(--text)">Volume breakout dates:</strong>
+        ${[...data.volumeBreakouts].reverse().map(b =>
+          `<span class="chip" style="margin:2px 4px 2px 0" title="${fV(b.quantity)} vs prev ${fV(b.previousQuantity)}">${b.periodKey} · ${fD(b.date)} <strong>${b.changePct != null ? '+' + b.changePct + '%' : ''}</strong></span>`
+        ).join('')}
+      </div>` : ''}
+    <div id="histTopScroll" style="overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:3px;">
+      <div id="histTopScrollInner" style="height:1px;"></div>
+    </div>
+    <div id="histTableWrap" style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>Period</th><th>Range</th><th>Vol BO</th><th class="td-right">High Vol</th><th>Vol Date</th>
+          <th class="td-right">Open</th><th class="td-right">High</th>
+          <th class="td-right">Low</th><th class="td-right">Close</th><th class="td-right">% Chg</th>
+          <th>Candle</th><th>Trend</th>
+          ${isStock ? '<th class="td-right">High Deliv</th><th>Deliv Date</th><th>Del BO</th>' : ''}
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>`;
 }
 
 // Close on Escape key
@@ -2135,7 +2294,7 @@ function renderTable() {
     return `
       <tr class="clickable" onclick="openComparison('${r.symbol}')">
         <td class="td-muted">${start + i + 1}</td>
-        <td class="td-symbol">${r.symbol}</td>
+        <td class="td-symbol">${r.symbol}${histBtn('stock', r.symbol)}</td>
         ${ctxCell}
         <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
         <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>
@@ -2837,7 +2996,7 @@ function renderIndexTable() {
         <button class="drill-btn" id="idx-drillbtn-${safeId}" title="Expand constituent stocks"
                 onclick="toggleIndexDrill(event,'${r.symbol.replace(/'/g,"\\'")}')">▶</button>${start + i + 1}
       </td>
-      <td class="td-symbol">${r.symbol}</td>
+      <td class="td-symbol">${r.symbol}${histBtn('index', r.symbol)}</td>
       ${ctxCell}
       <td class="td-right ${pctCls}" style="font-weight:600">${fPct(r.pctChange)}</td>
       <td><span class="trend-tag ${r.trend}">${r.trend}</span></td>

@@ -57,6 +57,10 @@ public class IndexCandleStats {
     @Column(name = "trend",       length = 5)
     private String trend;
 
+    // GREEN = last > open | RED = last < open | DOJI = equal
+    @Column(name = "candle_color", length = 5)
+    private String candleColor;
+
     @Column(name = "high_value_date")
     private LocalDate highValueDate;    // date when period high was first reached
 

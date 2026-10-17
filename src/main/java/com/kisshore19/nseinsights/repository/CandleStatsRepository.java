@@ -42,6 +42,23 @@ public interface CandleStatsRepository extends JpaRepository<CandleStats, Long>,
             @Param("timeframe") String timeframe,
             @Param("periodKey") String periodKey);
 
+    // ── History — all periods of one timeframe for a symbol ───────────────────
+    // period_key is zero-padded for every timeframe, so string comparison is chronological.
+
+    @Query("""
+            SELECT s FROM CandleStats s
+            WHERE s.symbol    = :symbol
+              AND s.timeframe = :timeframe
+              AND (:from IS NULL OR s.periodKey >= :from)
+              AND (:to   IS NULL OR s.periodKey <= :to)
+            ORDER BY s.periodKey ASC
+            """)
+    List<CandleStats> findHistory(
+            @Param("symbol")    String symbol,
+            @Param("timeframe") String timeframe,
+            @Param("from")      String from,
+            @Param("to")        String to);
+
     // ── Refresh logic — full rows so an in-progress period can be updated ─────
 
     @Query("""

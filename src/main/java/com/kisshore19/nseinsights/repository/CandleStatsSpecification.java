@@ -44,6 +44,11 @@ public class CandleStatsSpecification implements Specification<CandleStats> {
             predicates.add(cb.lessThanOrEqualTo(root.get("lastPrice"), req.getMaxClose()));
         }
 
+        // Candle colour
+        if (req.getCandleColor() != null && !req.getCandleColor().isBlank()) {
+            predicates.add(cb.equal(root.get("candleColor"), req.getCandleColor().toUpperCase()));
+        }
+
         // ── Trend ─────────────────────────────────────────────────────────────
         if (req.getTrend() != null && !req.getTrend().isBlank()) {
             predicates.add(cb.equal(root.get("trend"), req.getTrend().toUpperCase()));

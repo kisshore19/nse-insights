@@ -6,6 +6,8 @@ import com.kisshore19.nseinsights.dto.response.CandleStatsAvailableResponse.Peri
 import com.kisshore19.nseinsights.dto.response.IndexScreenerResponse.IndexScreenerResult;
 import com.kisshore19.nseinsights.entity.IndexCandleStats;
 import com.kisshore19.nseinsights.repository.*;
+import com.kisshore19.nseinsights.util.BreakoutUtils;
+import com.kisshore19.nseinsights.util.CandleColorUtils;
 import com.kisshore19.nseinsights.util.PeriodKeyUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -20,8 +22,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -76,8 +79,10 @@ public class IndexCandleStatsService {
         int totalRecords      = 0;
 
         for (String pk : periodsToProcess) {
-            Set<String> existingIndices =
-                    indexStatsRepository.findExistingIndicesForPeriod(timeframe, pk);
+            Map<String, IndexCandleStats> existing = new HashMap<>();
+            for (IndexCandleStats cs : indexStatsRepository.findByTimeframeAndPeriodKey(timeframe, pk)) {
+                existing.put(cs.getIndexName(), cs);
+            }
 
             LocalDate fromDate = PeriodKeyUtils.periodStart(timeframe, pk);
             LocalDate toDate   = PeriodKeyUtils.periodEnd(timeframe, pk);
@@ -91,13 +96,26 @@ public class IndexCandleStatsService {
                 continue;
             }
 
-            List<IndexCandleStats> toSave = projections.stream()
-                    .filter(p -> !existingIndices.contains(p.getIndexName()))
-                    .map(p -> toEntity(p, timeframe, pk))
-                    .toList();
+            // Insert new indices; refresh existing ones if new days arrived (running period)
+            List<IndexCandleStats> toSave = new ArrayList<>();
+            int newCount = 0;
+            int refreshed = 0;
+            for (IndexCandleStatsProjection p : projections) {
+                IndexCandleStats current = existing.get(p.getIndexName());
+                if (current == null) {
+                    toSave.add(toEntity(p, timeframe, pk));
+                    newCount++;
+                } else if (current.getCandleColor() == null
+                        || (p.getCandleEndDate() != null
+                            && p.getCandleEndDate().isAfter(current.getCandleEndDate()))) {
+                    applyProjection(current, p);
+                    toSave.add(current);
+                    refreshed++;
+                }
+            }
 
             if (toSave.isEmpty()) {
-                log.info("period={} — all {} indices already exist, skipping", pk, existingIndices.size());
+                log.info("period={} — all {} indices up to date, skipping", pk, existing.size());
                 skipped.add(pk);
                 continue;
             }
@@ -106,8 +124,8 @@ public class IndexCandleStatsService {
             totalRecords += toSave.size();
             inserted.add(pk);
 
-            log.info("period={} ({} to {}) — inserted={} skippedIndices={}",
-                    pk, fromDate, toDate, toSave.size(), existingIndices.size());
+            log.info("period={} ({} to {}) — inserted={} refreshed={} unchanged={}",
+                    pk, fromDate, toDate, newCount, refreshed, existing.size() - refreshed);
         }
 
         return CandleStatsBuildResponse.builder()
@@ -133,6 +151,51 @@ public class IndexCandleStatsService {
                         "No stats found for indexName=%s timeframe=%s period=%s"
                                 .formatted(indexName, timeframe, periodKey)));
         return toResponse(stats);
+    }
+
+    // =========================================================================
+    // HISTORY — one indexName across all periods of a timeframe
+    // =========================================================================
+
+    public IndexCandleStatsHistoryResponse getHistory(String indexName, String timeframe, String from, String to) {
+        validateTimeframe(timeframe);
+        boolean hasFrom = from != null && !from.isBlank();
+        boolean hasTo   = to   != null && !to.isBlank();
+        if (hasFrom) PeriodKeyUtils.validatePeriodKey(timeframe, from);
+        if (hasTo)   PeriodKeyUtils.validatePeriodKey(timeframe, to);
+
+        // Fetch from the start so the first period inside [from, to] still has a
+        // previous period to compare against; trim to the requested range afterwards.
+        List<IndexCandleStats> all = indexStatsRepository.findHistory(indexName, timeframe, null, hasTo ? to : null);
+
+        List<IndexCandleStatsResponse> periods = new ArrayList<>();
+        List<BreakoutInfo> volBreakouts        = new ArrayList<>();
+        IndexCandleStats prev = null;
+        for (IndexCandleStats cur : all) {
+            IndexCandleStatsResponse r = toResponse(cur);
+            r.setVolumeBreakout(BreakoutUtils.compare(
+                    cur.getHighVolQty(), cur.getHighVolDate(), prev != null ? prev.getHighVolQty() : null));
+            prev = cur;
+
+            if (hasFrom && cur.getPeriodKey().compareTo(from) < 0) continue;
+            periods.add(r);
+            if (r.getVolumeBreakout() != null && Boolean.TRUE.equals(r.getVolumeBreakout().getBreakout())) {
+                volBreakouts.add(BreakoutUtils.withPeriod(r.getVolumeBreakout(), cur.getPeriodKey()));
+            }
+        }
+
+        if (periods.isEmpty()) {
+            throw new EntityNotFoundException(
+                    "No stats found for indexName=%s timeframe=%s".formatted(indexName, timeframe));
+        }
+        return IndexCandleStatsHistoryResponse.builder()
+                .indexName(indexName)
+                .timeframe(timeframe)
+                .totalPeriods(periods.size())
+                .volumeBreakoutCount(volBreakouts.size())
+                .volumeBreakouts(volBreakouts)
+                .periods(periods)
+                .build();
     }
 
     // =========================================================================
@@ -200,27 +263,33 @@ public class IndexCandleStatsService {
     // =========================================================================
 
     private IndexCandleStats toEntity(IndexCandleStatsProjection p, String timeframe, String pk) {
-        return IndexCandleStats.builder()
+        IndexCandleStats stats = IndexCandleStats.builder()
                 .indexName(p.getIndexName())
                 .timeframe(timeframe)
                 .periodKey(pk)
-                .candleDate(p.getCandleDate())
-                .candleEndDate(p.getCandleEndDate())
-                .openValue(p.getOpenValue())
-                .highValue(p.getHighValue())
-                .lowValue(p.getLowValue())
-                .lastValue(p.getLastValue())
-                .trend(p.getTrend())
-                .highValueDate(p.getHighValueDate())
-                .lowValueDate(p.getLowValueDate())
-                .highVolQty(p.getHighVolQty())
-                .highVolDate(p.getHighVolDate())
-                .lowVolQty(p.getLowVolQty())
-                .lowVolDate(p.getLowVolDate())
-                .avgPe(p.getAvgPe())
-                .avgPb(p.getAvgPb())
-                .avgDivYield(p.getAvgDivYield())
                 .build();
+        applyProjection(stats, p);
+        return stats;
+    }
+
+    private void applyProjection(IndexCandleStats s, IndexCandleStatsProjection p) {
+        s.setCandleDate(p.getCandleDate());
+        s.setCandleEndDate(p.getCandleEndDate());
+        s.setOpenValue(p.getOpenValue());
+        s.setHighValue(p.getHighValue());
+        s.setLowValue(p.getLowValue());
+        s.setLastValue(p.getLastValue());
+        s.setTrend(p.getTrend());
+        s.setCandleColor(CandleColorUtils.of(p.getOpenValue(), p.getLastValue()));
+        s.setHighValueDate(p.getHighValueDate());
+        s.setLowValueDate(p.getLowValueDate());
+        s.setHighVolQty(p.getHighVolQty());
+        s.setHighVolDate(p.getHighVolDate());
+        s.setLowVolQty(p.getLowVolQty());
+        s.setLowVolDate(p.getLowVolDate());
+        s.setAvgPe(p.getAvgPe());
+        s.setAvgPb(p.getAvgPb());
+        s.setAvgDivYield(p.getAvgDivYield());
     }
 
     private IndexCandleStatsResponse toResponse(IndexCandleStats s) {
@@ -235,6 +304,7 @@ public class IndexCandleStatsService {
                 .low(s.getLowValue())
                 .lastValue(s.getLastValue())
                 .trend(s.getTrend())
+                .candleColor(s.getCandleColor())
                 .highValueDate(s.getHighValueDate())
                 .lowValueDate(s.getLowValueDate())
                 .highestVolume(IndexCandleStatsResponse.VolumePoint.builder()
@@ -258,6 +328,7 @@ public class IndexCandleStatsService {
                 .low(s.getLowValue())
                 .pctChange(computePctChange(s.getOpenValue(), s.getLastValue()))
                 .trend(s.getTrend())
+                .candleColor(s.getCandleColor())
                 .highValueDate(s.getHighValueDate())
                 .lowValueDate(s.getLowValueDate())
                 .highVolQty(s.getHighVolQty())

@@ -3,12 +3,15 @@ package com.kisshore19.nseinsights.service;
 import com.kisshore19.nseinsights.dto.response.CandleStatsAvailableResponse;
 import com.kisshore19.nseinsights.dto.response.CandleStatsAvailableResponse.PeriodEntry;
 import com.kisshore19.nseinsights.dto.response.CandleStatsBuildResponse;
+import com.kisshore19.nseinsights.dto.response.BreakoutInfo;
+import com.kisshore19.nseinsights.dto.response.CandleStatsHistoryResponse;
 import com.kisshore19.nseinsights.dto.response.CandleStatsResponse;
 import com.kisshore19.nseinsights.entity.CandleStats;
 import com.kisshore19.nseinsights.repository.CandlePeriodProjection;
 import com.kisshore19.nseinsights.repository.CandleStatsProjection;
 import com.kisshore19.nseinsights.repository.CandleStatsRepository;
 import com.kisshore19.nseinsights.repository.NseDailyPriceRepository;
+import com.kisshore19.nseinsights.util.BreakoutUtils;
 import com.kisshore19.nseinsights.util.CandleColorUtils;
 import com.kisshore19.nseinsights.util.PeriodKeyUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -179,6 +182,59 @@ public class CandleStatsService {
                         "No stats found for symbol=%s timeframe=%s period=%s"
                                 .formatted(symbol, timeframe, periodKey)));
         return toResponse(stats);
+    }
+
+    // =========================================================================
+    // HISTORY — one symbol across all periods of a timeframe
+    // =========================================================================
+
+    public CandleStatsHistoryResponse getHistory(String symbol, String timeframe, String from, String to) {
+        validateTimeframe(timeframe);
+        boolean hasFrom = from != null && !from.isBlank();
+        boolean hasTo   = to   != null && !to.isBlank();
+        if (hasFrom) PeriodKeyUtils.validatePeriodKey(timeframe, from);
+        if (hasTo)   PeriodKeyUtils.validatePeriodKey(timeframe, to);
+
+        // Fetch from the start so the first period inside [from, to] still has a
+        // previous period to compare against; trim to the requested range afterwards.
+        List<CandleStats> all = statsRepository.findHistory(symbol, timeframe, null, hasTo ? to : null);
+
+        List<CandleStatsResponse> periods = new ArrayList<>();
+        List<BreakoutInfo> volBreakouts   = new ArrayList<>();
+        List<BreakoutInfo> delivBreakouts = new ArrayList<>();
+        CandleStats prev = null;
+        for (CandleStats cur : all) {
+            CandleStatsResponse r = toResponse(cur);
+            r.setVolumeBreakout(BreakoutUtils.compare(
+                    cur.getHighVolQty(), cur.getHighVolDate(), prev != null ? prev.getHighVolQty() : null));
+            r.setDeliveryBreakout(BreakoutUtils.compare(
+                    cur.getHighDelivQty(), cur.getHighDelivDate(), prev != null ? prev.getHighDelivQty() : null));
+            prev = cur;
+
+            if (hasFrom && cur.getPeriodKey().compareTo(from) < 0) continue;
+            periods.add(r);
+            if (r.getVolumeBreakout() != null && Boolean.TRUE.equals(r.getVolumeBreakout().getBreakout())) {
+                volBreakouts.add(BreakoutUtils.withPeriod(r.getVolumeBreakout(), cur.getPeriodKey()));
+            }
+            if (r.getDeliveryBreakout() != null && Boolean.TRUE.equals(r.getDeliveryBreakout().getBreakout())) {
+                delivBreakouts.add(BreakoutUtils.withPeriod(r.getDeliveryBreakout(), cur.getPeriodKey()));
+            }
+        }
+
+        if (periods.isEmpty()) {
+            throw new EntityNotFoundException(
+                    "No stats found for symbol=%s timeframe=%s".formatted(symbol, timeframe));
+        }
+        return CandleStatsHistoryResponse.builder()
+                .symbol(symbol)
+                .timeframe(timeframe)
+                .totalPeriods(periods.size())
+                .volumeBreakoutCount(volBreakouts.size())
+                .volumeBreakouts(volBreakouts)
+                .deliveryBreakoutCount(delivBreakouts.size())
+                .deliveryBreakouts(delivBreakouts)
+                .periods(periods)
+                .build();
     }
 
     // =========================================================================

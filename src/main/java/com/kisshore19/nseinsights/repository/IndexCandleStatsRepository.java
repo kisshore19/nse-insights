@@ -29,6 +29,31 @@ public interface IndexCandleStatsRepository
             @Param("timeframe")  String timeframe,
             @Param("periodKey")  String periodKey);
 
+    // ── History — all periods of one timeframe for an index ───────────────────
+    @Query("""
+            SELECT s FROM IndexCandleStats s
+            WHERE s.indexName = :indexName
+              AND s.timeframe = :timeframe
+              AND (:from IS NULL OR s.periodKey >= :from)
+              AND (:to   IS NULL OR s.periodKey <= :to)
+            ORDER BY s.periodKey ASC
+            """)
+    List<IndexCandleStats> findHistory(
+            @Param("indexName") String indexName,
+            @Param("timeframe") String timeframe,
+            @Param("from")      String from,
+            @Param("to")        String to);
+
+    // ── Refresh logic — full rows so an in-progress period can be updated ─────
+    @Query("""
+            SELECT s FROM IndexCandleStats s
+            WHERE s.timeframe = :timeframe
+              AND s.periodKey = :periodKey
+            """)
+    List<IndexCandleStats> findByTimeframeAndPeriodKey(
+            @Param("timeframe") String timeframe,
+            @Param("periodKey") String periodKey);
+
     // ── Skip logic — which indices already have stats for this period ─────────
     @Query("""
             SELECT s.indexName FROM IndexCandleStats s

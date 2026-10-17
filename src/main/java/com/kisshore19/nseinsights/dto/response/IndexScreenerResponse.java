@@ -36,6 +36,7 @@ public class IndexScreenerResponse {
 
         // Trend + dates
         private String     trend;
+        private String     candleColor;   // GREEN | RED | DOJI (close vs open)
         private LocalDate  highValueDate;
         private LocalDate  lowValueDate;
 

@@ -100,6 +100,28 @@ public class CandleStatsController {
         }
     }
 
+    // ── GET /api/v1/candles/{symbol}/stats/history?timeframe=QUARTER&from=2023-Q1&to=2024-Q4 ──
+    // Every stored period of one timeframe for a single symbol, oldest first.
+    // Optional from/to are period keys (e.g. 2023-Q1).
+    @GetMapping("/{symbol}/stats/history")
+    public ResponseEntity<ApiResponse<CandleStatsHistoryResponse>> getHistory(
+            @PathVariable                        String symbol,
+            @RequestParam(defaultValue = "YEAR") String timeframe,
+            @RequestParam(required = false)      String from,
+            @RequestParam(required = false)      String to) {
+
+        try {
+            return ResponseEntity.ok(ApiResponse.success(
+                    candleStatsService.getHistory(symbol.toUpperCase(), timeframe.toUpperCase(), from, to)));
+        } catch (EntityNotFoundException ex) {
+            return ResponseEntity.status(404)
+                    .body(ApiResponse.error("404", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("400", ex.getMessage()));
+        }
+    }
+
     // ── GET /api/v1/candles/stats/screen ─────────────────────────────────────────
 // Reads from candle_stats table (pre-built data) — no new processing.
 // Returns all symbols for a timeframe + period. UI does all filtering client-side.
@@ -115,6 +137,7 @@ public class CandleStatsController {
             @RequestParam(required = false)      BigDecimal minPctChange,
             @RequestParam(required = false)      BigDecimal maxPctChange,
             @RequestParam(required = false)      String     trend,
+            @RequestParam(required = false)      String     candleColor,
             @RequestParam(required = false)      BigDecimal minHighVol,
             @RequestParam(required = false)      BigDecimal minHighDeliv,
             @RequestParam(required = false)      BigDecimal minDelivPct,
@@ -134,6 +157,7 @@ public class CandleStatsController {
                 .minPctChange(minPctChange)
                 .maxPctChange(maxPctChange)
                 .trend(trend != null ? trend.toUpperCase() : null)
+                .candleColor(candleColor != null ? candleColor.toUpperCase() : null)
                 .minHighVol(minHighVol)
                 .minHighDeliv(minHighDeliv)
                 .minDelivPct(minDelivPct)

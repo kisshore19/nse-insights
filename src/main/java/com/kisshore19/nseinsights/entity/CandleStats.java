@@ -59,6 +59,10 @@ public class CandleStats {
     @Column(name = "trend", length = 5)
     private String trend;
 
+    // GREEN = last > open | RED = last < open | DOJI = equal
+    @Column(name = "candle_color", length = 5)
+    private String candleColor;
+
     // Date when the period HIGH price was first reached
     @Column(name = "high_price_date")
     private LocalDate highPriceDate;

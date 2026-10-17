@@ -22,12 +22,16 @@ public class IndexCandleStatsResponse {
     private BigDecimal low;
     private BigDecimal lastValue;
     private String     trend;            // UP | DOWN | SIDE
+    private String     candleColor;      // GREEN | RED | DOJI (close vs open)
     private LocalDate  highValueDate;
     private LocalDate  lowValueDate;
 
     // Volume extremes
     private VolumePoint highestVolume;
     private VolumePoint lowestVolume;
+
+    // Breakout vs previous period — populated by the history endpoint only
+    private BreakoutInfo volumeBreakout;
 
     // Period-average fundamentals
     private BigDecimal avgPe;
