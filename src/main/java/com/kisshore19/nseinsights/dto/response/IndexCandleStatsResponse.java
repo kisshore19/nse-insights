@@ -43,5 +43,7 @@ public class IndexCandleStatsResponse {
     public static class VolumePoint {
         private LocalDate date;
         private Long      quantity;
+        private BigDecimal high;   // that day's high value
+        private BigDecimal low;    // that day's low value
     }
 }

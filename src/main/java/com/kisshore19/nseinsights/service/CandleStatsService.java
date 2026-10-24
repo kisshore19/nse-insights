@@ -55,9 +55,19 @@ public class CandleStatsService {
      * when nse_daily_price has newer data than it was built from (i.e. the
      * period is still running); completed periods are left untouched.
      */
-    @Transactional
     public CandleStatsBuildResponse buildStats(
             String timeframe, String period, String from, String to) {
+        return buildStats(timeframe, period, from, to, false);
+    }
+
+    /**
+     * @param refresh when true, every stored row in scope is recomputed from
+     *                nse_daily_price, even for completed periods. Use after a change
+     *                to how stats are derived.
+     */
+    @Transactional
+    public CandleStatsBuildResponse buildStats(
+            String timeframe, String period, String from, String to, boolean refresh) {
 
         validateTimeframe(timeframe);
 
@@ -130,7 +140,9 @@ public class CandleStatsService {
                 if (current == null) {
                     toSave.add(toEntity(p, timeframe, pk));
                     newCount++;
-                } else if (current.getCandleColor() == null
+                } else if (refresh
+                        || current.getCandleColor() == null
+                        || (current.getHighVolQty() != null && current.getHighVolDayHigh() == null)
                         || (p.getCandleEndDate() != null
                             && p.getCandleEndDate().isAfter(current.getCandleEndDate()))) {
                     applyProjection(current, p);
@@ -298,12 +310,20 @@ public class CandleStatsService {
         s.setCandleColor(CandleColorUtils.of(p.getOpenPrice(), p.getLastPrice()));
         s.setHighVolQty(p.getHighVolQty());
         s.setHighVolDate(p.getHighVolDate());
+        s.setHighVolDayHigh(p.getHighVolDayHigh());
+        s.setHighVolDayLow(p.getHighVolDayLow());
         s.setLowVolQty(p.getLowVolQty());
         s.setLowVolDate(p.getLowVolDate());
+        s.setLowVolDayHigh(p.getLowVolDayHigh());
+        s.setLowVolDayLow(p.getLowVolDayLow());
         s.setHighDelivQty(p.getHighDelivQty());
         s.setHighDelivDate(p.getHighDelivDate());
+        s.setHighDelivDayHigh(p.getHighDelivDayHigh());
+        s.setHighDelivDayLow(p.getHighDelivDayLow());
         s.setLowDelivQty(p.getLowDelivQty());
         s.setLowDelivDate(p.getLowDelivDate());
+        s.setLowDelivDayHigh(p.getLowDelivDayHigh());
+        s.setLowDelivDayLow(p.getLowDelivDayLow());
     }
 
     private CandleStatsResponse toResponse(CandleStats s) {
@@ -322,13 +342,17 @@ public class CandleStatsService {
                 .trend(s.getTrend())
                 .candleColor(s.getCandleColor())
                 .highestVolume(CandleStatsResponse.VolumePoint.builder()
-                        .date(s.getHighVolDate()).quantity(s.getHighVolQty()).build())
+                        .date(s.getHighVolDate()).quantity(s.getHighVolQty())
+                        .high(s.getHighVolDayHigh()).low(s.getHighVolDayLow()).build())
                 .lowestVolume(CandleStatsResponse.VolumePoint.builder()
-                        .date(s.getLowVolDate()).quantity(s.getLowVolQty()).build())
+                        .date(s.getLowVolDate()).quantity(s.getLowVolQty())
+                        .high(s.getLowVolDayHigh()).low(s.getLowVolDayLow()).build())
                 .highestDelivery(CandleStatsResponse.VolumePoint.builder()
-                        .date(s.getHighDelivDate()).quantity(s.getHighDelivQty()).build())
+                        .date(s.getHighDelivDate()).quantity(s.getHighDelivQty())
+                        .high(s.getHighDelivDayHigh()).low(s.getHighDelivDayLow()).build())
                 .lowestDelivery(CandleStatsResponse.VolumePoint.builder()
-                        .date(s.getLowDelivDate()).quantity(s.getLowDelivQty()).build())
+                        .date(s.getLowDelivDate()).quantity(s.getLowDelivQty())
+                        .high(s.getLowDelivDayHigh()).low(s.getLowDelivDayLow()).build())
                 .build();
     }
 

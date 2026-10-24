@@ -91,12 +91,20 @@ public class ScreenerService {
                 .lowPriceDate(s.getLowPriceDate())
                 .highVolQty(s.getHighVolQty())
                 .highVolDate(s.getHighVolDate())
+                .highVolDayHigh(s.getHighVolDayHigh())
+                .highVolDayLow(s.getHighVolDayLow())
                 .lowVolQty(s.getLowVolQty())
                 .lowVolDate(s.getLowVolDate())
+                .lowVolDayHigh(s.getLowVolDayHigh())
+                .lowVolDayLow(s.getLowVolDayLow())
                 .highDelivQty(s.getHighDelivQty())
                 .highDelivDate(s.getHighDelivDate())
+                .highDelivDayHigh(s.getHighDelivDayHigh())
+                .highDelivDayLow(s.getHighDelivDayLow())
                 .lowDelivQty(s.getLowDelivQty())
                 .lowDelivDate(s.getLowDelivDate())
+                .lowDelivDayHigh(s.getLowDelivDayHigh())
+                .lowDelivDayLow(s.getLowDelivDayLow())
                 .build();
     }
 

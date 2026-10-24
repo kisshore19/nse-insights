@@ -43,5 +43,7 @@ public class CandleStatsResponse {
     public static class VolumePoint {
         private LocalDate date;
         private Long      quantity;
+        private BigDecimal high;   // that day's high price
+        private BigDecimal low;    // that day's low price
     }
 }

@@ -74,11 +74,25 @@ public class IndexCandleStats {
     @Column(name = "high_vol_date")
     private LocalDate highVolDate;
 
+    // High / low value of the high vol day
+    @Column(name = "high_vol_day_high", precision = 12, scale = 2)
+    private BigDecimal highVolDayHigh;
+
+    @Column(name = "high_vol_day_low", precision = 12, scale = 2)
+    private BigDecimal highVolDayLow;
+
     @Column(name = "low_vol_qty")
     private Long lowVolQty;
 
     @Column(name = "low_vol_date")
     private LocalDate lowVolDate;
+
+    // High / low value of the low vol day
+    @Column(name = "low_vol_day_high", precision = 12, scale = 2)
+    private BigDecimal lowVolDayHigh;
+
+    @Column(name = "low_vol_day_low", precision = 12, scale = 2)
+    private BigDecimal lowVolDayLow;
 
     // ── Period-average fundamentals (P/E, P/B, Div Yield) ────────────────────
     @Column(name = "avg_pe",        precision = 8, scale = 2)

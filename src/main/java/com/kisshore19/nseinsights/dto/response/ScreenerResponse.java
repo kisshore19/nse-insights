@@ -44,13 +44,21 @@ public class ScreenerResponse {
         // Volume extremes
         private Long       highVolQty;
         private LocalDate  highVolDate;
+        private BigDecimal highVolDayHigh;
+        private BigDecimal highVolDayLow;
         private Long       lowVolQty;
         private LocalDate  lowVolDate;
+        private BigDecimal lowVolDayHigh;
+        private BigDecimal lowVolDayLow;
 
         // Delivery extremes
         private Long       highDelivQty;
         private LocalDate  highDelivDate;
+        private BigDecimal highDelivDayHigh;
+        private BigDecimal highDelivDayLow;
         private Long       lowDelivQty;
         private LocalDate  lowDelivDate;
+        private BigDecimal lowDelivDayHigh;
+        private BigDecimal lowDelivDayLow;
     }
 }

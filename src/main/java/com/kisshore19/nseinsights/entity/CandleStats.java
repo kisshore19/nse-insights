@@ -78,11 +78,25 @@ public class CandleStats {
     @Column(name = "high_vol_date")
     private LocalDate highVolDate;
 
+    // High / low price of the high vol day
+    @Column(name = "high_vol_day_high", precision = 12, scale = 2)
+    private BigDecimal highVolDayHigh;
+
+    @Column(name = "high_vol_day_low", precision = 12, scale = 2)
+    private BigDecimal highVolDayLow;
+
     @Column(name = "low_vol_qty")
     private Long lowVolQty;
 
     @Column(name = "low_vol_date")
     private LocalDate lowVolDate;
+
+    // High / low price of the low vol day
+    @Column(name = "low_vol_day_high", precision = 12, scale = 2)
+    private BigDecimal lowVolDayHigh;
+
+    @Column(name = "low_vol_day_low", precision = 12, scale = 2)
+    private BigDecimal lowVolDayLow;
 
     // ── Delivery extremes ─────────────────────────────────────────────────────
     @Column(name = "high_deliv_qty")
@@ -91,11 +105,25 @@ public class CandleStats {
     @Column(name = "high_deliv_date")
     private LocalDate highDelivDate;
 
+    // High / low price of the high deliv day
+    @Column(name = "high_deliv_day_high", precision = 12, scale = 2)
+    private BigDecimal highDelivDayHigh;
+
+    @Column(name = "high_deliv_day_low", precision = 12, scale = 2)
+    private BigDecimal highDelivDayLow;
+
     @Column(name = "low_deliv_qty")
     private Long lowDelivQty;
 
     @Column(name = "low_deliv_date")
     private LocalDate lowDelivDate;
+
+    // High / low price of the low deliv day
+    @Column(name = "low_deliv_day_high", precision = 12, scale = 2)
+    private BigDecimal lowDelivDayHigh;
+
+    @Column(name = "low_deliv_day_low", precision = 12, scale = 2)
+    private BigDecimal lowDelivDayLow;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

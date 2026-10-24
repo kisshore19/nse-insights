@@ -14,7 +14,7 @@ Runtime dependencies: MySQL (`nse_insights` DB on localhost:3306) and Redis (loc
 
 ## Architecture
 
-A single-module Spring Boot app that ingests NSE (India) market data, derives aggregated candles and stats, and serves them over REST to static HTML UIs at the repo root (`admin-dashboard.html`, `screener.html`).
+A single-module Spring Boot app that ingests NSE (India) market data, derives aggregated candles and stats, and serves them over REST to static HTML UIs in `src/main/resources/static/` (served at `http://localhost:8080/`: `index.html` hub with tabs for `stats-insights.html`, `screener.html`, `admin-dashboard.html`).
 
 Layering is the usual `controller → service → repository (Spring Data JPA, with projections and Specifications) → entity`, with DTOs under `dto/request` and `dto/response`. Responses are wrapped in `ApiResponse`, and errors go through `exception/GlobalExceptionHandler`. Lombok and MapStruct are used (both are annotation processors).
 

@@ -106,6 +106,7 @@ public class IndexCandleStatsService {
                     toSave.add(toEntity(p, timeframe, pk));
                     newCount++;
                 } else if (current.getCandleColor() == null
+                        || (current.getHighVolQty() != null && current.getHighVolDayHigh() == null)
                         || (p.getCandleEndDate() != null
                             && p.getCandleEndDate().isAfter(current.getCandleEndDate()))) {
                     applyProjection(current, p);
@@ -285,8 +286,12 @@ public class IndexCandleStatsService {
         s.setLowValueDate(p.getLowValueDate());
         s.setHighVolQty(p.getHighVolQty());
         s.setHighVolDate(p.getHighVolDate());
+        s.setHighVolDayHigh(p.getHighVolDayHigh());
+        s.setHighVolDayLow(p.getHighVolDayLow());
         s.setLowVolQty(p.getLowVolQty());
         s.setLowVolDate(p.getLowVolDate());
+        s.setLowVolDayHigh(p.getLowVolDayHigh());
+        s.setLowVolDayLow(p.getLowVolDayLow());
         s.setAvgPe(p.getAvgPe());
         s.setAvgPb(p.getAvgPb());
         s.setAvgDivYield(p.getAvgDivYield());
@@ -308,9 +313,11 @@ public class IndexCandleStatsService {
                 .highValueDate(s.getHighValueDate())
                 .lowValueDate(s.getLowValueDate())
                 .highestVolume(IndexCandleStatsResponse.VolumePoint.builder()
-                        .date(s.getHighVolDate()).quantity(s.getHighVolQty()).build())
+                        .date(s.getHighVolDate()).quantity(s.getHighVolQty())
+                        .high(s.getHighVolDayHigh()).low(s.getHighVolDayLow()).build())
                 .lowestVolume(IndexCandleStatsResponse.VolumePoint.builder()
-                        .date(s.getLowVolDate()).quantity(s.getLowVolQty()).build())
+                        .date(s.getLowVolDate()).quantity(s.getLowVolQty())
+                        .high(s.getLowVolDayHigh()).low(s.getLowVolDayLow()).build())
                 .avgPe(s.getAvgPe())
                 .avgPb(s.getAvgPb())
                 .avgDivYield(s.getAvgDivYield())

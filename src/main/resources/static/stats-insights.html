@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NSE · Stats Insights</title>
+<style>
+:root {
+  --bg:#f5f7fc; --surf:#fff; --surf2:#eef1f8; --border:#dde2f0; --border2:#c8cfe3;
+  --text:#111827; --muted:#6b7280; --up:#059669; --down:#dc2626; --side:#d97706; --accent:#4f46e5;
+  --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:13px; }
+.wrap { max-width:1400px; margin:0 auto; padding:28px 20px 60px; }
+h1 { font-size:26px; font-weight:800; letter-spacing:-1px; margin-bottom:4px; }
+.sub { color:var(--muted); margin-bottom:20px; }
+.panel { background:var(--surf); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:14px; }
+.row { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+.field label { display:block; font-family:var(--mono); font-size:9px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
+.field input, .field select { background:var(--bg); border:1px solid var(--border2); border-radius:7px; padding:8px 10px; font-family:var(--mono); font-size:12px; color:var(--text); min-width:130px; }
+.field input:focus, .field select:focus { outline:none; border-color:var(--accent); }
+button { background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:1px; cursor:pointer; }
+button:disabled { opacity:.5; cursor:default; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.chip { background:var(--surf); border:1px solid var(--border); border-radius:20px; padding:6px 12px; font-size:12px; }
+.chip b { font-family:var(--mono); margin-left:4px; }
+.msg { padding:12px 14px; border-radius:8px; margin-bottom:14px; background:#fef2f2; color:var(--down); border:1px solid #fecaca; display:none; }
+.msg.info { background:#eef2ff; color:var(--accent); border-color:#c7d2fe; }
+.tablebox { background:var(--surf); border:1px solid var(--border); border-radius:12px; overflow:auto; max-height:72vh; }
+table { border-collapse:collapse; width:100%; }
+th { position:sticky; top:0; background:var(--surf2); text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); padding:10px 12px; cursor:pointer; white-space:nowrap; border-bottom:1px solid var(--border); }
+th.sorted::after { content:' ▼'; } th.sorted.asc::after { content:' ▲'; }
+td { padding:8px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+tr:hover td { background:#fafbff; }
+.num { font-family:var(--mono); text-align:right; }
+.sym { font-weight:700; }
+.badge { display:inline-block; border-radius:5px; padding:2px 8px; font-size:11px; font-weight:600; }
+.g { background:#d1fae5; color:#065f46; } .r { background:#fee2e2; color:#991b1b; }
+.y { background:#fef3c7; color:#92400e; } .n { background:var(--surf2); color:var(--muted); }
+.p { background:#ede9fe; color:#5b21b6; }
+.up { color:var(--up); } .down { color:var(--down); }
+.small { color:var(--muted); font-family:var(--mono); font-size:10px; margin-left:4px; }
+.fgs { display:flex; flex-wrap:wrap; gap:10px 22px; margin-top:14px; }
+.fg { display:flex; align-items:center; gap:6px; }
+.fl { font-family:var(--mono); font-size:9px; letter-spacing:1.2px; color:var(--muted); text-transform:uppercase; margin-right:2px; }
+.tg { background:var(--bg); color:var(--text); border:1px solid var(--border2); border-radius:6px; padding:5px 10px; font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:0; min-width:34px; }
+.tg:hover { border-color:var(--accent); }
+.tg.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.legend { color:var(--muted); font-size:11px; line-height:1.7; margin-top:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Stats Insights</h1>
+  <div class="sub">Volume &amp; delivery breakouts, trend, closing location and range structure for any period.</div>
+
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label>API URL</label><input id="apiUrl" value="http://localhost:8080" style="min-width:220px"/></div>
+      <div class="field"><label>Timeframe</label>
+        <select id="tf"><option>WEEK</option><option>MONTH</option><option selected>QUARTER</option><option>YEAR</option></select></div>
+      <div class="field"><label>Period</label><select id="period" disabled><option>—</option></select></div>
+      <button id="loadBtn">LOAD</button>
+    </div>
+  </div>
+
+  <div id="msg" class="msg"></div>
+
+  <div id="results" style="display:none">
+    <div class="panel">
+      <div class="row">
+        <div class="field"><label>Search symbol</label><input id="fSearch" placeholder="e.g. TCS"/></div>
+        <button id="resetBtn" style="background:var(--muted)">RESET</button>
+      </div>
+      <div class="fgs" id="msHost"></div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="tablebox"><table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="body"></tbody>
+    </table></div>
+    <div class="legend">
+      <b>Vol B/O · Deliv B/O</b> — <b>▲</b> breakout (this period's highest volume / delivery is above the previous period's) · <b>–</b> no breakout · <b>·</b> no previous period. Next to it: the date of that peak day and the % change vs the previous period.<br/>
+      <b>Same day</b> — <b>=</b> the volume peak and the delivery peak fall on the same date · <b>≠</b> different dates (hover to see both).<br/>
+      <b>Trend</b> — <b>▲</b> up (low before high) · <b>▼</b> down (high before low) · <b>◆</b> side (same day).<br/>
+      <b>Close/Vol · Close/Deliv</b> — close vs the high–low range of the highest-volume / highest-delivery day: <b>↑</b> above its high · <b>↔</b> inside (range bound) · <b>↓</b> below its low.<br/>
+      <b>Structure</b> vs previous period — <b>HH</b> higher high (high above, low not below) · <b>LL</b> lower low · <b>IN</b> inside previous range · <b>VOL</b> high volatile (broke both previous high and low).<br/>
+      <b>Close</b> is the official closing price of the period's last trading day; <b>% Chg</b> is open to close. Filters: click chips to include values; nothing clicked in a group means no filter. Hover any symbol for its full meaning.
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const baseUrl = () => $('apiUrl').value.trim().replace(/\/+$/, '');
+const num = v => (v === null || v === undefined) ? null : Number(v);
+
+$('apiUrl').value = localStorage.getItem('screener_api_url') || $('apiUrl').value;
+
+let rows = [], sortKey = 'pctChange', sortAsc = false;
+
+const COLS = [
+  ['symbol','Symbol'], ['close','Close'], ['pctChange','% Chg'], ['trend','Trend'],
+  ['volPct','Vol B/O'], ['delPct','Deliv B/O'],
+  ['sameDate','Same day'], ['locVol','Close/Vol'], ['locDel','Close/Deliv'], ['structure','Structure']
+];
+$('head').innerHTML = COLS.map(([k,l]) => `<th data-k="${k}">${l}</th>`).join('');
+
+function showMsg(text, info) {
+  const m = $('msg'); m.textContent = text; m.className = 'msg' + (info ? ' info' : '');
+  m.style.display = text ? 'block' : 'none';
+}
+
+async function getJson(url) {
+  const res = await fetch(url);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+  return json.data !== undefined ? json.data : json;
+}
+
+let periodKeys = [];
+async function loadPeriods() {
+  const tf = $('tf').value, sel = $('period');
+  sel.disabled = true; sel.innerHTML = '<option>Loading…</option>';
+  try {
+    const d = await getJson(`${baseUrl()}/api/v1/candles/stats/available?timeframe=${tf}`);
+    periodKeys = (d.periods || []).map(p => p.periodKey);
+    if (!periodKeys.length) { sel.innerHTML = '<option value="">No periods built</option>'; return; }
+    sel.innerHTML = [...periodKeys].reverse().map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+    sel.disabled = false;
+  } catch (e) {
+    sel.innerHTML = '<option value="">—</option>';
+    showMsg('Could not load periods: ' + e.message);
+  }
+}
+
+const fetchScreen = (tf, pk) =>
+  getJson(`${baseUrl()}/api/v1/candles/stats/screen?timeframe=${tf}&period=${encodeURIComponent(pk)}&size=5000&page=0&sortBy=CLOSE&sortDir=DESC`)
+    .then(d => d.results || []);
+
+function closeLoc(close, hi, lo) {
+  if (close === null || hi === null || lo === null) return null;
+  return close > hi ? 'ABOVE' : close < lo ? 'BELOW' : 'INSIDE';
+}
+function structure(r, p) {
+  if (!p || r.high === null || r.low === null || p.high === null || p.low === null) return null;
+  const hi = r.high > p.high, lo = r.low < p.low;
+  if (hi && lo) return 'VOLATILE';
+  if (hi) return 'HH';
+  if (lo) return 'LL';
+  return 'INSIDE';
+}
+function breakout(cur, prev) {
+  if (cur === null || prev === null) return { flag: null, pct: null };
+  return { flag: cur > prev, pct: prev === 0 ? null : (cur - prev) * 100 / prev };
+}
+
+function enrich(r, p) {
+  const close = num(r.close), high = num(r.high), low = num(r.low);
+  const vb = breakout(num(r.highVolQty),   p ? num(p.highVolQty)   : null);
+  const db = breakout(num(r.highDelivQty), p ? num(p.highDelivQty) : null);
+  const base = { symbol: r.symbol, close, high, low, pctChange: num(r.pctChange), trend: r.trend || null };
+  return {
+    ...base,
+    sameDate: null, volDate: r.highVolDate || null, delDate: r.highDelivDate || null,
+    volFlag: vb.flag, volPct: vb.pct, delFlag: db.flag, delPct: db.pct,
+    locVol: closeLoc(close, num(r.highVolDayHigh),   num(r.highVolDayLow)),
+    locDel: closeLoc(close, num(r.highDelivDayHigh), num(r.highDelivDayLow)),
+    structure: structure(base, p && { high: num(p.high), low: num(p.low) })
+  };
+}
+
+async function load() {
+  const tf = $('tf').value, pk = $('period').value;
+  if (!pk) { showMsg('Pick a period first.'); return; }
+  localStorage.setItem('screener_api_url', baseUrl());
+  $('loadBtn').disabled = true; showMsg('Loading…', true);
+  try {
+    const idx = periodKeys.indexOf(pk);
+    const prevKey = idx > 0 ? periodKeys[idx - 1] : null;
+    const [cur, prev] = await Promise.all([fetchScreen(tf, pk), prevKey ? fetchScreen(tf, prevKey) : Promise.resolve([])]);
+    if (!cur.length) { showMsg(`No stats for ${tf} · ${pk}. Build stats first.`); $('results').style.display = 'none'; return; }
+    const prevMap = new Map(prev.map(r => [r.symbol, r]));
+    rows = cur.map(r => enrich(r, prevMap.get(r.symbol)));
+    rows.forEach(r => { r.sameDate = sameDate(r); });   // sortable value for the Vol = Deliv day column
+    showMsg(prevKey ? '' : 'First available period: breakouts and structure need a previous period, so they show “—”.', true);
+    $('results').style.display = 'block';
+    render();
+  } catch (e) {
+    showMsg('Load failed: ' + e.message);
+  } finally {
+    $('loadBtn').disabled = false;
+  }
+}
+
+// Toggle-chip filters. Click to include a value; click again to remove it.
+// Nothing selected in a group = no filtering on that field.
+const sameDate = r => (!r.volDate || !r.delDate) ? 'NA' : r.volDate === r.delDate ? 'SAME' : 'DIFF';
+const yn = f => f === true ? 'YES' : f === false ? 'NO' : 'NA';
+// opts: [value, chip text, tooltip]
+const LOCS = [['ABOVE','↑','Close above the day high'],['INSIDE','↔','Close inside the day range (range bound)'],['BELOW','↓','Close below the day low']];
+const FILTERS = [
+  { key:'vol',    label:'Vol B/O',    get:r => yn(r.volFlag), opts:[['YES','▲','Volume breakout'],['NO','–','No volume breakout']] },
+  { key:'del',    label:'Deliv B/O',  get:r => yn(r.delFlag), opts:[['YES','▲','Delivery breakout'],['NO','–','No delivery breakout']] },
+  { key:'same',   label:'Same day',   get:sameDate,           opts:[['SAME','=','Volume and delivery peak on the same date'],['DIFF','≠','Volume and delivery peak on different dates']] },
+  { key:'trend',  label:'Trend',      get:r => r.trend || 'NA', opts:[['UP','▲','Up'],['DOWN','▼','Down'],['SIDE','◆','Side']] },
+  { key:'locVol', label:'Close/Vol',  get:r => r.locVol || 'NA', opts:LOCS },
+  { key:'locDel', label:'Close/Deliv',get:r => r.locDel || 'NA', opts:LOCS },
+  { key:'struct', label:'Structure',  get:r => r.structure || 'NA', opts:[['HH','HH','Higher high'],['LL','LL','Lower low'],['INSIDE','IN','Inside previous range'],['VOLATILE','VOL','High volatile: broke both previous high and low']] }
+];
+const sel = Object.fromEntries(FILTERS.map(f => [f.key, new Set()]));
+
+function buildFilters() {
+  $('msHost').innerHTML = FILTERS.map(f => `
+    <div class="fg"><span class="fl">${esc(f.label)}</span>${f.opts.map(([v, t, tip]) =>
+      `<button type="button" class="tg" data-k="${f.key}" data-v="${esc(v)}" title="${esc(tip)}">${esc(t)}</button>`).join('')}</div>`).join('');
+}
+function syncFilterUi() {
+  document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', sel[b.dataset.k].has(b.dataset.v)));
+}
+
+function filtered() {
+  const q = $('fSearch').value.trim().toUpperCase();
+  return rows.filter(r =>
+    (!q || r.symbol.toUpperCase().includes(q)) &&
+    FILTERS.every(f => !sel[f.key].size || sel[f.key].has(f.get(r))));
+}
+
+const badge = (txt, cls, tip) => `<span class="badge ${cls}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(txt)}</span>`;
+const fmt = v => v === null ? '—' : v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fd = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || ''); return m ? `${+m[3]} ${MON[+m[2] - 1]} ${m[1].slice(2)}` : '—'; };
+const dateTag = d => d ? `<span class="small">${esc(fd(d))}</span>` : '';
+
+// Breakout cell: ▲ breakout / – none / · no previous period, then the peak day and % vs previous.
+const boCell = (flag, p, date, what) => {
+  const tip = flag === null ? `${what}: no previous period to compare`
+            : `${what} ${flag ? 'breakout' : 'no breakout'} on ${date}` + (p === null ? '' : ` (${p >= 0 ? '+' : ''}${p.toFixed(0)}% vs previous period)`);
+  const sym = flag === null ? badge('·','n',tip) : flag ? badge('▲','g',tip) : badge('–','n',tip);
+  return sym + dateTag(date) + (p === null ? '' : `<span class="small" title="${esc(tip)}">${p >= 0 ? '+' : ''}${p.toFixed(0)}%</span>`);
+};
+const sameCell = r => {
+  const k = sameDate(r);
+  if (k === 'NA') return badge('·','n','No data');
+  return k === 'SAME' ? badge('=','g',`Same day: ${r.volDate}`) : badge('≠','y',`Volume ${r.volDate} · Delivery ${r.delDate}`);
+};
+const LOC = { ABOVE:['↑','g','Close above the day high'], INSIDE:['↔','y','Close inside the day range (range bound)'], BELOW:['↓','r','Close below the day low'] };
+const STRUCT = { HH:['HH','g','Higher high'], LL:['LL','r','Lower low'], INSIDE:['IN','y','Inside previous range'], VOLATILE:['VOL','p','High volatile: broke both previous high and low'] };
+const TREND = { UP:['▲','g','Up: low formed before high'], DOWN:['▼','r','Down: high formed before low'], SIDE:['◆','y','Side: high and low on the same day'] };
+const pill = (map, k) => k && map[k] ? badge(map[k][0], map[k][1], map[k][2]) : badge('·','n','No data');
+
+function cmp(a, b) {
+  const x = a[sortKey], y = b[sortKey];
+  if (x === null && y === null) return 0;
+  if (x === null) return 1; if (y === null) return -1;   // nulls always last
+  const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
+  return sortAsc ? c : -c;
+}
+
+function render() {
+  const list = filtered().sort(cmp);
+  const count = fn => list.filter(fn).length;
+  $('chips').innerHTML = [
+    ['Showing', `${list.length} / ${rows.length}`],
+    ['Volume breakouts', count(r => r.volFlag === true)],
+    ['Delivery breakouts', count(r => r.delFlag === true)],
+    ['Higher high', count(r => r.structure === 'HH')],
+    ['Lower low', count(r => r.structure === 'LL')],
+    ['Inside', count(r => r.structure === 'INSIDE')],
+    ['High volatile', count(r => r.structure === 'VOLATILE')]
+  ].map(([l, v]) => `<div class="chip">${l}<b>${v}</b></div>`).join('');
+
+  $('body').innerHTML = list.map(r => {
+    const cls = r.pctChange === null ? '' : r.pctChange >= 0 ? 'up' : 'down';
+    return `<tr>
+      <td class="sym">${esc(r.symbol)}</td>
+      <td class="num">${fmt(r.close)}</td>
+      <td class="num ${cls}">${r.pctChange === null ? '—' : r.pctChange.toFixed(2) + '%'}</td>
+      <td>${pill(TREND, r.trend)}</td>
+      <td>${boCell(r.volFlag, r.volPct, r.volDate, 'Volume')}</td>
+      <td>${boCell(r.delFlag, r.delPct, r.delDate, 'Delivery')}</td>
+      <td>${sameCell(r)}</td>
+      <td>${pill(LOC, r.locVol)}</td>
+      <td>${pill(LOC, r.locDel)}</td>
+      <td>${pill(STRUCT, r.structure)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted);padding:30px">No symbols match the filters.</td></tr>`;
+
+  document.querySelectorAll('th').forEach(th => {
+    th.className = th.dataset.k === sortKey ? 'sorted' + (sortAsc ? ' asc' : '') : '';
+  });
+}
+
+$('head').addEventListener('click', e => {
+  const k = e.target.dataset.k; if (!k) return;
+  sortAsc = k === sortKey ? !sortAsc : (k === 'symbol');
+  sortKey = k; render();
+});
+$('fSearch').addEventListener('input', render);
+$('msHost').addEventListener('click', e => {
+  const b = e.target.closest('.tg'); if (!b) return;
+  const set = sel[b.dataset.k];
+  set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v);
+  syncFilterUi(); render();
+});
+$('resetBtn').onclick = () => {
+  $('fSearch').value = '';
+  Object.values(sel).forEach(set => set.clear());
+  syncFilterUi(); render();
+};
+buildFilters(); syncFilterUi();
+$('tf').onchange = loadPeriods;
+$('loadBtn').onclick = load;
+loadPeriods();
+</script>
+</body>
+</html>

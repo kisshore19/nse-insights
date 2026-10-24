@@ -29,20 +29,23 @@ public class CandleStatsController {
     //   ?timeframe=MONTH&from=2024-01&to=2024-06 → build Jan–Jun 2024
     //   ?timeframe=WEEK&period=2024-W03          → build week 3 of 2024
     //
-    // Skip logic: existing records are never deleted or overwritten.
+    // Skip logic: existing records are never deleted. Completed periods are left as-is
+    // unless refresh=true, which recomputes every stored row in scope.
     @PostMapping("/stats/build")
     public ResponseEntity<ApiResponse<CandleStatsBuildResponse>> buildStats(
             @RequestParam                        String timeframe,
             @RequestParam(required = false)      String period,
             @RequestParam(required = false)      String from,
-            @RequestParam(required = false)      String to) {
+            @RequestParam(required = false)      String to,
+            @RequestParam(defaultValue = "false") boolean refresh) {
 
         try {
             CandleStatsBuildResponse result = candleStatsService.buildStats(
                     timeframe.toUpperCase(),
                     period,
                     from,
-                    to);
+                    to,
+                    refresh);
             return ResponseEntity.ok(ApiResponse.success(result));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest()

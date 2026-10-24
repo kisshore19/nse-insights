@@ -127,6 +127,14 @@ public interface IndexCandleStatsRepository
             FROM period_data
             WINDOW w AS (PARTITION BY index_name)
         ),
+        -- one row per index+day so the joins below cannot fan out
+        day_hl AS (
+            SELECT index_name, trade_date,
+                   MAX(high_value) AS day_high,
+                   MIN(low_value)  AS day_low
+            FROM period_data
+            GROUP BY index_name, trade_date
+        ),
         aggregated AS (
             SELECT
                 index_name,
@@ -153,7 +161,7 @@ public interface IndexCandleStatsRepository
             GROUP BY index_name, period_start, period_end
         )
         SELECT
-            index_name                                              AS indexName,
+            a.index_name                                            AS indexName,
             candle_date                                             AS candleDate,
             candle_end_date                                         AS candleEndDate,
             open_value                                              AS openValue,
@@ -173,9 +181,15 @@ public interface IndexCandleStatsRepository
             low_vol_date                                            AS lowVolDate,
             avg_pe                                                  AS avgPe,
             avg_pb                                                  AS avgPb,
-            avg_div_yield                                           AS avgDivYield
-        FROM aggregated
-        ORDER BY index_name ASC
+            avg_div_yield                                           AS avgDivYield,
+            hv.day_high                                             AS highVolDayHigh,
+            hv.day_low                                              AS highVolDayLow,
+            lv.day_high                                             AS lowVolDayHigh,
+            lv.day_low                                              AS lowVolDayLow
+        FROM aggregated a
+        LEFT JOIN day_hl hv ON hv.index_name = a.index_name AND hv.trade_date = a.high_vol_date
+        LEFT JOIN day_hl lv ON lv.index_name = a.index_name AND lv.trade_date = a.low_vol_date
+        ORDER BY a.index_name ASC
         """, nativeQuery = true)
     List<IndexCandleStatsProjection> findIndexStatsForPeriod(
             @Param("fromDate") LocalDate fromDate,

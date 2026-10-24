@@ -1570,6 +1570,14 @@ public interface NseDailyPriceRepository extends JpaRepository<NseDailyPrice, Lo
             FROM period_data
             WINDOW w AS (PARTITION BY symbol)
         ),
+        -- one row per symbol+day so the joins below cannot fan out across series
+        day_hl AS (
+            SELECT symbol, trade_date,
+                   MAX(high_price) AS day_high,
+                   MIN(low_price)  AS day_low
+            FROM period_data
+            GROUP BY symbol, trade_date
+        ),
         aggregated AS (
             SELECT
                 symbol,
@@ -1612,7 +1620,7 @@ public interface NseDailyPriceRepository extends JpaRepository<NseDailyPrice, Lo
         )
         -- Step 4: final output — trend derived from high_price_date vs low_price_date
         SELECT
-            symbol                                                  AS symbol,
+            a.symbol                                                AS symbol,
             candle_date                                             AS candleDate,
             candle_end_date                                         AS candleEndDate,
             open_price                                              AS openPrice,
@@ -1633,9 +1641,21 @@ public interface NseDailyPriceRepository extends JpaRepository<NseDailyPrice, Lo
             high_deliv_qty                                          AS highDelivQty,
             high_deliv_date                                         AS highDelivDate,
             low_deliv_qty                                           AS lowDelivQty,
-            low_deliv_date                                          AS lowDelivDate
-        FROM aggregated
-        ORDER BY symbol ASC
+            low_deliv_date                                          AS lowDelivDate,
+            hv.day_high                                             AS highVolDayHigh,
+            hv.day_low                                              AS highVolDayLow,
+            lv.day_high                                             AS lowVolDayHigh,
+            lv.day_low                                              AS lowVolDayLow,
+            hd.day_high                                             AS highDelivDayHigh,
+            hd.day_low                                              AS highDelivDayLow,
+            ld.day_high                                             AS lowDelivDayHigh,
+            ld.day_low                                              AS lowDelivDayLow
+        FROM aggregated a
+        LEFT JOIN day_hl hv ON hv.symbol = a.symbol AND hv.trade_date = a.high_vol_date
+        LEFT JOIN day_hl lv ON lv.symbol = a.symbol AND lv.trade_date = a.low_vol_date
+        LEFT JOIN day_hl hd ON hd.symbol = a.symbol AND hd.trade_date = a.high_deliv_date
+        LEFT JOIN day_hl ld ON ld.symbol = a.symbol AND ld.trade_date = a.low_deliv_date
+        ORDER BY a.symbol ASC
         """, nativeQuery = true)
     List<CandleStatsProjection> findStatsForPeriod(
             @Param("fromDate") LocalDate fromDate,

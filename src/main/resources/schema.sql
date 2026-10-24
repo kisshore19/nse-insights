@@ -202,6 +202,16 @@ CREATE TABLE candle_stats (
     low_deliv_qty   BIGINT          NULL,
     low_deliv_date  DATE            NULL,
 
+    -- High / low price on each of the four extreme days above
+    high_vol_day_high    DECIMAL(12,2) NULL,
+    high_vol_day_low     DECIMAL(12,2) NULL,
+    low_vol_day_high     DECIMAL(12,2) NULL,
+    low_vol_day_low      DECIMAL(12,2) NULL,
+    high_deliv_day_high  DECIMAL(12,2) NULL,
+    high_deliv_day_low   DECIMAL(12,2) NULL,
+    low_deliv_day_high   DECIMAL(12,2) NULL,
+    low_deliv_day_low    DECIMAL(12,2) NULL,
+
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
                                              ON UPDATE CURRENT_TIMESTAMP,
@@ -259,6 +269,10 @@ CREATE TABLE IF NOT EXISTS index_candle_stats (
     high_vol_date   DATE             NULL,
     low_vol_qty     BIGINT           NULL,
     low_vol_date    DATE             NULL,
+    high_vol_day_high DECIMAL(12,2)  NULL,
+    high_vol_day_low  DECIMAL(12,2)  NULL,
+    low_vol_day_high  DECIMAL(12,2)  NULL,
+    low_vol_day_low   DECIMAL(12,2)  NULL,
     avg_pe          DECIMAL(8,2)     NULL,
     avg_pb          DECIMAL(8,2)     NULL,
     avg_div_yield   DECIMAL(7,2)     NULL,
@@ -281,3 +295,21 @@ CREATE INDEX idx_idx_stats_tf      ON index_candle_stats (timeframe);
 --     WHEN last__value > open_value THEN 'GREEN'
 --     WHEN last__value < open_value THEN 'RED' ELSE 'DOJI' END
 --  WHERE open_value IS NOT NULL AND last__value IS NOT NULL;
+
+-- ── Migration: volume/delivery extreme-day high & low (existing installs) ────
+-- Run, then re-run POST /api/v1/candles/stats/build per timeframe to backfill.
+ALTER TABLE candle_stats
+  ADD COLUMN high_vol_day_high   DECIMAL(12,2) NULL AFTER low_deliv_date,
+  ADD COLUMN high_vol_day_low    DECIMAL(12,2) NULL,
+  ADD COLUMN low_vol_day_high    DECIMAL(12,2) NULL,
+  ADD COLUMN low_vol_day_low     DECIMAL(12,2) NULL,
+  ADD COLUMN high_deliv_day_high DECIMAL(12,2) NULL,
+  ADD COLUMN high_deliv_day_low  DECIMAL(12,2) NULL,
+  ADD COLUMN low_deliv_day_high  DECIMAL(12,2) NULL,
+  ADD COLUMN low_deliv_day_low   DECIMAL(12,2) NULL;
+ALTER TABLE index_candle_stats
+  ADD COLUMN high_vol_day_high DECIMAL(12,2) NULL AFTER low_vol_date,
+  ADD COLUMN high_vol_day_low  DECIMAL(12,2) NULL,
+  ADD COLUMN low_vol_day_high  DECIMAL(12,2) NULL,
+  ADD COLUMN low_vol_day_low   DECIMAL(12,2) NULL;
+-- (then re-run POST /api/v1/index-candles/stats/build per timeframe to backfill)

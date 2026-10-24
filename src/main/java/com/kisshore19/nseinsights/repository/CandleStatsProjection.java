@@ -28,12 +28,20 @@ public interface CandleStatsProjection {
     // Volume extremes
     Long       getHighVolQty();
     LocalDate  getHighVolDate();
+    BigDecimal getHighVolDayHigh();
+    BigDecimal getHighVolDayLow();
     Long       getLowVolQty();
     LocalDate  getLowVolDate();
+    BigDecimal getLowVolDayHigh();
+    BigDecimal getLowVolDayLow();
 
     // Delivery extremes
     Long       getHighDelivQty();
     LocalDate  getHighDelivDate();
+    BigDecimal getHighDelivDayHigh();
+    BigDecimal getHighDelivDayLow();
     Long       getLowDelivQty();
     LocalDate  getLowDelivDate();
+    BigDecimal getLowDelivDayHigh();
+    BigDecimal getLowDelivDayLow();
 }

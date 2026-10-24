@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NSE Insights</title>
+<style>
+:root { --bg:#f5f7fc; --surf:#fff; --border:#dde2f0; --text:#111827; --muted:#6b7280; --accent:#4f46e5;
+        --mono:ui-monospace,'JetBrains Mono',monospace; --sans:system-ui,'Plus Jakarta Sans',sans-serif; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { display:flex; flex-direction:column; background:var(--bg); color:var(--text); font-family:var(--sans); }
+header { display:flex; align-items:center; gap:18px; background:var(--surf); border-bottom:1px solid var(--border); padding:0 18px; height:52px; flex:none; }
+.brand { font-weight:800; font-size:16px; letter-spacing:-.5px; }
+.brand span { color:var(--accent); }
+nav { display:flex; gap:4px; height:100%; }
+nav button { background:none; border:none; border-bottom:3px solid transparent; padding:0 14px; font-family:var(--sans); font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; }
+nav button:hover { color:var(--text); }
+nav button.active { color:var(--accent); border-bottom-color:var(--accent); }
+.spacer { flex:1; }
+.act { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:6px 12px; font-family:var(--mono); font-size:11px; color:var(--text); cursor:pointer; text-decoration:none; }
+.act:hover { border-color:var(--accent); color:var(--accent); }
+main { flex:1; position:relative; min-height:0; }
+iframe { position:absolute; inset:0; width:100%; height:100%; border:0; display:none; background:var(--bg); }
+iframe.active { display:block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">NSE <span>Insights</span></div>
+  <nav id="nav"></nav>
+  <div class="spacer"></div>
+  <button class="act" id="reload" title="Reload the current page">⟳ Reload</button>
+  <a class="act" id="popout" target="_blank" rel="noopener" title="Open the current page in its own tab">↗ Open in new tab</a>
+</header>
+<main id="main"></main>
+
+<script>
+// Add a page here and it gets a tab automatically.
+const PAGES = [
+  { id: 'insights', label: 'Stats Insights',  file: 'stats-insights.html' },
+  { id: 'screener', label: 'Screener',        file: 'screener.html' },
+  { id: 'admin',    label: 'Admin Dashboard', file: 'admin-dashboard.html' }
+];
+
+const nav = document.getElementById('nav'), main = document.getElementById('main');
+const frames = {};   // created lazily on first visit, then kept alive so state survives tab switches
+
+PAGES.forEach(p => {
+  const b = document.createElement('button');
+  b.textContent = p.label; b.dataset.id = p.id;
+  b.onclick = () => show(p.id);
+  nav.appendChild(b);
+});
+
+function show(id) {
+  const page = PAGES.find(p => p.id === id) || PAGES[0];
+  if (!frames[page.id]) {
+    const f = document.createElement('iframe');
+    f.src = page.file; f.title = page.label;
+    main.appendChild(f); frames[page.id] = f;
+  }
+  Object.entries(frames).forEach(([k, f]) => f.classList.toggle('active', k === page.id));
+  nav.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.id === page.id));
+  document.getElementById('popout').href = page.file;
+  document.title = page.label + ' · NSE Insights';
+  if (location.hash !== '#' + page.id) history.replaceState(null, '', '#' + page.id);
+  current = page.id;
+}
+
+let current = null;
+document.getElementById('reload').onclick = () => { if (current) frames[current].src = frames[current].src; };
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+// Keyboard: Alt+1..3 switches tabs
+window.addEventListener('keydown', e => {
+  if (e.altKey && e.key >= '1' && e.key <= String(PAGES.length)) { e.preventDefault(); show(PAGES[e.key - 1].id); }
+});
+
+show(location.hash.slice(1));
+</script>
+</body>
+</html>
