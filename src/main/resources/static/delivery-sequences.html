@@ -9,7 +9,7 @@
         --up:#059669; --down:#dc2626; --accent:#4f46e5; --mono:ui-monospace,monospace; --sans:system-ui,sans-serif; }
 * { box-sizing:border-box; margin:0; padding:0; }
 body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:13px; }
-.wrap { max-width:1400px; margin:0 auto; padding:24px 20px 60px; }
+.wrap { max-width:none; margin:0 auto; padding:16px 10px 40px; }
 h1 { font-size:24px; font-weight:800; letter-spacing:-1px; margin-bottom:4px; }
 .sub { color:var(--muted); margin-bottom:16px; }
 .panel { background:var(--surf); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
@@ -22,14 +22,28 @@ button:disabled { opacity:.5; }
 .msg { padding:10px 14px; border-radius:8px; margin-bottom:12px; background:#fef2f2; color:var(--down); border:1px solid #fecaca; display:none; }
 .msg.info { background:#eef2ff; color:var(--accent); border-color:#c7d2fe; }
 .tablebox { background:var(--surf); border:1px solid var(--border); border-radius:12px; overflow:auto; max-height:72vh; }
-table { border-collapse:collapse; width:100%; }
-th { position:sticky; top:0; background:var(--surf2); text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); padding:10px 12px; white-space:nowrap; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; }
+table { border-collapse:collapse; width:100%; table-layout:auto; }
+th { position:sticky; top:0; background:var(--surf2); text-align:left; font-family:var(--mono); font-size:9px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); padding:6px 5px; white-space:normal; vertical-align:bottom; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; }
 th.sorted::after { content:' ▼'; } th.sorted.asc::after { content:' ▲'; }
-td { padding:7px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:4px 5px; font-size:12px; border-bottom:1px solid var(--border); white-space:normal; }
 td.num { font-family:var(--mono); text-align:right; }
 tr.cool td { background:#fffbeb; }
 .hiC { background:#bbf7d0 !important; color:#065f46; font-weight:700; }
 .loC { background:#fecaca !important; color:#991b1b; font-weight:700; }
+.hv { background:#dbeafe !important; color:#1e40af; font-weight:700; }
+.hd { background:#ede9fe !important; color:#5b21b6; font-weight:700; }
+.chips2 { display:flex; gap:2px; justify-content:flex-end; margin-top:2px; }
+.chip2 { font-family:var(--mono); font-size:9px; font-weight:700; line-height:1; padding:2px 4px; border-radius:3px; }
+.chip2.ch { background:#1e293b; color:#fff; }
+.chip2.cb { background:#ffedd5; color:#9a3412; }
+.tg { font-size:10px; font-weight:700; }
+.tg.bo { background:#ffedd5; color:#9a3412; border-radius:4px; padding:0 3px; }
+.pk { display:flex; gap:10px; font-family:var(--mono); font-size:12px; padding-bottom:8px; }
+.pk label { display:flex; align-items:center; gap:4px; margin:0; font-size:12px; letter-spacing:0; color:var(--text); text-transform:none; }
+tr.b-W td { border-top:2px dashed #64748b; }
+tr.b-M td { border-top:2px solid #3b82f6; }
+tr.b-Q td { border-top:2px solid #8b5cf6; }
+tr.b-Y td { border-top:3px solid #111827; }
 .up { color:var(--up); } .down { color:var(--down); }
 .badge { display:inline-block; border-radius:5px; padding:2px 8px; font-size:11px; font-weight:600; }
 .y { background:#fef3c7; color:#92400e; } .g { background:#d1fae5; color:#065f46; }
@@ -39,16 +53,29 @@ tr.cool td { background:#fffbeb; }
 <body>
 <div class="wrap">
   <h1>Delivery Sequences</h1>
-  <p class="sub">Every session in the range. RISE = delivery above the previous session; COOL OFF = delivery below the previous session after a rise. Cool High/Low = high / low of the first cool-off day and the candle before it. CoolOffStruc = the first cool-off day against that candle; Cool to Cool = the range against the previous cool-off period. HH = higher high and low, LL = lower high and low, HV = higher high with lower low, LV = lower high with higher low. Green High / red Low cells are the candles that match Cool High / Cool Low. Click a header to sort.</p>
+  <p class="sub">Every session in the range. RISE = delivery above the previous session; COOL OFF = delivery below the previous session after a rise. Cool High/Low = high / low of the first cool-off day and the candle before it. CoolOffStruc = the first cool-off day against that candle; Cool to Cool = the range against the previous cool-off period. HH = higher high and low, LL = lower high and low, HV = higher high with lower low, LV = lower high with higher low. Green High / red Low cells are the candles that match Cool High / Cool Low. The first session of a period shows (W) (M) (Q) (Y) after its date and gets a line above it: dashed grey = week, blue = month, purple = quarter, black = year (biggest wins), whatever the sort. Blue Traded Qty / purple Delivery Qty = highest in the selected range. Chips under the number: W M Q Y; dark = highest of that period, ↑ = first day above the previous period's highest, orange = breakout only. The Period comparison section lists every period. Click a header to sort.</p>
   <div class="panel"><div class="row">
     <div class="field"><label>API URL</label><input id="apiUrl" value="http://localhost:8080" style="min-width:200px"/></div>
     <div class="field"><label>Symbol</label><input id="symbol" placeholder="RELIANCE" style="text-transform:uppercase"/></div>
     <div class="field"><label>From</label><input id="from" type="date"/></div>
     <div class="field"><label>To</label><input id="to" type="date"/></div>
+    <div class="field"><label>Highlight periods</label><div class="pk" id="pk">
+      <label><input type="checkbox" value="W" checked/> Week</label><label><input type="checkbox" value="M" checked/> Month</label>
+      <label><input type="checkbox" value="Q" checked/> Quarter</label><label><input type="checkbox" value="Y" checked/> Year</label></div></div>
     <button id="run">SHOW</button>
     <button id="csv" class="ghost" disabled>CSV</button>
     <span class="count" id="count"></span>
   </div></div>
+  <div class="panel" id="pcPanel" style="display:none">
+    <div class="row" style="margin-bottom:8px">
+      <b>Period comparison</b>
+      <div class="pk" id="pcTf" style="padding-bottom:0">
+        <label><input type="radio" name="pcTf" value="W" checked/> Week</label><label><input type="radio" name="pcTf" value="M"/> Month</label>
+        <label><input type="radio" name="pcTf" value="Q"/> Quarter</label><label><input type="radio" name="pcTf" value="Y"/> Year</label></div>
+      <span class="count" style="margin-left:0">highest in the selected range vs the previous period's highest</span>
+    </div>
+    <div class="tablebox" style="max-height:260px"><table id="pcTbl"></table></div>
+  </div>
   <div id="msg" class="msg"></div>
   <div class="tablebox"><table id="tbl"></table></div>
 </div>
@@ -56,10 +83,11 @@ tr.cool td { background:#fffbeb; }
 const $ = id => document.getElementById(id);
 const COLS = [
   ['date','Date'],['open','Open'],['high','High'],['low','Low'],['close','Close'],['tradedQty','Traded Qty'],
-  ['deliveryQty','Delivery Qty'],['sequence','Seq'],['phase','Phase'],['coolOff','Cool Off'],
-  ['coolNo','Cool #'],['coolHigh','Cool High'],['coolLow','Cool Low'],['coolOffStruc','CoolOffStruc'],['coolToCool','Cool to Cool']];
+  ['deliveryQty','Delivery Qty'],['phase','Phase'],
+  ['coolHigh','Cool High'],['coolLow','Cool Low'],['coolOffStruc','CoolOffStruc'],['coolToCool','Cool to Cool']];;
 const n2 = v => v == null ? '' : Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 let marks = {};   // date -> { hi, lo }: cells that equal the period's Cool High / Cool Low
+let periods = [];
 let days = [], sortKey = 'date', asc = true;
 
 function msg(t, info) { const m = $('msg'); m.textContent = t; m.className = 'msg' + (info ? ' info' : ''); m.style.display = t ? 'block' : 'none'; }
@@ -76,10 +104,11 @@ async function run() {
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
     days = (json.data || json).days;
+    periods = (json.data || json).periods || [];
     markCool();
     sortKey = 'date'; asc = true; render();
     msg(days.length ? '' : `No sessions with delivery data for ${sym} in this range.`);
-  } catch (e) { msg(e.message); days = []; render(); }
+  } catch (e) { msg(e.message); days = []; periods = []; render(); }
   $('run').disabled = false;
 }
 
@@ -102,10 +131,57 @@ function markCool() {
   }
 }
 
+// keeps only the period codes (W, M, Q, Y) ticked in 'Highlight periods'
+const sel = codes => (codes || '').split(',').filter(c => c && document.querySelector(`#pk input[value="${c}"]`).checked).join(',');
+// One small chip per period under the number: W M Q Y. Dark chip = highest in the range, ↑ = first day above the
+// previous period's highest (orange when that is the only thing it is).
+const tags = (high, brk) => {
+  const h = sel(high).split(',').filter(Boolean), b = sel(brk).split(',').filter(Boolean);
+  const chips = ['W', 'M', 'Q', 'Y'].filter(c => h.includes(c) || b.includes(c)).map(c => {
+    const isH = h.includes(c), isB = b.includes(c);
+    const tip = [isH && 'highest in range', isB && "above previous period's highest"].filter(Boolean).join(' · ');
+    return `<span class="chip2 ${isH ? 'ch' : 'cb'}" title="${tip}">${c}${isB ? '↑' : ''}</span>`;
+  });
+  return chips.length ? `<div class="chips2">${chips.join('')}</div>` : '';
+};
 const hiCls = d => (marks[d.date] || {}).hi ? 'hiC' : '';
 const loCls = d => (marks[d.date] || {}).lo ? 'loC' : '';
 
+function renderPeriods() {
+  const tf = document.querySelector('input[name=pcTf]:checked').value;
+  const rows = periods.filter(p => p.type === tf);
+  $('pcPanel').style.display = periods.length ? 'block' : 'none';
+  const chg = v => v == null ? '' : `<span class="${v > 0 ? 'up' : v < 0 ? 'down' : ''}">${v > 0 ? '+' : ''}${n2(v)}%</span>`;
+  $('pcTbl').innerHTML = '<tr>' + ['Period','Dates','Prev Highest Vol','Highest Vol','Vol Chg','Vol Date',
+      'Del Date','Prev Highest Del','Highest Del','Del Chg'].map(h => `<th style="cursor:default">${h}</th>`).join('') + '</tr>' +
+    rows.map(p => `<tr><td>${p.period}</td><td>${p.start} → ${p.end}</td>
+      <td class="num">${n2(p.prevMaxVol)}</td><td class="num">${n2(p.maxVol)}</td><td class="num">${chg(p.volChangePct)}</td><td>${p.maxVolDate}</td>
+      <td>${p.maxDelDate}</td><td class="num">${n2(p.prevMaxDel)}</td><td class="num">${n2(p.maxDel)}</td><td class="num">${chg(p.delChangePct)}</td></tr>`).join('');
+}
+
+// Period keys for the (W)(M)(Q)(Y) tags and the lines above period-start rows
+const isoWeek = ds => {
+  const d = new Date(ds + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 3);   // Thursday of that week
+  const jan4 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  return d.getUTCFullYear() + '-W' + (1 + Math.round(((d - jan4) / 86400000 - 3 + ((jan4.getUTCDay() + 6) % 7)) / 7));
+};
+const KEYS = {
+  Y: ds => ds.slice(0, 4),
+  Q: ds => ds.slice(0, 4) + 'Q' + Math.ceil(+ds.slice(5, 7) / 3),
+  M: ds => ds.slice(0, 7),
+  W: isoWeek };
+
 function render() {
+  renderPeriods();
+  // periods that begin on each date (against the previous session); the first row in range is skipped as its real start is unknown
+  const starts = {};
+  const asc0 = [...days].sort((a, b) => a.date < b.date ? -1 : 1);
+  for (let k = 1; k < asc0.length; k++) {
+    const crossed = ['W', 'M', 'Q', 'Y'].filter(c => KEYS[c](asc0[k].date) !== KEYS[c](asc0[k - 1].date)
+      && document.querySelector(`#pk input[value="${c}"]`).checked);
+    if (crossed.length) starts[asc0[k].date] = crossed;
+  }
   const rows = [...days].sort((a, b) => {
     const x = a[sortKey], y = b[sortKey];
     const c = x == null ? -1 : y == null ? 1 : x < y ? -1 : x > y ? 1 : 0;
@@ -113,13 +189,11 @@ function render() {
   });
   $('tbl').innerHTML = '<tr>' + COLS.map(([k, h]) =>
     `<th data-k="${k}" class="${k === sortKey ? 'sorted' + (asc ? ' asc' : '') : ''}">${h}</th>`).join('') + '</tr>' +
-    rows.map(d => `<tr class="${d.coolOff ? 'cool' : ''}"><td>${d.date}</td>
+    rows.map(d => `<tr class="${d.coolOff ? 'cool' : ''} ${starts[d.date] ? 'b-' + starts[d.date][starts[d.date].length - 1] : ''}"><td>${d.date}${(starts[d.date] || []).map(c => ` <span class="tg">(${c})</span>`).join('')}</td>
       <td class="num">${n2(d.open)}</td><td class="num ${hiCls(d)}">${n2(d.high)}</td><td class="num ${loCls(d)}">${n2(d.low)}</td><td class="num">${n2(d.close)}</td>
-      <td class="num">${n2(d.tradedQty)}</td><td class="num">${n2(d.deliveryQty)}</td>
-      <td class="num">${d.sequence}</td>
-      <td>${d.phase === 'RISE' ? '<span class="badge g">RISE</span>' : d.phase === 'COOL_OFF' ? '<span class="badge y">COOL OFF</span>' : ''}</td>
-      <td>${d.coolOff ? 'Yes' : 'No'}</td>
-      <td class="num">${d.coolNo || ''}</td><td class="num ${d.coolHigh != null ? 'hiC' : ''}">${n2(d.coolHigh)}</td><td class="num ${d.coolLow != null ? 'loC' : ''}">${n2(d.coolLow)}</td>
+      <td class="num ${sel(d.highVol) ? 'hv' : ''}">${n2(d.tradedQty)}${tags(d.highVol, d.volBreakout)}</td><td class="num ${sel(d.highDel) ? 'hd' : ''}">${n2(d.deliveryQty)}${tags(d.highDel, d.delBreakout)}</td>
+            <td>${d.phase === 'RISE' ? '<span class="badge g">RISE</span>' : d.phase === 'COOL_OFF' ? '<span class="badge y">COOL OFF</span>' : ''}</td>
+      <td class="num ${d.coolHigh != null ? 'hiC' : ''}">${n2(d.coolHigh)}</td><td class="num ${d.coolLow != null ? 'loC' : ''}">${n2(d.coolLow)}</td>
       <td>${d.coolOffStruc}</td><td>${d.coolToCool}</td></tr>`).join('');
   $('count').textContent = days.length ? `${days.length} sessions · ${days.filter(d => d.coolOff).length} cool-off` : '';
   $('csv').disabled = !days.length;
@@ -130,11 +204,15 @@ $('tbl').addEventListener('click', e => {
   asc = th.dataset.k === sortKey ? !asc : true; sortKey = th.dataset.k; render();
 });
 $('csv').onclick = () => {
-  const lines = [COLS.map(c => c[1]).join(',')].concat(days.map(d => COLS.map(([k]) => d[k] ?? '').join(',')));
+  const plain = (h, b) => [h && `highest ${h}`, b && `breakout ${b}`].filter(Boolean).join(' ').replace(/,/g, '/');
+  const lines = [COLS.map(c => c[1]).concat(['Vol Tags', 'Del Tags']).join(',')].concat(days.map(d =>
+    COLS.map(([k]) => d[k] ?? '').concat([plain(d.highVol, d.volBreakout), plain(d.highDel, d.delBreakout)]).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
   a.download = `delivery-${$('symbol').value.trim().toUpperCase()}.csv`; a.click();
 };
+$('pk').addEventListener('change', render);
+$('pcTf').addEventListener('change', renderPeriods);
 $('run').onclick = run;
 $('symbol').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
 </script>
