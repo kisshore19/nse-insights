@@ -40,6 +40,7 @@ iframe.active { display:block; }
 const PAGES = [
   { id: 'insights', label: 'Stats Insights',  file: 'stats-insights.html' },
   { id: 'screener', label: 'Screener',        file: 'screener.html' },
+  { id: 'backtest', label: 'Backtest',        file: 'backtest.html' },
   { id: 'admin',    label: 'Admin Dashboard', file: 'admin-dashboard.html' }
 ];
 
@@ -71,7 +72,7 @@ function show(id) {
 let current = null;
 document.getElementById('reload').onclick = () => { if (current) frames[current].src = frames[current].src; };
 window.addEventListener('hashchange', () => show(location.hash.slice(1)));
-// Keyboard: Alt+1..3 switches tabs
+// Keyboard: Alt+1..4 switches tabs
 window.addEventListener('keydown', e => {
   if (e.altKey && e.key >= '1' && e.key <= String(PAGES.length)) { e.preventDefault(); show(PAGES[e.key - 1].id); }
 });

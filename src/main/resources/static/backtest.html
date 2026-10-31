@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NSE · Retest Backtest</title>
+<style>
+:root {
+  --bg:#f5f7fc; --surf:#fff; --surf2:#eef1f8; --border:#dde2f0; --border2:#c8cfe3;
+  --text:#111827; --muted:#6b7280; --up:#059669; --down:#dc2626; --side:#d97706; --accent:#4f46e5;
+  --mono:'JetBrains Mono',ui-monospace,monospace; --sans:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:13px; }
+.wrap { max-width:1400px; margin:0 auto; padding:28px 20px 60px; }
+h1 { font-size:26px; font-weight:800; letter-spacing:-1px; margin-bottom:4px; }
+h2 { font-family:var(--mono); font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin:18px 0 8px; }
+.sub { color:var(--muted); margin-bottom:20px; }
+.panel { background:var(--surf); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:14px; }
+.row { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+.field label { display:block; font-family:var(--mono); font-size:9px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
+.field input, .field select { background:var(--bg); border:1px solid var(--border2); border-radius:7px; padding:8px 10px; font-family:var(--mono); font-size:12px; color:var(--text); min-width:110px; }
+.field input[type=number] { width:100px; min-width:0; }
+.field input:focus, .field select:focus { outline:none; border-color:var(--accent); }
+.chk { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:12px; padding-bottom:8px; }
+button { background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:1px; cursor:pointer; }
+button:disabled { opacity:.5; cursor:default; }
+.ghost { background:var(--surf); color:var(--text); border:1px solid var(--border2); }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.chip { background:var(--surf); border:1px solid var(--border); border-radius:20px; padding:6px 12px; font-size:12px; }
+.chip b { font-family:var(--mono); margin-left:4px; }
+.msg { padding:12px 14px; border-radius:8px; margin-bottom:14px; background:#fef2f2; color:var(--down); border:1px solid #fecaca; display:none; }
+.msg.info { background:#eef2ff; color:var(--accent); border-color:#c7d2fe; }
+.tablebox { background:var(--surf); border:1px solid var(--border); border-radius:12px; overflow:auto; }
+.tablebox.tall { max-height:62vh; }
+table { border-collapse:collapse; width:100%; }
+th { position:sticky; top:0; background:var(--surf2); text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); padding:10px 12px; white-space:nowrap; border-bottom:1px solid var(--border); }
+th.s { cursor:pointer; }
+th.sorted::after { content:' ▼'; } th.sorted.asc::after { content:' ▲'; }
+td { padding:8px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+tr:hover td { background:#fafbff; }
+.num { font-family:var(--mono); text-align:right; }
+.sym { font-weight:700; }
+.up { color:var(--up); } .down { color:var(--down); }
+.badge { display:inline-block; border-radius:5px; padding:2px 8px; font-size:11px; font-weight:600; }
+.g { background:#d1fae5; color:#065f46; } .r { background:#fee2e2; color:#991b1b; }
+.y { background:#fef3c7; color:#92400e; } .n { background:var(--surf2); color:var(--muted); }
+.fg { display:flex; align-items:center; gap:6px; }
+.fl { font-family:var(--mono); font-size:9px; letter-spacing:1.2px; color:var(--muted); text-transform:uppercase; margin-right:2px; }
+.tg { background:var(--bg); color:var(--text); border:1px solid var(--border2); border-radius:6px; padding:5px 10px; font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:0; }
+.tg.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.rules { color:var(--muted); line-height:1.7; font-size:12px; }
+.rules b { color:var(--text); }
+#curve { width:100%; height:200px; display:block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Retest Backtest</h1>
+  <p class="sub">Previous-quarter highest-volume level, retested in the next quarter: enter on the break away from the level, target the previously made extreme, stop beyond the level.</p>
+
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label>API URL</label><input id="apiUrl" value="http://localhost:8080" style="min-width:210px"/></div>
+      <div class="field"><label>Strategy</label><select id="strategy">
+        <option value="VOLUME_CANDLE">Volume candle (Q1 → Q2 → Q3)</option>
+        <option value="LEVEL_RETEST">Level retest (first touch)</option></select></div>
+      <div class="field"><label>Trade quarter (Q3) from</label><select id="from"></select></div>
+      <div class="field"><label>to (same = one quarter)</label><select id="to"></select></div>
+      <div class="field"><label>Signal candle highest in</label><select id="signal">
+        <option value="VOLUME">Volume</option><option value="BOTH">Volume and delivery</option><option value="DELIVERY">Delivery only</option></select></div>
+      <div class="field"><label>Index confirmation</label><select id="indexMode">
+        <option value="NONE">None (all stocks)</option>
+        <option value="SETUP">Index has same setup</option>
+        <option value="TRIGGERED">Index already triggered</option></select></div>
+      <div class="field"><label>Index group</label><select id="indexScope">
+        <option value="ALL">All indices</option><option value="BROAD">Broad / cap indices</option><option value="SECTOR">Sector indices</option></select></div>
+      <div class="field"><label>Level (retest strategy)</label><select id="source"><option value="VOL">Highest volume day</option><option value="DELIV">Highest delivery day</option></select></div>
+      <div class="field"><label>Side</label><select id="side"><option value="BOTH">Long + Short</option><option value="LONG">Long only</option><option value="SHORT">Short only</option></select></div>
+      <label class="chk"><input type="checkbox" id="breakout"/> Base peak was a breakout</label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="field"><label>Target</label><select id="targetMode"><option value="EXTREME">Previous high / low</option><option value="R">Fixed R multiple</option></select></div>
+      <div class="field"><label>Target R</label><input type="number" id="targetR" value="2" min="0.5" step="0.5"/></div>
+      <div class="field"><label>Min days into Q3</label><input type="number" id="minDays" value="5" min="0" max="60"/></div>
+      <div class="field"><label>Target lookback (bars)</label><input type="number" id="lookback" value="60" min="5" max="250"/></div>
+      <div class="field"><label>Stop buffer %</label><input type="number" id="buffer" value="0" min="0" max="20" step="0.1"/></div>
+      <div class="field"><label>Min reward : risk</label><input type="number" id="minRR" value="0" min="0" step="0.1"/></div>
+      <div class="field"><label>Max hold (bars, 0 = none)</label><input type="number" id="hold" value="0" min="0"/></div>
+      <button id="runBtn">RUN BACKTEST</button>
+    </div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div id="out" style="display:none">
+    <h2>Setup funnel (every base level, one row per symbol and quarter)</h2>
+    <div class="chips" id="funnel"></div>
+
+    <h2>Results (closed trades; open trades are excluded)</h2>
+    <div class="tablebox"><table><thead><tr id="sumHead"></tr></thead><tbody id="sumBody"></tbody></table></div>
+
+    <h2>Equity curve (cumulative R by exit date, shown for the trades listed below)</h2>
+    <div class="panel"><svg id="curve" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg><div class="rules" id="curveNote"></div></div>
+
+    <h2>By target quarter</h2>
+    <div class="tablebox"><table><thead><tr id="perHead"></tr></thead><tbody id="perBody"></tbody></table></div>
+
+    <h2>Trades</h2>
+    <div class="panel">
+      <div class="row">
+        <div class="field"><label>Search symbol</label><input id="fSearch" placeholder="e.g. BRIT"/></div>
+        <div class="fg"><span class="fl">Side</span><span id="gSide"></span></div>
+        <div class="fg"><span class="fl">Exit</span><span id="gExit"></span></div>
+        <button class="ghost" id="csvBtn">⬇ CSV</button>
+        <span id="count" class="sub" style="margin:0"></span>
+      </div>
+    </div>
+    <div class="tablebox tall"><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div>
+  </div>
+
+  <h2>Rules used</h2>
+  <div class="panel rules">
+    <b>Volume candle (Q1 → Q2 → Q3)</b><br/>
+    1. Q2's highest volume must be greater than Q1's highest volume.<br/>
+    2. Q2 must close above the Q2 peak volume candle's high (long) or below its low (short). A close inside it is skipped.<br/>
+    3. The Q2 peak volume candle's high–low is the level.<br/>
+    <i>Signal setting:</i> Volume uses volume everywhere below. Volume and delivery needs both Q2 breakouts (volume and delivery above Q1), the level is the Q2 peak volume candle, and the Q3 signal candle must be the highest in both so far; a later day with more volume <b>or</b> more delivery cancels it. Delivery only does the same using delivery quantity and the Q2 peak delivery candle. Days without delivery data can never be a signal when delivery is used.<br/>
+    4. In Q3 the signal candle is a day whose range touches the level and whose volume is the highest of Q3 so far (quarter start to that day). It must be at least "Min days into Q3" trading days after the quarter start, otherwise the first days of a quarter are trivially the peak. It stays the signal only while no later day trades more volume before the trigger; if one does, that earlier candle is dropped and the higher-volume day is checked as the new signal.<br/>
+    <b>Trigger</b> long = a day that <i>closes</i> above the signal candle high (an intraday break is not enough). <b>Entry</b> = the signal candle high, taken on the first later day whose range trades back to that price; <b>stop</b> = the signal candle low. Short is the reverse: close below the low, entry at the low, stop at the signal candle high. If the far side of the signal candle is lost before the entry, the setup is dropped. No trigger or entry by quarter end = no trade. If the entry day also reaches the stop, the stop is assumed hit.<br/>
+    <b>Index confirmation</b> (volume candle strategy): the same Q1 → Q2 → Q3 pattern is run on every index, using index volume. <i>Index has same setup</i> = at least one index the stock belongs to had a Q2 volume breakout over Q1 and closed Q2 beyond its peak volume candle in the same direction. <i>Index already triggered</i> additionally needs that index to have had a signal candle and a close beyond it on or before the stock's entry day. Index groups: sector indices (Auto, Bank, IT, Pharma and so on) or broad / cap indices (Nifty 50, 100, 500, Midcap, Smallcap and so on). Stocks that are in none of the chosen indices are excluded. Membership is today's constituent list, applied to past quarters.<br/>
+    <b>Target</b> = the highest high (long) or lowest low (short) of the lookback bars before the signal candle, or a fixed R multiple. Trades with no room to the target, or below the minimum reward : risk, are skipped.<br/><br/>
+    <b>Level retest (first touch)</b> is the earlier version: the level is the previous quarter's peak volume (or delivery) day, the first touch in the next quarter picks the side from the previous close, and entry is the first close beyond the level; stop is the lowest low made since the touch.<br/><br/>
+    <b>Exit</b> (both) = target or stop, whichever hits first. If both hit on one day the stop wins; gaps fill at the open. Trades still running at the last data day show as OPEN and are left out of the statistics. R = profit divided by the entry-to-stop risk.<br/>
+    No costs, slippage or position sizing. One trade per symbol per base quarter.
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const baseUrl = () => $('apiUrl').value.trim().replace(/\/+$/, '');
+$('apiUrl').value = localStorage.getItem('screener_api_url') || $('apiUrl').value;
+
+function showMsg(text, info) {
+  const m = $('msg'); m.textContent = text; m.className = 'msg' + (info ? ' info' : '');
+  m.style.display = text ? 'block' : 'none';
+}
+async function getJson(url) {
+  const res = await fetch(url);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+  return json.data !== undefined ? json.data : json;
+}
+
+const prevQuarter = k => { const y = +k.slice(0, 4), q = +k.slice(6); return q === 1 ? `${y - 1}-Q4` : `${y}-Q${q - 1}`; };
+
+async function loadPeriods() {
+  try {
+    const d = await getJson(`${baseUrl()}/api/v1/candles/stats/available?timeframe=QUARTER`);
+    const keys = (d.periods || []).map(p => p.periodKey);
+    // pick the quarter to trade in; its level quarter is the one before, so the first quarter cannot be picked
+    const targets = keys.slice(1);
+    const opts = [...targets].reverse().map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+    $('from').innerHTML = opts; $('to').innerHTML = opts;
+    $('from').value = targets[targets.length - 1] || ''; $('to').value = targets[targets.length - 1] || '';
+  } catch (e) { showMsg('Could not load quarters: ' + e.message); }
+}
+
+// ── state ───────────────────────────────────────────────────────────────────────────────────
+let data = null, trades = [], sortKey = 'entryDate', sortAsc = true;
+const selSide = new Set(), selExit = new Set();
+const TCOLS = [
+  ['symbol','Symbol'], ['side','Side'], ['basePeriod','Q2 (level)'], ['targetPeriod','Q3 (trade)'],
+  ['levelLow','Level low'], ['levelHigh','Level high'], ['touchDate','Signal candle'], ['triggerDate','Close beyond'], ['entryDate','Entry date'],
+  ['entry','Entry'], ['stop','Stop'], ['target','Target px'], ['rr','R:R'],
+  ['exitDate','Exit date'], ['exitPrice','Exit'], ['exitReason','Result'], ['returnPct','Ret %'], ['rMultiple','R'], ['holdDays','Bars']
+];
+$('head').innerHTML = TCOLS.map(([k, l]) => `<th class="s" data-k="${k}">${l}</th>`).join('');
+const SCOLS = ['Trades','Wins','Losses','Open','Win %','Avg R','Total R','Avg win R','Avg loss R','Avg ret %','Profit factor','Avg bars','Max DD (R)'];
+$('sumHead').innerHTML = ['Side', ...SCOLS].map(l => `<th>${l}</th>`).join('');
+$('perHead').innerHTML = ['Target quarter', ...SCOLS].map(l => `<th>${l}</th>`).join('');
+
+const pn = (v, d = 2) => v === null || v === undefined ? '—' : Number(v).toFixed(d);
+const signed = v => `<span class="${v > 0 ? 'up' : v < 0 ? 'down' : ''}">${pn(v)}</span>`;
+function sumCells(s) {
+  return `<td class="num">${s.trades}</td><td class="num">${s.wins}</td><td class="num">${s.losses}</td><td class="num">${s.open}</td>`
+    + `<td class="num">${pn(s.winRate, 1)}</td><td class="num">${signed(s.avgR)}</td><td class="num">${signed(s.totalR)}</td>`
+    + `<td class="num">${pn(s.avgWinR)}</td><td class="num">${pn(s.avgLossR)}</td><td class="num">${signed(s.avgReturnPct)}</td>`
+    + `<td class="num">${pn(s.profitFactor)}</td><td class="num">${pn(s.avgHoldDays, 1)}</td><td class="num">${pn(s.maxDrawdownR)}</td>`;
+}
+const sideBadge = s => `<span class="badge ${s === 'LONG' ? 'g' : 'r'}">${s}</span>`;
+const exitBadge = r => `<span class="badge ${r === 'TARGET' ? 'g' : r === 'STOP' ? 'r' : r === 'OPEN' ? 'y' : 'n'}">${r}</span>`;
+
+function buildToggles() {
+  const mk = (host, set, vals) => {
+    $(host).innerHTML = vals.map(v => `<button type="button" class="tg" data-v="${v}">${v}</button>`).join(' ');
+    $(host).onclick = e => {
+      const b = e.target.closest('.tg'); if (!b) return;
+      set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v);
+      b.classList.toggle('on', set.has(b.dataset.v)); render();
+    };
+  };
+  mk('gSide', selSide, ['LONG', 'SHORT']);
+  mk('gExit', selExit, ['TARGET', 'STOP', 'TIME', 'OPEN']);
+}
+
+function visible() {
+  const q = $('fSearch').value.trim().toUpperCase();
+  return trades.filter(t => (!q || t.symbol.includes(q))
+    && (!selSide.size || selSide.has(t.side)) && (!selExit.size || selExit.has(t.exitReason)));
+}
+
+function drawCurve(list) {
+  const closed = list.filter(t => t.exitReason !== 'OPEN').sort((a, b) => a.exitDate < b.exitDate ? -1 : a.exitDate > b.exitDate ? 1 : 0);
+  const svg = $('curve');
+  if (!closed.length) { svg.innerHTML = ''; $('curveNote').textContent = 'No closed trades.'; return; }
+  let cum = 0; const pts = closed.map(t => (cum += t.rMultiple));
+  const lo = Math.min(0, ...pts), hi = Math.max(0, ...pts), span = (hi - lo) || 1;
+  const x = i => (i / Math.max(1, pts.length - 1)) * 1000, y = v => 190 - ((v - lo) / span) * 180;
+  svg.innerHTML = `<line x1="0" x2="1000" y1="${y(0)}" y2="${y(0)}" stroke="#c8cfe3" stroke-dasharray="4 4"/>`
+    + `<polyline fill="none" stroke="${cum >= 0 ? '#059669' : '#dc2626'}" stroke-width="2" vector-effect="non-scaling-stroke" points="${pts.map((v, i) => x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ')}"/>`;
+  $('curveNote').textContent = `${closed.length} closed trades, ${closed[0].exitDate} to ${closed[closed.length - 1].exitDate}. Ends at ${cum.toFixed(1)} R, high ${hi.toFixed(1)} R, low ${lo.toFixed(1)} R.`;
+}
+
+function render() {
+  if (!data) return;
+  const list = visible();
+  list.sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    const c = typeof x === 'number' ? x - y : String(x).localeCompare(String(y));
+    return (sortAsc ? c : -c) || a.symbol.localeCompare(b.symbol);
+  });
+  const MAX = 2500;
+  $('count').textContent = `${list.length} of ${trades.length} trades` + (list.length > MAX ? ` (first ${MAX} shown)` : '');
+  document.querySelectorAll('#head th').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.k === sortKey); th.classList.toggle('asc', th.dataset.k === sortKey && sortAsc);
+  });
+  $('body').innerHTML = list.slice(0, MAX).map(t => `<tr>
+    <td class="sym">${esc(t.symbol)}</td><td>${sideBadge(t.side)}</td><td>${t.basePeriod}</td><td>${t.targetPeriod}</td>
+    <td class="num">${pn(t.levelLow)}</td><td class="num">${pn(t.levelHigh)}</td><td>${t.touchDate}</td><td>${t.triggerDate}</td><td>${t.entryDate}</td>
+    <td class="num">${pn(t.entry)}</td><td class="num">${pn(t.stop)}</td><td class="num">${pn(t.target)}</td><td class="num">${pn(t.rr)}</td>
+    <td>${t.exitDate}</td><td class="num">${pn(t.exitPrice)}</td><td>${exitBadge(t.exitReason)}</td>
+    <td class="num">${signed(t.returnPct)}</td><td class="num">${signed(t.rMultiple)}</td><td class="num">${t.holdDays}</td></tr>`).join('');
+  drawCurve(list);
+}
+
+async function run() {
+  const btn = $('runBtn'); btn.disabled = true; showMsg('Running backtest over the stored daily prices…', true);
+  const q = new URLSearchParams({
+    from: prevQuarter($('from').value), to: prevQuarter($('to').value), source: $('source').value, side: $('side').value,
+    requireBreakout: $('breakout').checked, lookback: $('lookback').value || 60,
+    strategy: $('strategy').value, signal: $('signal').value, indexMode: $('indexMode').value, indexScope: $('indexScope').value, targetMode: $('targetMode').value, targetR: $('targetR').value || 2, minDays: $('minDays').value || 0,
+    stopBufferPct: $('buffer').value || 0, minRR: $('minRR').value || 0, maxHoldDays: $('hold').value || 0
+  });
+  try {
+    data = await getJson(`${baseUrl()}/api/v1/backtest/retest?${q}`);
+    trades = data.trades || [];
+    const f = data.funnel;
+    $('funnel').innerHTML = [
+      ['Base levels', f.levels], ['Setup found in next quarter', f.touched], ['Inside / close inside level', f.inside],
+      ['Long setups', f.longSetups], ['Short setups', f.shortSetups], ['No trigger', f.noTrigger],
+      ['Cancelled (far side lost first)', f.invalidated], ['Blocked by index', f.indexBlocked], ['No room / low R:R', f.noRoom], ['Trades', f.triggered]
+    ].map(([l, v]) => `<span class="chip">${l}<b>${v}</b></span>`).join('');
+    $('sumBody').innerHTML = [['ALL', data.all], ['LONG', data.longs], ['SHORT', data.shorts]]
+      .map(([l, s]) => `<tr><td class="sym">${l}</td>${sumCells(s)}</tr>`).join('');
+    $('perBody').innerHTML = (data.byPeriod || []).map(p => `<tr><td class="sym">${p.targetPeriod}</td>${sumCells(p.summary)}</tr>`).join('');
+    $('out').style.display = 'block'; showMsg('');
+    render();
+  } catch (e) { showMsg('Backtest failed: ' + e.message); }
+  btn.disabled = false;
+}
+
+function csv() {
+  const list = visible();
+  if (!list.length) { alert('No trades to export.'); return; }
+  const keys = TCOLS.map(c => c[0]);
+  const text = [keys.join(','), ...list.map(t => keys.map(k => t[k]).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+  a.download = `retest_backtest_${$('from').value}_${$('to').value}_${$('source').value}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+$('head').addEventListener('click', e => {
+  const th = e.target.closest('th'); if (!th) return;
+  sortAsc = th.dataset.k === sortKey ? !sortAsc : true; sortKey = th.dataset.k; render();
+});
+$('fSearch').addEventListener('input', render);
+$('runBtn').onclick = run;
+$('csvBtn').onclick = csv;
+$('apiUrl').addEventListener('change', () => { localStorage.setItem('screener_api_url', $('apiUrl').value.trim()); loadPeriods(); });
+buildToggles(); loadPeriods();
+</script>
+</body>
+</html>

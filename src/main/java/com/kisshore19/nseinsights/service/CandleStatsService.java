@@ -5,9 +5,11 @@ import com.kisshore19.nseinsights.dto.response.CandleStatsAvailableResponse.Peri
 import com.kisshore19.nseinsights.dto.response.CandleStatsBuildResponse;
 import com.kisshore19.nseinsights.dto.response.BreakoutInfo;
 import com.kisshore19.nseinsights.dto.response.CandleStatsHistoryResponse;
+import com.kisshore19.nseinsights.dto.response.CandleRetestResponse;
 import com.kisshore19.nseinsights.dto.response.CandleStatsResponse;
 import com.kisshore19.nseinsights.entity.CandleStats;
 import com.kisshore19.nseinsights.repository.CandlePeriodProjection;
+import com.kisshore19.nseinsights.repository.CandleRetestProjection;
 import com.kisshore19.nseinsights.repository.CandleStatsProjection;
 import com.kisshore19.nseinsights.repository.CandleStatsRepository;
 import com.kisshore19.nseinsights.repository.NseDailyPriceRepository;
@@ -247,6 +249,57 @@ public class CandleStatsService {
                 .deliveryBreakouts(delivBreakouts)
                 .periods(periods)
                 .build();
+    }
+
+    // =========================================================================
+    // RETEST — did the target period's daily prices come back to the base
+    // period's highest-volume / highest-delivery day ranges?
+    // =========================================================================
+
+    public CandleRetestResponse getRetest(String timeframe, String basePeriod, String targetPeriod) {
+        validateTimeframe(timeframe);
+        PeriodKeyUtils.validatePeriodKey(timeframe, basePeriod);
+        PeriodKeyUtils.validatePeriodKey(timeframe, targetPeriod);
+        if (targetPeriod.compareTo(basePeriod) <= 0) {
+            throw new IllegalArgumentException("targetPeriod must be after basePeriod.");
+        }
+
+        LocalDate from = PeriodKeyUtils.periodStart(timeframe, targetPeriod);
+        LocalDate to   = PeriodKeyUtils.periodEnd(timeframe, targetPeriod);
+
+        List<CandleRetestResponse.Entry> results = new ArrayList<>();
+        for (CandleRetestProjection p : priceRepository.findRetestTouches(
+                timeframe, basePeriod, targetPeriod, from.minusDays(10), from, to)) {
+            results.add(CandleRetestResponse.Entry.builder()
+                    .symbol(p.getSymbol())
+                    .volTouchDate(p.getVolTouchDate())
+                    .volTouchDays(p.getVolTouchDays())
+                    .delivTouchDate(p.getDelivTouchDate())
+                    .delivTouchDays(p.getDelivTouchDays())
+                    .volApproachClose(rawNumber(p.getVolApproachRaw()))
+                    .volAfterDate(rawDate(p.getVolAfterRaw()))
+                    .volAfterClose(rawNumber(p.getVolAfterRaw()))
+                    .delivApproachClose(rawNumber(p.getDelivApproachRaw()))
+                    .delivAfterDate(rawDate(p.getDelivAfterRaw()))
+                    .delivAfterClose(rawNumber(p.getDelivAfterRaw()))
+                    .build());
+        }
+        return CandleRetestResponse.builder()
+                .timeframe(timeframe).basePeriod(basePeriod).targetPeriod(targetPeriod)
+                .targetFrom(from).targetTo(to)
+                .results(results)
+                .build();
+    }
+
+    // "yyyy-MM-dd|value" pairs produced by the retest query
+    private static LocalDate rawDate(String raw) {
+        return raw == null || raw.length() < 10 ? null : LocalDate.parse(raw.substring(0, 10));
+    }
+
+    private static java.math.BigDecimal rawNumber(String raw) {
+        if (raw == null) return null;
+        String v = raw.substring(raw.indexOf('|') + 1);
+        return v.isBlank() ? null : new java.math.BigDecimal(v);
     }
 
     // =========================================================================

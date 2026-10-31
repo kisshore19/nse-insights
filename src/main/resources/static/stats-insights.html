@@ -47,6 +47,16 @@ tr:hover td { background:#fafbff; }
 .tg { background:var(--bg); color:var(--text); border:1px solid var(--border2); border-radius:6px; padding:5px 10px; font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:0; min-width:34px; }
 .tg:hover { border-color:var(--accent); }
 .tg.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.pre { background:var(--surf); color:var(--text); border:1px solid var(--border2); }
+.pre:hover { border-color:var(--accent); }
+.pre.on { color:#fff; border-color:transparent; }
+#shortBtn.on { background:var(--down); } #longBtn.on { background:var(--up); } #candBtn.on { background:var(--accent); }
+.star { background:none; color:#cbd5e1; border:none; padding:0 4px; font-size:17px; line-height:1; letter-spacing:0; }
+.star.on { color:#f59e0b; } .star:hover { color:#f59e0b; }
+.lvl { font-family:var(--mono); font-size:11px; line-height:1.5; }
+.note { background:#eef2ff; border:1px solid #c7d2fe; color:#3730a3; border-radius:8px; padding:9px 12px; margin-bottom:12px; font-size:12px; display:none; }
+.ghost { background:var(--surf); color:var(--text); border:1px solid var(--border2); }
+.rm { background:none; color:var(--down); border:none; padding:0 6px; font-size:14px; letter-spacing:0; }
 .legend { color:var(--muted); font-size:11px; line-height:1.7; margin-top:14px; }
 </style>
 </head>
@@ -62,19 +72,39 @@ tr:hover td { background:#fafbff; }
         <select id="tf"><option>WEEK</option><option>MONTH</option><option selected>QUARTER</option><option>YEAR</option></select></div>
       <div class="field"><label>Period</label><select id="period" disabled><option>—</option></select></div>
       <button id="loadBtn">LOAD</button>
+      <button id="wlBtn" class="ghost">★ WATCHLIST (0)</button>
     </div>
   </div>
 
   <div id="msg" class="msg"></div>
 
+  <div id="wlPanel" class="panel" style="display:none">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <div><b>Watchlist</b> <span class="small">saved in this browser only · levels are the breakout-day ranges saved when you starred the stock</span></div>
+      <div class="row"><button id="wlRefresh" class="ghost">REFRESH PRICES</button><button id="wlClear" class="ghost">CLEAR ALL</button></div>
+    </div>
+    <div class="tablebox" style="max-height:40vh"><table>
+      <thead><tr>
+        <th style="cursor:default">Symbol</th><th style="cursor:default">Levels</th><th style="cursor:default">Added</th>
+        <th style="cursor:default">Now</th><th style="cursor:default">Now vs levels</th><th style="cursor:default"></th>
+      </tr></thead>
+      <tbody id="wlBody"></tbody>
+    </table></div>
+  </div>
+
   <div id="results" style="display:none">
     <div class="panel">
       <div class="row">
         <div class="field"><label>Search symbol</label><input id="fSearch" placeholder="e.g. TCS"/></div>
+        <button id="shortBtn" class="pre" title="Came up into the level from below, quarter peak volume at the level, rejected or still pending">SHORT SETUPS</button>
+        <button id="longBtn" class="pre" title="Came down into the level from above, quarter peak volume at the level, bounced or still pending">LONG SETUPS</button>
+        <button id="candBtn" class="pre" title="Retest ✓ and a month or quarter volume peak at the level">RETEST CANDIDATES</button>
+        <button id="exportBtn" class="ghost" title="Download the stocks shown as NSE:SYMBOL-EQ, comma separated (Fyers watchlist import)">⬇ EXPORT</button>
         <button id="resetBtn" style="background:var(--muted)">RESET</button>
       </div>
       <div class="fgs" id="msHost"></div>
     </div>
+    <div class="note" id="retestNote"></div>
     <div class="chips" id="chips"></div>
     <div class="tablebox"><table>
       <thead><tr id="head"></tr></thead>
@@ -86,11 +116,19 @@ tr:hover td { background:#fafbff; }
       <b>Trend</b> — <b>▲</b> up (low before high) · <b>▼</b> down (high before low) · <b>◆</b> side (same day).<br/>
       <b>Close/Vol · Close/Deliv</b> — close vs the high–low range of the highest-volume / highest-delivery day: <b>↑</b> above its high · <b>↔</b> inside (range bound) · <b>↓</b> below its low.<br/>
       <b>Structure</b> vs previous period — <b>HH</b> higher high (high above, low not below) · <b>LL</b> lower low · <b>IN</b> inside previous range · <b>VOL</b> high volatile (broke both previous high and low).<br/>
+      <b>Level</b> — the high–low range of the base quarter's highest-volume (<b>V</b>) and highest-delivery (<b>D</b>) day. Only breakout levels count (▲ in Vol B/O / Deliv B/O).<br/>
+      <b>Retest</b> — <b>✓</b> some day of the next (running) quarter had a high–low range touching a breakout level (first touch date and number of days shown) · <b>✗</b> not yet · <b>·</b> not applicable. Needs the QUARTER timeframe with a later quarter built.<br/>
+      <b>Mo vol@lvl · Qtr vol@lvl</b> — the highest-volume day of the latest month / of the running quarter has a range touching a breakout level. <b>Peak@lvl</b> filter = month or quarter.<br/>
+      <b>Approach</b> — which side price came from before first touching the level: <b>↗</b> from below (the level acts as resistance, short setup) · <b>↘</b> from above (support, long setup) · <b>↔</b> already inside.<br/>
+      <b>After peak</b> — what price did after the running quarter's highest-volume day (needs that day to touch the level): <b>REJ</b> came from below, closed back under the level · <b>BNC</b> came from above, closed back over it · <b>▲▲ / ▼▼</b> closed through it · <b>…</b> no close outside the level yet (watch). The date is the first close outside.<br/>
+      <b>SHORT SETUPS</b> / <b>LONG SETUPS</b> presets — retest ✓, quarter peak at the level, approach from below / above, outcome rejected or bounced or still pending.<br/>
+      <b>Now</b> — latest close of the running quarter, with ↑ ↔ ↓ against the first breakout level. <b>★</b> saves the stock to the browser watchlist.<br/>
       <b>Close</b> is the official closing price of the period's last trading day; <b>% Chg</b> is open to close. Filters: click chips to include values; nothing clicked in a group means no filter. Hover any symbol for its full meaning.
     </div>
   </div>
 </div>
 
+<script src="fno-stocks.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -104,7 +142,8 @@ let rows = [], sortKey = 'pctChange', sortAsc = false;
 const COLS = [
   ['symbol','Symbol'], ['close','Close'], ['pctChange','% Chg'], ['trend','Trend'],
   ['volPct','Vol B/O'], ['delPct','Deliv B/O'],
-  ['sameDate','Same day'], ['locVol','Close/Vol'], ['locDel','Close/Deliv'], ['structure','Structure']
+  ['sameDate','Same day'], ['locVol','Close/Vol'], ['locDel','Close/Deliv'], ['structure','Structure'],
+  ['zoneLo','Level'], ['retest','Retest'], ['moVol','Mo vol@lvl'], ['qtVol','Qtr vol@lvl'], ['approach','Approach'], ['after','After peak'], ['nowClose','Now'], ['starred','★']
 ];
 $('head').innerHTML = COLS.map(([k,l]) => `<th data-k="${k}">${l}</th>`).join('');
 
@@ -157,6 +196,9 @@ function breakout(cur, prev) {
   return { flag: cur > prev, pct: prev === 0 ? null : (cur - prev) * 100 / prev };
 }
 
+const zone = (lo, hi) => (lo === null || lo === undefined || hi === null || hi === undefined) ? null : [Number(lo), Number(hi)];
+const overlaps = (a, z) => a && z && a[0] <= z[1] && a[1] >= z[0];
+
 function enrich(r, p) {
   const close = num(r.close), high = num(r.high), low = num(r.low);
   const vb = breakout(num(r.highVolQty),   p ? num(p.highVolQty)   : null);
@@ -168,7 +210,11 @@ function enrich(r, p) {
     volFlag: vb.flag, volPct: vb.pct, delFlag: db.flag, delPct: db.pct,
     locVol: closeLoc(close, num(r.highVolDayHigh),   num(r.highVolDayLow)),
     locDel: closeLoc(close, num(r.highDelivDayHigh), num(r.highDelivDayLow)),
-    structure: structure(base, p && { high: num(p.high), low: num(p.low) })
+    structure: structure(base, p && { high: num(p.high), low: num(p.low) }),
+    vz: zone(r.highVolDayLow, r.highVolDayHigh), dz: zone(r.highDelivDayLow, r.highDelivDayHigh),
+    fno: FNO_STOCKS.has(r.symbol) ? 'YES' : 'NO',
+    retest: 'NA', moVol: 'NA', qtVol: 'NA', peakAny: 'NA', zoneLo: null, nowClose: null, nowLoc: null,
+    touchVol: null, touchDel: null, approach: 'NA', after: 'NA', afterDate: null, retestDate: null, starred: false
   };
 }
 
@@ -185,7 +231,17 @@ async function load() {
     const prevMap = new Map(prev.map(r => [r.symbol, r]));
     rows = cur.map(r => enrich(r, prevMap.get(r.symbol)));
     rows.forEach(r => { r.sameDate = sameDate(r); });   // sortable value for the Vol = Deliv day column
-    showMsg(prevKey ? '' : 'First available period: breakouts and structure need a previous period, so they show “—”.', true);
+    ctx = null; $('retestNote').style.display = 'none';
+    let retestMsg = '';
+    if (tf === 'QUARTER') {
+      try { ctx = await loadRetest(pk, idx); } catch (e) { retestMsg = ' Retest data failed: ' + e.message; }
+      if (ctx) applyRetest(rows, ctx); else if (!retestMsg) retestMsg = ' No later quarter built after ' + pk + ', so Retest columns show “·”.';
+    } else {
+      retestMsg = ' Retest needs the QUARTER timeframe.';
+    }
+    rows.forEach(r => { r.starred = isStarred(r.symbol); });
+    showMsg((prevKey ? '' : 'First available period: breakouts and structure need a previous period, so they show “—”.') + retestMsg,
+            !prevKey || !!retestMsg);
     $('results').style.display = 'block';
     render();
   } catch (e) {
@@ -195,6 +251,148 @@ async function load() {
   }
 }
 
+// ── Retest: base quarter breakout levels vs the next (running) quarter ───────
+let ctx = null;
+
+async function loadRetest(basePk, idx) {
+  const targetPk = periodKeys[idx + 1];
+  if (!targetPk) return null;
+  const monthsAvail = await getJson(`${baseUrl()}/api/v1/candles/stats/available?timeframe=MONTH`);
+  const tgtPeriod = (await getJson(`${baseUrl()}/api/v1/candles/stats/available?timeframe=QUARTER`)).periods.find(p => p.periodKey === targetPk);
+  // latest built month inside the target quarter (bounded on both sides, so a finished quarter does not pick up a later month)
+  const monthPeriods = (monthsAvail.periods || []).filter(m => tgtPeriod && m.candleDate >= tgtPeriod.candleDate && m.candleDate <= tgtPeriod.candleEndDate);
+  const monKey = monthPeriods.length ? monthPeriods[monthPeriods.length - 1].periodKey : null;
+  const [retest, tgtRows, monRows] = await Promise.all([
+    getJson(`${baseUrl()}/api/v1/candles/stats/retest?timeframe=QUARTER&basePeriod=${encodeURIComponent(basePk)}&targetPeriod=${encodeURIComponent(targetPk)}`),
+    fetchScreen('QUARTER', targetPk),
+    monKey ? fetchScreen('MONTH', monKey) : Promise.resolve([])
+  ]);
+  return {
+    base: basePk, target: targetPk, monKey, from: retest.targetFrom, to: retest.targetTo,
+    touch: new Map((retest.results || []).map(e => [e.symbol, e])),
+    tgt: new Map(tgtRows.map(r => [r.symbol, r])),
+    mon: new Map(monRows.map(r => [r.symbol, r]))
+  };
+}
+
+// Where price came from before first touching the level, and what it did after the
+// quarter's highest-volume day:
+//   came from BELOW (resistance): close back under the level = REJECT (short setup), above = BREAK_UP
+//   came from ABOVE (support):    close back over the level  = BOUNCE (long setup),  under = BREAK_DOWN
+//   nothing closed outside the level since the peak day = PENDING
+function classify(z, approachClose, after, peakAtLevel) {
+  let approach = 'NA';
+  if (approachClose !== null) approach = approachClose < z[0] ? 'BELOW' : approachClose > z[1] ? 'ABOVE' : 'INSIDE';
+  let out = 'NA';
+  if (peakAtLevel) {
+    if (!after) out = 'PENDING';
+    else {
+      const up = after.close > z[1];
+      out = approach === 'BELOW' ? (up ? 'BREAK_UP' : 'REJECT')
+          : approach === 'ABOVE' ? (up ? 'BOUNCE' : 'BREAK_DOWN')
+          : (up ? 'BREAK_UP' : 'BREAK_DOWN');
+    }
+  }
+  return { approach, after: out, afterDate: after ? after.date : null };
+}
+
+function applyRetest(list, c) {
+  list.forEach(r => {
+    const t = c.touch.get(r.symbol), tg = c.tgt.get(r.symbol), mo = c.mon.get(r.symbol);
+    const peakHit = (row, z) => !row ? null : overlaps(zone(row.highVolDayLow, row.highVolDayHigh), z);
+    // active levels = breakout levels only
+    const levels = [];
+    if (r.volFlag === true && r.vz) levels.push({ z: r.vz, touch: t && t.volTouchDate ? { date: t.volTouchDate, days: t.volTouchDays } : null,
+      app: t && t.volApproachClose != null ? Number(t.volApproachClose) : null,
+      after: t && t.volAfterDate ? { date: t.volAfterDate, close: Number(t.volAfterClose) } : null });
+    if (r.delFlag === true && r.dz) levels.push({ z: r.dz, touch: t && t.delivTouchDate ? { date: t.delivTouchDate, days: t.delivTouchDays } : null,
+      app: t && t.delivApproachClose != null ? Number(t.delivApproachClose) : null,
+      after: t && t.delivAfterDate ? { date: t.delivAfterDate, close: Number(t.delivAfterClose) } : null });
+    r.touchVol = r.volFlag === true && t && t.volTouchDate ? { date: t.volTouchDate, days: t.volTouchDays } : null;
+    r.touchDel = r.delFlag === true && t && t.delivTouchDate ? { date: t.delivTouchDate, days: t.delivTouchDays } : null;
+    if (!levels.length) return;                      // not a breakout: retest does not apply
+    levels.forEach(l => { l.qtHit = peakHit(tg, l.z); });
+    // primary level: one the quarter peak sits in and price touched, else any touched, else first
+    const primary = levels.find(l => l.touch && l.qtHit) || levels.find(l => l.touch) || levels[0];
+    r.zoneLo = levels[0].z[0];
+    r.retest = levels.some(l => l.touch) ? 'YES' : 'NO';
+    r.retestDate = levels.filter(l => l.touch).map(l => l.touch.date).sort()[0] || null;   // first touch, used for sorting
+    r.qtVol = !tg ? 'NA' : levels.some(l => l.qtHit) ? 'YES' : 'NO';
+    r.moVol = !mo ? 'NA' : levels.some(l => peakHit(mo, l.z)) ? 'YES' : 'NO';
+    r.peakAny = (r.qtVol === 'YES' || r.moVol === 'YES') ? 'YES' : (r.qtVol === 'NA' && r.moVol === 'NA') ? 'NA' : 'NO';
+    r.nowClose = tg ? num(tg.close) : null;
+    r.nowLoc = r.nowClose === null ? null : closeLoc(r.nowClose, primary.z[1], primary.z[0]);
+    if (primary.touch) {
+      const k = classify(primary.z, primary.app, primary.after, primary.qtHit === true);
+      r.approach = k.approach; r.after = k.after; r.afterDate = k.afterDate;
+    }
+  });
+  const note = $('retestNote');
+  note.textContent = `Retest: levels = ${c.base} breakout days · daily prices checked for ${c.target} (${c.from} → ${c.to})` +
+                     ` · month volume peak from ${c.monKey || 'n/a'} · quarter volume peak from ${c.target} (After peak = first close outside the level after that day).`;
+  note.style.display = 'block';
+}
+
+// ── Watchlist (browser localStorage only) ────────────────────────────────────
+const WL_KEY = 'nse_insights_watchlist_v1';
+function wlLoad() { try { const v = JSON.parse(localStorage.getItem(WL_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } }
+function wlSave(list) { localStorage.setItem(WL_KEY, JSON.stringify(list)); $('wlBtn').textContent = `★ WATCHLIST (${list.length})`; }
+const isStarred = sym => wlLoad().some(w => w.symbol === sym);
+
+function toggleStar(sym) {
+  const list = wlLoad(), i = list.findIndex(w => w.symbol === sym);
+  if (i >= 0) { list.splice(i, 1); }
+  else {
+    const r = rows.find(x => x.symbol === sym); if (!r) return;
+    list.push({
+      symbol: sym, tf: $('tf').value, base: $('period').value, target: ctx ? ctx.target : null,
+      volZone: r.volFlag === true ? r.vz : null, delZone: r.delFlag === true ? r.dz : null,
+      approach: r.approach, after: r.after,
+      addedAt: new Date().toISOString().slice(0, 10), addedClose: r.nowClose ?? r.close
+    });
+  }
+  wlSave(list);
+  const r = rows.find(x => x.symbol === sym); if (r) r.starred = i < 0;
+  render(); if ($('wlPanel').style.display !== 'none') renderWatchlist();
+}
+
+let wlPrices = new Map();   // symbol -> latest close
+function distTag(close, z) {
+  if (close === null || !z) return badge('·', 'n', 'No data');
+  if (close > z[1]) return badge('↑', 'g', 'Above the level') + `<span class="small">+${((close - z[1]) * 100 / z[1]).toFixed(1)}%</span>`;
+  if (close < z[0]) return badge('↓', 'r', 'Below the level') + `<span class="small">${(-(z[0] - close) * 100 / z[0]).toFixed(1)}%</span>`;
+  return badge('↔', 'y', 'Inside the level (range bound)');
+}
+const zTxt = z => z ? `${fmt(z[0])}–${fmt(z[1])}` : '';
+
+function renderWatchlist() {
+  const list = wlLoad();
+  $('wlBody').innerHTML = list.map(w => {
+    const now = wlPrices.has(w.symbol) ? wlPrices.get(w.symbol) : null;
+    return `<tr>
+      <td class="sym">${esc(w.symbol)}</td>
+      <td class="lvl">${w.volZone ? 'V ' + esc(zTxt(w.volZone)) + '<br/>' : ''}${w.delZone ? 'D ' + esc(zTxt(w.delZone)) : ''}${!w.volZone && !w.delZone ? '—' : ''}</td>
+      <td class="lvl">${esc(w.addedAt)}<br/>${w.addedClose == null ? '' : esc(fmt(Number(w.addedClose)))} <span class="small">${esc(w.base)}</span>${w.approach && APPROACH[w.approach] ? '<br/>' + badge(APPROACH[w.approach][0], APPROACH[w.approach][1], APPROACH[w.approach][2]) + (w.after && AFTER[w.after] ? ' ' + badge(AFTER[w.after][0], AFTER[w.after][1], AFTER[w.after][2]) : '') : ''}</td>
+      <td class="num">${now === null ? '—' : fmt(now)}</td>
+      <td>${w.volZone ? 'V ' + distTag(now, w.volZone) + '<br/>' : ''}${w.delZone ? 'D ' + distTag(now, w.delZone) : ''}</td>
+      <td><button class="rm" data-s="${esc(w.symbol)}" title="Remove">✕</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Nothing saved yet. Click ☆ on a row to track a stock.</td></tr>';
+}
+
+async function refreshWatchlistPrices() {
+  const list = wlLoad(); if (!list.length) { renderWatchlist(); return; }
+  try {
+    for (const tf of [...new Set(list.map(w => w.tf))]) {
+      const d = await getJson(`${baseUrl()}/api/v1/candles/stats/available?timeframe=${tf}`);
+      const last = (d.periods || []).map(p => p.periodKey).pop();
+      if (!last) continue;
+      (await fetchScreen(tf, last)).forEach(r => wlPrices.set(r.symbol, num(r.close)));
+    }
+  } catch (e) { showMsg('Could not refresh watchlist prices: ' + e.message); }
+  renderWatchlist();
+}
+
 // Toggle-chip filters. Click to include a value; click again to remove it.
 // Nothing selected in a group = no filtering on that field.
 const sameDate = r => (!r.volDate || !r.delDate) ? 'NA' : r.volDate === r.delDate ? 'SAME' : 'DIFF';
@@ -202,15 +400,27 @@ const yn = f => f === true ? 'YES' : f === false ? 'NO' : 'NA';
 // opts: [value, chip text, tooltip]
 const LOCS = [['ABOVE','↑','Close above the day high'],['INSIDE','↔','Close inside the day range (range bound)'],['BELOW','↓','Close below the day low']];
 const FILTERS = [
+  { key:'fno',     label:'F&O',        get:r => r.fno, opts:[['YES','F&O','F&O stocks only'],['NO','Non F&O','Stocks without futures & options']] },
   { key:'vol',    label:'Vol B/O',    get:r => yn(r.volFlag), opts:[['YES','▲','Volume breakout'],['NO','–','No volume breakout']] },
   { key:'del',    label:'Deliv B/O',  get:r => yn(r.delFlag), opts:[['YES','▲','Delivery breakout'],['NO','–','No delivery breakout']] },
   { key:'same',   label:'Same day',   get:sameDate,           opts:[['SAME','=','Volume and delivery peak on the same date'],['DIFF','≠','Volume and delivery peak on different dates']] },
   { key:'trend',  label:'Trend',      get:r => r.trend || 'NA', opts:[['UP','▲','Up'],['DOWN','▼','Down'],['SIDE','◆','Side']] },
   { key:'locVol', label:'Close/Vol',  get:r => r.locVol || 'NA', opts:LOCS },
   { key:'locDel', label:'Close/Deliv',get:r => r.locDel || 'NA', opts:LOCS },
+  { key:'retest',  label:'Retest',        get:r => r.retest,  opts:[['YES','✓','Daily price touched a breakout level in the running quarter'],['NO','✗','Not touched yet']] },
+  { key:'peakAny', label:'Peak@lvl (M or Q)', get:r => r.peakAny, opts:[['YES','✓','Month or quarter highest-volume day touches a breakout level'],['NO','✗','Neither does']] },
+  { key:'moVol',  label:'Month peak@lvl', get:r => r.moVol,   opts:[['YES','✓','Latest month highest-volume day touches a breakout level'],['NO','✗','It does not']] },
+  { key:'qtVol',  label:'Qtr peak@lvl',   get:r => r.qtVol,   opts:[['YES','✓','Running quarter highest-volume day touches a breakout level'],['NO','✗','It does not']] },
+  { key:'approach', label:'Approach', get:r => r.approach, opts:[['BELOW','↗','Came up into the level from below: resistance (short setup)'],['ABOVE','↘','Came down into the level from above: support (long setup)'],['INSIDE','↔','Already inside the level at first touch']] },
+  { key:'after',  label:'After peak', get:r => r.after, opts:[['REJECT','REJ','Rejected: came from below and closed back under the level (bearish)'],['BOUNCE','BNC','Bounced: came from above and closed back over the level (bullish)'],['BREAK_UP','▲▲','Closed above the level and held (broke up)'],['BREAK_DOWN','▼▼','Closed below the level (broke down)'],['PENDING','…','No close outside the level since the peak-volume day yet']] },
   { key:'struct', label:'Structure',  get:r => r.structure || 'NA', opts:[['HH','HH','Higher high'],['LL','LL','Lower low'],['INSIDE','IN','Inside previous range'],['VOLATILE','VOL','High volatile: broke both previous high and low']] }
 ];
 const sel = Object.fromEntries(FILTERS.map(f => [f.key, new Set()]));
+const PRESETS = {
+  shortBtn: { retest:['YES'], qtVol:['YES'], approach:['BELOW'], after:['REJECT','PENDING'] },
+  longBtn:  { retest:['YES'], qtVol:['YES'], approach:['ABOVE'], after:['BOUNCE','PENDING'] },
+  candBtn:  { retest:['YES'], peakAny:['YES'] }
+};
 
 function buildFilters() {
   $('msHost').innerHTML = FILTERS.map(f => `
@@ -219,6 +429,14 @@ function buildFilters() {
 }
 function syncFilterUi() {
   document.querySelectorAll('.tg').forEach(b => b.classList.toggle('on', sel[b.dataset.k].has(b.dataset.v)));
+  // a preset button lights up only while the selected chips are exactly that preset
+  Object.entries(PRESETS).forEach(([id, want]) => {
+    const on = Object.keys(sel).every(k => {
+      const w = want[k] || [];
+      return sel[k].size === w.length && w.every(v => sel[k].has(v));
+    });
+    $(id).classList.toggle('on', on);
+  });
 }
 
 function filtered() {
@@ -246,22 +464,57 @@ const sameCell = r => {
   if (k === 'NA') return badge('·','n','No data');
   return k === 'SAME' ? badge('=','g',`Same day: ${r.volDate}`) : badge('≠','y',`Volume ${r.volDate} · Delivery ${r.delDate}`);
 };
+const yesNo = k => k === 'YES' ? badge('✓','g','Touches a breakout level') : k === 'NO' ? badge('✗','n','Does not touch a breakout level') : badge('·','n','Not applicable');
+const APPROACH = { BELOW:['↗','p','Came up into the level from below: resistance (short setup)'], ABOVE:['↘','p','Came down into the level from above: support (long setup)'], INSIDE:['↔','n','Already inside the level at first touch'] };
+const AFTER = {
+  REJECT:['REJ','r','Rejected: came from below and closed back under the level (bearish)'],
+  BOUNCE:['BNC','g','Bounced: came from above and closed back over the level (bullish)'],
+  BREAK_UP:['▲▲','g','Closed above the level (broke up)'],
+  BREAK_DOWN:['▼▼','r','Closed below the level (broke down)'],
+  PENDING:['…','y','No close outside the level since the peak-volume day yet']
+};
+const approachCell = r => pill(APPROACH, r.approach);
+const afterCell = r => r.after === 'NA' ? badge('·','n','Needs the quarter peak-volume day at a touched level') : pill(AFTER, r.after) + dateTag(r.afterDate);
+const retestCell = r => {
+  if (r.retest === 'NA') return badge('·','n','Not applicable (not a breakout, or no later quarter)');
+  const hits = [];
+  if (r.volFlag === true && r.touchVol) hits.push(`Volume level touched ${r.touchVol.date} (${r.touchVol.days} day${r.touchVol.days == 1 ? '' : 's'})`);
+  if (r.delFlag === true && r.touchDel) hits.push(`Delivery level touched ${r.touchDel.date} (${r.touchDel.days} day${r.touchDel.days == 1 ? '' : 's'})`);
+  if (r.retest === 'NO') return badge('✗','n','Breakout level not touched yet in the running quarter');
+  const first = [r.volFlag === true && r.touchVol && r.touchVol.date, r.delFlag === true && r.touchDel && r.touchDel.date].filter(Boolean).sort()[0];
+  return badge('✓','g',hits.join(' · ')) + dateTag(first);
+};
 const LOC = { ABOVE:['↑','g','Close above the day high'], INSIDE:['↔','y','Close inside the day range (range bound)'], BELOW:['↓','r','Close below the day low'] };
 const STRUCT = { HH:['HH','g','Higher high'], LL:['LL','r','Lower low'], INSIDE:['IN','y','Inside previous range'], VOLATILE:['VOL','p','High volatile: broke both previous high and low'] };
 const TREND = { UP:['▲','g','Up: low formed before high'], DOWN:['▼','r','Down: high formed before low'], SIDE:['◆','y','Side: high and low on the same day'] };
 const pill = (map, k) => k && map[k] ? badge(map[k][0], map[k][1], map[k][2]) : badge('·','n','No data');
 
+// Sort value per column. Words like YES/NO/NA are mapped to ranks; "no data" is null and always sorts last.
+const RANK = {
+  moVol:    { YES: 2, NO: 1 },
+  qtVol:    { YES: 2, NO: 1 },
+  sameDate: { SAME: 2, DIFF: 1 },
+  approach: { BELOW: 3, ABOVE: 2, INSIDE: 1 },
+  after:    { REJECT: 5, BOUNCE: 4, BREAK_UP: 3, BREAK_DOWN: 2, PENDING: 1 }
+};
+function sortVal(r, key) {
+  if (key === 'retest') return r.retestDate;            // ✓ rows ordered by first touch date; ✗ and · last
+  const v = r[key];
+  if (v === 'NA' || v === undefined) return null;
+  return RANK[key] ? (RANK[key][v] ?? null) : v;
+}
 function cmp(a, b) {
-  const x = a[sortKey], y = b[sortKey];
-  if (x === null && y === null) return 0;
-  if (x === null) return 1; if (y === null) return -1;   // nulls always last
-  const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
-  return sortAsc ? c : -c;
+  const x = sortVal(a, sortKey), y = sortVal(b, sortKey);
+  if (x === null && y === null) return a.symbol.localeCompare(b.symbol);
+  if (x === null) return 1; if (y === null) return -1;   // no data always last
+  const c = typeof x === 'string' ? x.localeCompare(y) : Number(x) - Number(y);
+  return c ? (sortAsc ? c : -c) : a.symbol.localeCompare(b.symbol);   // ties: by symbol
 }
 
 function render() {
   const list = filtered().sort(cmp);
   const count = fn => list.filter(fn).length;
+  $('exportBtn').textContent = `⬇ EXPORT (${list.length})`;
   $('chips').innerHTML = [
     ['Showing', `${list.length} / ${rows.length}`],
     ['Volume breakouts', count(r => r.volFlag === true)],
@@ -275,7 +528,7 @@ function render() {
   $('body').innerHTML = list.map(r => {
     const cls = r.pctChange === null ? '' : r.pctChange >= 0 ? 'up' : 'down';
     return `<tr>
-      <td class="sym">${esc(r.symbol)}</td>
+      <td class="sym">${esc(r.symbol)}${r.fno === 'YES' ? '<span class="small" title="F&O stock">F&amp;O</span>' : ''}</td>
       <td class="num">${fmt(r.close)}</td>
       <td class="num ${cls}">${r.pctChange === null ? '—' : r.pctChange.toFixed(2) + '%'}</td>
       <td>${pill(TREND, r.trend)}</td>
@@ -285,6 +538,14 @@ function render() {
       <td>${pill(LOC, r.locVol)}</td>
       <td>${pill(LOC, r.locDel)}</td>
       <td>${pill(STRUCT, r.structure)}</td>
+      <td class="lvl">${r.volFlag === true && r.vz ? 'V ' + esc(zTxt(r.vz)) + '<br/>' : ''}${r.delFlag === true && r.dz ? 'D ' + esc(zTxt(r.dz)) : ''}${r.zoneLo === null ? '—' : ''}</td>
+      <td>${retestCell(r)}</td>
+      <td>${yesNo(r.moVol)}</td>
+      <td>${yesNo(r.qtVol)}</td>
+      <td>${approachCell(r)}</td>
+      <td>${afterCell(r)}</td>
+      <td class="num">${r.nowClose === null ? '—' : fmt(r.nowClose)} ${r.nowLoc ? pill(LOC, r.nowLoc) : ''}</td>
+      <td><button class="star${r.starred ? ' on' : ''}" data-s="${esc(r.symbol)}" title="${r.starred ? 'Remove from' : 'Add to'} watchlist">${r.starred ? '★' : '☆'}</button></td>
     </tr>`;
   }).join('') || `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--muted);padding:30px">No symbols match the filters.</td></tr>`;
 
@@ -305,12 +566,55 @@ $('msHost').addEventListener('click', e => {
   set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v);
   syncFilterUi(); render();
 });
+$('body').addEventListener('click', e => { const b = e.target.closest('.star'); if (b) toggleStar(b.dataset.s); });
+$('wlBody').addEventListener('click', e => {
+  const b = e.target.closest('.rm'); if (!b) return;
+  wlSave(wlLoad().filter(w => w.symbol !== b.dataset.s));
+  const r = rows.find(x => x.symbol === b.dataset.s); if (r) r.starred = false;
+  renderWatchlist(); if (rows.length) render();
+});
+$('wlBtn').onclick = () => {
+  const open = $('wlPanel').style.display === 'none';
+  $('wlPanel').style.display = open ? 'block' : 'none';
+  if (open) { renderWatchlist(); refreshWatchlistPrices(); }
+};
+$('wlRefresh').onclick = refreshWatchlistPrices;
+$('wlClear').onclick = () => {
+  if (!wlLoad().length || !confirm('Remove every stock from the watchlist?')) return;
+  wlSave([]); rows.forEach(r => { r.starred = false; }); renderWatchlist(); if (rows.length) render();
+};
+const applyPreset = id => () => {
+  Object.values(sel).forEach(set => set.clear());
+  Object.entries(PRESETS[id]).forEach(([k, vs]) => vs.forEach(v => sel[k].add(v)));
+  syncFilterUi(); render();
+};
+['shortBtn', 'longBtn', 'candBtn'].forEach(id => { $(id).onclick = applyPreset(id); });
+// Export the stocks currently shown (current filters and sort order) in the format
+// the Fyers watchlist import accepts: NSE:SYMBOL-EQ,NSE:SYMBOL-EQ,...
+function exportFiltered() {
+  const list = filtered().sort(cmp);
+  if (!list.length) { alert('No symbols to export.'); return; }
+  const parts = [$('tf').value, $('period').value];
+  FILTERS.forEach(f => {
+    const picked = f.opts.filter(([v]) => sel[f.key].has(v)).map(([v]) => v);
+    if (picked.length) parts.push(f.key + '-' + picked.join('+'));
+  });
+  const q = $('fSearch').value.trim().toUpperCase();
+  if (q) parts.push(q);
+  const filename = parts.filter(Boolean).join('_').replace(/[^A-Za-z0-9._+-]/g, '') + '.txt';
+  const blob = new Blob([list.map(r => 'NSE:' + r.symbol + '-EQ').join(',')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+$('exportBtn').onclick = exportFiltered;
 $('resetBtn').onclick = () => {
   $('fSearch').value = '';
   Object.values(sel).forEach(set => set.clear());
   syncFilterUi(); render();
 };
-buildFilters(); syncFilterUi();
+buildFilters(); syncFilterUi(); wlSave(wlLoad());
 $('tf').onchange = loadPeriods;
 $('loadBtn').onclick = load;
 loadPeriods();

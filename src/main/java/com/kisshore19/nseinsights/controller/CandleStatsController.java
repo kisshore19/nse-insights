@@ -53,6 +53,26 @@ public class CandleStatsController {
         }
     }
 
+    // ── GET /api/v1/candles/stats/retest?timeframe=QUARTER&basePeriod=2026-Q3&targetPeriod=2026-Q4 ──
+    //
+    // For every symbol with stats in basePeriod: the first day (and number of days) on which
+    // the target period's daily high-low range touched the base period's highest-volume day
+    // range and highest-delivery day range. Symbols never touching a level have null dates.
+    @GetMapping("/stats/retest")
+    public ResponseEntity<ApiResponse<CandleRetestResponse>> retest(
+            @RequestParam                        String timeframe,
+            @RequestParam                        String basePeriod,
+            @RequestParam                        String targetPeriod) {
+
+        try {
+            return ResponseEntity.ok(ApiResponse.success(
+                    candleStatsService.getRetest(timeframe.toUpperCase(), basePeriod, targetPeriod)));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("400", ex.getMessage()));
+        }
+    }
+
     // ── GET /api/v1/candles/stats/available?timeframe=WEEK ───────────────────
     //
     // Returns all period keys that already have stats built, with their

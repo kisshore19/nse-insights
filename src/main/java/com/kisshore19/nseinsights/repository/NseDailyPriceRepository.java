@@ -1678,4 +1678,70 @@ public interface NseDailyPriceRepository extends JpaRepository<NseDailyPrice, Lo
         ORDER BY period_key ASC
         """, nativeQuery = true)
     List<String> findDistinctPeriodKeys(@Param("timeframe") String timeframe);
+
+    // ── Retest: did the target period's daily range touch the base period's levels ──
+    // Levels are the high/low of the base period's highest-volume and highest-delivery
+    // days (stored in candle_stats). A day touches a level when its low is at or below
+    // the level high and its high is at or above the level low.
+    // Also returned, per level:
+    //   approach - close of the trading day before the first touch (which side price came from)
+    //   after    - first day after the target period highest-volume day that closed outside
+    //              the level (rejection / bounce / break evidence)
+    // The COLLATE keeps the join valid: the two tables use different symbol collations.
+    // lookbackFrom is a few days before fromDate so the first target day has a previous close.
+    @Query(value = """
+        WITH px AS (
+            SELECT symbol, trade_date, low_price, high_price, close_price,
+                   LAG(close_price) OVER (PARTITION BY symbol ORDER BY trade_date) AS prev_close
+            FROM nse_daily_price
+            WHERE trade_date BETWEEN :lookbackFrom AND :toDate
+        )
+        SELECT
+            cs.symbol AS symbol,
+            MIN(CASE WHEN px.low_price <= cs.high_vol_day_high
+                      AND px.high_price >= cs.high_vol_day_low
+                     THEN px.trade_date END)                         AS volTouchDate,
+            CAST(SUM(CASE WHEN px.low_price <= cs.high_vol_day_high
+                           AND px.high_price >= cs.high_vol_day_low
+                          THEN 1 ELSE 0 END) AS SIGNED)              AS volTouchDays,
+            MIN(CASE WHEN px.low_price <= cs.high_deliv_day_high
+                      AND px.high_price >= cs.high_deliv_day_low
+                     THEN px.trade_date END)                         AS delivTouchDate,
+            CAST(SUM(CASE WHEN px.low_price <= cs.high_deliv_day_high
+                           AND px.high_price >= cs.high_deliv_day_low
+                          THEN 1 ELSE 0 END) AS SIGNED)              AS delivTouchDays,
+            MIN(CASE WHEN px.low_price <= cs.high_vol_day_high
+                      AND px.high_price >= cs.high_vol_day_low
+                     THEN CONCAT(px.trade_date, '|', IFNULL(px.prev_close, '')) END) AS volApproachRaw,
+            MIN(CASE WHEN tg.high_vol_date IS NOT NULL
+                      AND px.trade_date > tg.high_vol_date
+                      AND (px.close_price > cs.high_vol_day_high OR px.close_price < cs.high_vol_day_low)
+                     THEN CONCAT(px.trade_date, '|', px.close_price) END)           AS volAfterRaw,
+            MIN(CASE WHEN px.low_price <= cs.high_deliv_day_high
+                      AND px.high_price >= cs.high_deliv_day_low
+                     THEN CONCAT(px.trade_date, '|', IFNULL(px.prev_close, '')) END) AS delivApproachRaw,
+            MIN(CASE WHEN tg.high_vol_date IS NOT NULL
+                      AND px.trade_date > tg.high_vol_date
+                      AND (px.close_price > cs.high_deliv_day_high OR px.close_price < cs.high_deliv_day_low)
+                     THEN CONCAT(px.trade_date, '|', px.close_price) END)           AS delivAfterRaw
+        FROM candle_stats cs
+        LEFT JOIN candle_stats tg
+               ON tg.symbol     = cs.symbol
+              AND tg.timeframe  = :timeframe
+              AND tg.period_key = :targetPeriod
+        JOIN px
+          ON px.symbol = cs.symbol COLLATE utf8mb4_unicode_ci
+         AND px.trade_date >= :fromDate
+        WHERE cs.timeframe  = :timeframe
+          AND cs.period_key = :basePeriod
+        GROUP BY cs.symbol
+        ORDER BY cs.symbol ASC
+        """, nativeQuery = true)
+    List<CandleRetestProjection> findRetestTouches(
+            @Param("timeframe")    String timeframe,
+            @Param("basePeriod")   String basePeriod,
+            @Param("targetPeriod") String targetPeriod,
+            @Param("lookbackFrom") LocalDate lookbackFrom,
+            @Param("fromDate")     LocalDate fromDate,
+            @Param("toDate")       LocalDate toDate);
 }
