@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NSE · Delivery Sequences</title>
+<style>
+:root { --bg:#f5f7fc; --surf:#fff; --surf2:#eef1f8; --border:#dde2f0; --border2:#c8cfe3; --text:#111827; --muted:#6b7280;
+        --up:#059669; --down:#dc2626; --accent:#4f46e5; --mono:ui-monospace,monospace; --sans:system-ui,sans-serif; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:13px; }
+.wrap { max-width:1400px; margin:0 auto; padding:24px 20px 60px; }
+h1 { font-size:24px; font-weight:800; letter-spacing:-1px; margin-bottom:4px; }
+.sub { color:var(--muted); margin-bottom:16px; }
+.panel { background:var(--surf); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+.row { display:flex; flex-wrap:wrap; gap:12px; align-items:end; }
+.field label { display:block; font-family:var(--mono); font-size:9px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
+.field input { background:var(--bg); border:1px solid var(--border2); border-radius:7px; padding:8px 10px; font-family:var(--mono); font-size:12px; }
+button { background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 18px; font-family:var(--mono); font-size:11px; font-weight:600; cursor:pointer; }
+button.ghost { background:var(--surf); color:var(--text); border:1px solid var(--border2); }
+button:disabled { opacity:.5; }
+.msg { padding:10px 14px; border-radius:8px; margin-bottom:12px; background:#fef2f2; color:var(--down); border:1px solid #fecaca; display:none; }
+.msg.info { background:#eef2ff; color:var(--accent); border-color:#c7d2fe; }
+.tablebox { background:var(--surf); border:1px solid var(--border); border-radius:12px; overflow:auto; max-height:72vh; }
+table { border-collapse:collapse; width:100%; }
+th { position:sticky; top:0; background:var(--surf2); text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); padding:10px 12px; white-space:nowrap; border-bottom:1px solid var(--border); cursor:pointer; user-select:none; }
+th.sorted::after { content:' ▼'; } th.sorted.asc::after { content:' ▲'; }
+td { padding:7px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+td.num { font-family:var(--mono); text-align:right; }
+tr.cool td { background:#fffbeb; }
+.hiC { background:#bbf7d0 !important; color:#065f46; font-weight:700; }
+.loC { background:#fecaca !important; color:#991b1b; font-weight:700; }
+.up { color:var(--up); } .down { color:var(--down); }
+.badge { display:inline-block; border-radius:5px; padding:2px 8px; font-size:11px; font-weight:600; }
+.y { background:#fef3c7; color:#92400e; } .g { background:#d1fae5; color:#065f46; }
+.count { color:var(--muted); font-family:var(--mono); font-size:11px; margin-left:auto; align-self:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Delivery Sequences</h1>
+  <p class="sub">Every session in the range. RISE = delivery above the previous session; COOL OFF = delivery below the previous session after a rise. Cool High/Low = high / low of the first cool-off day and the candle before it. CoolOffStruc = the first cool-off day against that candle; Cool to Cool = the range against the previous cool-off period. HH = higher high and low, LL = lower high and low, HV = higher high with lower low, LV = lower high with higher low. Green High / red Low cells are the candles that match Cool High / Cool Low. Click a header to sort.</p>
+  <div class="panel"><div class="row">
+    <div class="field"><label>API URL</label><input id="apiUrl" value="http://localhost:8080" style="min-width:200px"/></div>
+    <div class="field"><label>Symbol</label><input id="symbol" placeholder="RELIANCE" style="text-transform:uppercase"/></div>
+    <div class="field"><label>From</label><input id="from" type="date"/></div>
+    <div class="field"><label>To</label><input id="to" type="date"/></div>
+    <button id="run">SHOW</button>
+    <button id="csv" class="ghost" disabled>CSV</button>
+    <span class="count" id="count"></span>
+  </div></div>
+  <div id="msg" class="msg"></div>
+  <div class="tablebox"><table id="tbl"></table></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const COLS = [
+  ['date','Date'],['open','Open'],['high','High'],['low','Low'],['close','Close'],['tradedQty','Traded Qty'],
+  ['deliveryQty','Delivery Qty'],['sequence','Seq'],['phase','Phase'],['coolOff','Cool Off'],
+  ['coolNo','Cool #'],['coolHigh','Cool High'],['coolLow','Cool Low'],['coolOffStruc','CoolOffStruc'],['coolToCool','Cool to Cool']];
+const n2 = v => v == null ? '' : Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+let marks = {};   // date -> { hi, lo }: cells that equal the period's Cool High / Cool Low
+let days = [], sortKey = 'date', asc = true;
+
+function msg(t, info) { const m = $('msg'); m.textContent = t; m.className = 'msg' + (info ? ' info' : ''); m.style.display = t ? 'block' : 'none'; }
+
+async function run() {
+  const sym = $('symbol').value.trim().toUpperCase();
+  if (!sym) { msg('Enter a symbol.'); return; }
+  const q = new URLSearchParams();
+  if ($('from').value) q.set('from', $('from').value);
+  if ($('to').value) q.set('to', $('to').value);
+  $('run').disabled = true; msg('Loading…', true);
+  try {
+    const res = await fetch(`${$('apiUrl').value.replace(/\/$/, '')}/api/v1/delivery-sequences/${encodeURIComponent(sym)}?${q}`);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+    days = (json.data || json).days;
+    markCool();
+    sortKey = 'date'; asc = true; render();
+    msg(days.length ? '' : `No sessions with delivery data for ${sym} in this range.`);
+  } catch (e) { msg(e.message); days = []; render(); }
+  $('run').disabled = false;
+}
+
+// Marks only the cells whose value is the period's Cool High / Cool Low: the highest High and lowest Low between the
+// first cool-off day and the candle just before it (the same two candles the backend uses).
+function markCool() {
+  marks = {};
+  const byDate = [...days].sort((a, b) => a.date < b.date ? -1 : 1);
+  for (let i = 0; i < byDate.length; ) {
+    if (!byDate[i].coolOff) { i++; continue; }
+    let e = i;
+    while (e + 1 < byDate.length && byDate[e + 1].coolOff) e++;
+    const range = byDate.slice(i > 0 ? i - 1 : i, i + 1);   // candle before + first cool-off day
+    const coolHigh = byDate[i].coolHigh, coolLow = byDate[i].coolLow;
+    range.forEach(d => {
+      if (d.high === coolHigh) (marks[d.date] ||= {}).hi = true;
+      if (d.low === coolLow) (marks[d.date] ||= {}).lo = true;
+    });
+    i = e + 1;
+  }
+}
+
+const hiCls = d => (marks[d.date] || {}).hi ? 'hiC' : '';
+const loCls = d => (marks[d.date] || {}).lo ? 'loC' : '';
+
+function render() {
+  const rows = [...days].sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    const c = x == null ? -1 : y == null ? 1 : x < y ? -1 : x > y ? 1 : 0;
+    return asc ? c : -c;
+  });
+  $('tbl').innerHTML = '<tr>' + COLS.map(([k, h]) =>
+    `<th data-k="${k}" class="${k === sortKey ? 'sorted' + (asc ? ' asc' : '') : ''}">${h}</th>`).join('') + '</tr>' +
+    rows.map(d => `<tr class="${d.coolOff ? 'cool' : ''}"><td>${d.date}</td>
+      <td class="num">${n2(d.open)}</td><td class="num ${hiCls(d)}">${n2(d.high)}</td><td class="num ${loCls(d)}">${n2(d.low)}</td><td class="num">${n2(d.close)}</td>
+      <td class="num">${n2(d.tradedQty)}</td><td class="num">${n2(d.deliveryQty)}</td>
+      <td class="num">${d.sequence}</td>
+      <td>${d.phase === 'RISE' ? '<span class="badge g">RISE</span>' : d.phase === 'COOL_OFF' ? '<span class="badge y">COOL OFF</span>' : ''}</td>
+      <td>${d.coolOff ? 'Yes' : 'No'}</td>
+      <td class="num">${d.coolNo || ''}</td><td class="num ${d.coolHigh != null ? 'hiC' : ''}">${n2(d.coolHigh)}</td><td class="num ${d.coolLow != null ? 'loC' : ''}">${n2(d.coolLow)}</td>
+      <td>${d.coolOffStruc}</td><td>${d.coolToCool}</td></tr>`).join('');
+  $('count').textContent = days.length ? `${days.length} sessions · ${days.filter(d => d.coolOff).length} cool-off` : '';
+  $('csv').disabled = !days.length;
+}
+
+$('tbl').addEventListener('click', e => {
+  const th = e.target.closest('th'); if (!th) return;
+  asc = th.dataset.k === sortKey ? !asc : true; sortKey = th.dataset.k; render();
+});
+$('csv').onclick = () => {
+  const lines = [COLS.map(c => c[1]).join(',')].concat(days.map(d => COLS.map(([k]) => d[k] ?? '').join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+  a.download = `delivery-${$('symbol').value.trim().toUpperCase()}.csv`; a.click();
+};
+$('run').onclick = run;
+$('symbol').addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+</script>
+</body>
+</html>
