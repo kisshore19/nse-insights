@@ -48,12 +48,74 @@ tr.b-Y td { border-top:3px solid #111827; }
 .badge { display:inline-block; border-radius:5px; padding:2px 8px; font-size:11px; font-weight:600; }
 .y { background:#fef3c7; color:#92400e; } .g { background:#d1fae5; color:#065f46; }
 .count { color:var(--muted); font-family:var(--mono); font-size:11px; margin-left:auto; align-self:center; }
+
+/* ── themes: set on <html data-theme="..."> ── */
+:root { --t1:#7c3aed; --t2:#ec4899; --t3:#06b6d4; --bg1:#ede9fe; --bg2:#fce7f3; --bg3:#cffafe;
+        --soft:#faf5ff; --hover:#f3e8ff; --edge:#ddd6fe; --field:#faf5ff; --fieldEdge:#c4b5fd; --ink:#6d28d9;
+        --th1:#6d28d9; --th2:#7c3aed; --pc1:#0e7490; --pc2:#06b6d4; --pcsoft:#ecfeff; --cool:#fef3c7; --coolHover:#fde68a; --sh:124,58,237; }
+[data-theme=ocean]  { --t1:#0369a1; --t2:#06b6d4; --t3:#14b8a6; --bg1:#e0f2fe; --bg2:#cffafe; --bg3:#ccfbf1; --soft:#f0f9ff; --hover:#e0f2fe; --edge:#bae6fd;
+        --field:#f0f9ff; --fieldEdge:#7dd3fc; --ink:#075985; --th1:#075985; --th2:#0284c7; --pc1:#0f766e; --pc2:#14b8a6; --pcsoft:#f0fdfa; --sh:3,105,161; }
+[data-theme=sunset] { --t1:#ea580c; --t2:#db2777; --t3:#f59e0b; --bg1:#ffedd5; --bg2:#fce7f3; --bg3:#fef9c3; --soft:#fff7ed; --hover:#ffedd5; --edge:#fed7aa;
+        --field:#fff7ed; --fieldEdge:#fdba74; --ink:#9a3412; --th1:#c2410c; --th2:#ea580c; --pc1:#be185d; --pc2:#db2777; --pcsoft:#fdf2f8; --sh:234,88,12; }
+[data-theme=forest] { --t1:#15803d; --t2:#65a30d; --t3:#0d9488; --bg1:#dcfce7; --bg2:#ecfccb; --bg3:#ccfbf1; --soft:#f0fdf4; --hover:#dcfce7; --edge:#bbf7d0;
+        --field:#f0fdf4; --fieldEdge:#86efac; --ink:#166534; --th1:#166534; --th2:#16a34a; --pc1:#0f766e; --pc2:#0d9488; --pcsoft:#f0fdfa; --sh:21,128,61; }
+[data-theme=dark]   { --t1:#a78bfa; --t2:#f472b6; --t3:#22d3ee; --bg1:#0f172a; --bg2:#1e1b4b; --bg3:#0f172a; --soft:#172033; --hover:#334155; --edge:#334155;
+        --field:#0f172a; --fieldEdge:#475569; --ink:#c4b5fd; --th1:#4c1d95; --th2:#6d28d9; --pc1:#155e75; --pc2:#0e7490; --pcsoft:#0f2a35; --cool:#713f12; --coolHover:#854d0e; --sh:0,0,0;
+        --bg:#0f172a; --surf:#1e293b; --surf2:#334155; --text:#e2e8f0; --muted:#94a3b8; --border:#334155; --border2:#475569; }
+
+body { background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 45%,var(--bg3) 100%) fixed; }
+.top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+h1 { background:linear-gradient(90deg,var(--t1),var(--t2),#f59e0b); -webkit-background-clip:text; background-clip:text; color:transparent; font-size:28px; }
+.sub { color:var(--ink); }
+.panel { border:1px solid var(--edge); border-top:4px solid var(--t1); box-shadow:0 4px 14px rgba(var(--sh),.12); }
+#pcPanel { border-top-color:var(--t3); }
+#pcPanel b { color:var(--pc1); font-size:14px; }
+.field label { color:var(--t1); font-weight:700; }
+.field input, .field select { border:1px solid var(--fieldEdge); background:var(--field); color:var(--text); border-radius:7px; padding:8px 10px; font-family:var(--mono); font-size:12px; }
+.field input:focus, .field select:focus { outline:none; border-color:var(--t2); box-shadow:0 0 0 3px rgba(236,72,153,.18); }
+button { background:linear-gradient(90deg,var(--t1),var(--t2)); box-shadow:0 3px 8px rgba(var(--sh),.30); transition:transform .1s; }
+button:hover:not(:disabled) { transform:translateY(-1px); }
+button.ghost { background:var(--surf); color:var(--t1); border:1px solid var(--fieldEdge); box-shadow:none; }
+.pk label { color:var(--ink); }
+.pk input { accent-color:var(--t2); }
+.tablebox { border:1px solid var(--edge); box-shadow:0 4px 14px rgba(var(--sh),.12); background:var(--surf); }
+th { background:linear-gradient(180deg,var(--th1),var(--th2)); color:#fff; border-bottom:0; }
+#pcTbl th { background:linear-gradient(180deg,var(--pc1),var(--pc2)); }
+tr:nth-child(even) td { background:var(--soft); }
+#pcTbl tr:nth-child(even) td { background:var(--pcsoft); }
+tr:hover td { background:var(--hover); }
+tr.cool td { background:var(--cool); }
+tr.cool:hover td { background:var(--coolHover); }
+td { border-bottom-color:var(--edge); }
+.badge.g { background:#bbf7d0; color:#14532d; }
+.badge.y { background:#fde68a; color:#78350f; }
+.up { color:#10b981; font-weight:600; } .down { color:#f43f5e; font-weight:600; }
+.hv { background:#bfdbfe !important; color:#1d4ed8; }
+.hd { background:#e9d5ff !important; color:#6b21a8; }
+.msg.info { background:var(--soft); color:var(--ink); border-color:var(--fieldEdge); }
+.count { color:var(--t1); font-weight:700; }
+
+/* period colours, the same in every theme: W blue, M green, Q pink, Y amber */
+:root { --W:#3b82f6; --M:#10b981; --Q:#ec4899; --Y:#f59e0b; --Wl:#dbeafe; --Ml:#d1fae5; --Ql:#fce7f3; --Yl:#fef3c7; }
+.chip2 { color:#fff; }
+.chip2.ch.cW { background:var(--W); } .chip2.ch.cM { background:var(--M); } .chip2.ch.cQ { background:var(--Q); } .chip2.ch.cY { background:var(--Y); }
+.chip2.cb.cW { background:var(--Wl); color:#1d4ed8; } .chip2.cb.cM { background:var(--Ml); color:#047857; }
+.chip2.cb.cQ { background:var(--Ql); color:#be185d; } .chip2.cb.cY { background:var(--Yl); color:#b45309; }
+.cb { border:1px solid currentColor; }
+.tg.tW { color:var(--W); } .tg.tM { color:var(--M); } .tg.tQ { color:var(--Q); } .tg.tY { color:var(--Y); }
+tr.b-W td { border-top:2px dashed var(--W); }
+tr.b-M td { border-top:2px solid var(--M); }
+tr.b-Q td { border-top:2px solid var(--Q); }
+tr.b-Y td { border-top:3px solid var(--Y); }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Delivery Sequences</h1>
-  <p class="sub">Every session in the range. RISE = delivery above the previous session; COOL OFF = delivery below the previous session after a rise. Cool High/Low = high / low of the first cool-off day and the candle before it. CoolOffStruc = the first cool-off day against that candle; Cool to Cool = the range against the previous cool-off period. HH = higher high and low, LL = lower high and low, HV = higher high with lower low, LV = lower high with higher low. Green High / red Low cells are the candles that match Cool High / Cool Low. The first session of a period shows (W) (M) (Q) (Y) after its date and gets a line above it: dashed grey = week, blue = month, purple = quarter, black = year (biggest wins), whatever the sort. Blue Traded Qty / purple Delivery Qty = highest in the selected range. Chips under the number: W M Q Y; dark = highest of that period, ↑ = first day above the previous period's highest, orange = breakout only. The Period comparison section lists every period. Click a header to sort.</p>
+  <div class="top"><h1>Delivery Sequences</h1>
+    <div class="field"><label>Theme</label><select id="theme">
+      <option value="violet">Violet</option><option value="ocean">Ocean</option><option value="sunset">Sunset</option>
+      <option value="forest">Forest</option><option value="dark">Dark</option></select></div></div>
+  <p class="sub">Every session in the range. RISE = delivery above the previous session; COOL OFF = delivery below the previous session after a rise. Cool High/Low = high / low of the first cool-off day and the candle before it. CoolOffStruc = the first cool-off day against that candle; Cool to Cool = the range against the previous cool-off period. HH = higher high and low, LL = lower high and low, HV = higher high with lower low, LV = lower high with higher low. Green High / red Low cells are the candles that match Cool High / Cool Low. The first session of a period shows (W) (M) (Q) (Y) after its date and gets a line above it: dashed blue = week, green = month, pink = quarter, amber = year (biggest wins), whatever the sort. Blue Traded Qty / purple Delivery Qty = highest in the selected range. Chips under the number: W M Q Y; solid chip = highest of that period, ↑ = first day above the previous period's highest, light chip = breakout only; W blue, M green, Q pink, Y amber. The Period comparison section lists every period. Click a header to sort.</p>
   <div class="panel"><div class="row">
     <div class="field"><label>API URL</label><input id="apiUrl" value="http://localhost:8080" style="min-width:200px"/></div>
     <div class="field"><label>Symbol</label><input id="symbol" placeholder="RELIANCE" style="text-transform:uppercase"/></div>
@@ -81,6 +143,9 @@ tr.b-Y td { border-top:3px solid #111827; }
 </div>
 <script>
 const $ = id => document.getElementById(id);
+$('theme').value = localStorage.getItem('dsTheme') || 'violet';
+document.documentElement.dataset.theme = $('theme').value;
+$('theme').onchange = () => { document.documentElement.dataset.theme = $('theme').value; localStorage.setItem('dsTheme', $('theme').value); };
 const COLS = [
   ['date','Date'],['open','Open'],['high','High'],['low','Low'],['close','Close'],['tradedQty','Traded Qty'],
   ['deliveryQty','Delivery Qty'],['phase','Phase'],
@@ -140,7 +205,7 @@ const tags = (high, brk) => {
   const chips = ['W', 'M', 'Q', 'Y'].filter(c => h.includes(c) || b.includes(c)).map(c => {
     const isH = h.includes(c), isB = b.includes(c);
     const tip = [isH && 'highest in range', isB && "above previous period's highest"].filter(Boolean).join(' · ');
-    return `<span class="chip2 ${isH ? 'ch' : 'cb'}" title="${tip}">${c}${isB ? '↑' : ''}</span>`;
+    return `<span class="chip2 c${c} ${isH ? 'ch' : 'cb'}" title="${tip}">${c}${isB ? '↑' : ''}</span>`;
   });
   return chips.length ? `<div class="chips2">${chips.join('')}</div>` : '';
 };
@@ -189,7 +254,7 @@ function render() {
   });
   $('tbl').innerHTML = '<tr>' + COLS.map(([k, h]) =>
     `<th data-k="${k}" class="${k === sortKey ? 'sorted' + (asc ? ' asc' : '') : ''}">${h}</th>`).join('') + '</tr>' +
-    rows.map(d => `<tr class="${d.coolOff ? 'cool' : ''} ${starts[d.date] ? 'b-' + starts[d.date][starts[d.date].length - 1] : ''}"><td>${d.date}${(starts[d.date] || []).map(c => ` <span class="tg">(${c})</span>`).join('')}</td>
+    rows.map(d => `<tr class="${d.coolOff ? 'cool' : ''} ${starts[d.date] ? 'b-' + starts[d.date][starts[d.date].length - 1] : ''}"><td>${d.date}${(starts[d.date] || []).map(c => ` <span class="tg t${c}">(${c})</span>`).join('')}</td>
       <td class="num">${n2(d.open)}</td><td class="num ${hiCls(d)}">${n2(d.high)}</td><td class="num ${loCls(d)}">${n2(d.low)}</td><td class="num">${n2(d.close)}</td>
       <td class="num ${sel(d.highVol) ? 'hv' : ''}">${n2(d.tradedQty)}${tags(d.highVol, d.volBreakout)}</td><td class="num ${sel(d.highDel) ? 'hd' : ''}">${n2(d.deliveryQty)}${tags(d.highDel, d.delBreakout)}</td>
             <td>${d.phase === 'RISE' ? '<span class="badge g">RISE</span>' : d.phase === 'COOL_OFF' ? '<span class="badge y">COOL OFF</span>' : ''}</td>
